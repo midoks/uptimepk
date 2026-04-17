@@ -9,6 +9,7 @@ import (
 	"uptimepk/internal/conf"
 	"uptimepk/internal/db"
 	"uptimepk/internal/log"
+	"uptimepk/internal/op"
 )
 
 var Web = cli.Command{
@@ -30,6 +31,11 @@ func runWeb(c *cli.Context) error {
 
 	log.Init()
 	db.InitDb()
+
+	if conf.Security.InstallLock {
+		//初始化telegram监听任务
+		op.InitTgTask()
+	}
 
 	//
 	app.Run()
