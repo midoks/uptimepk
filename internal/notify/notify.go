@@ -35,7 +35,7 @@ func NewNotification(token string, chat_id int64, proxy string, enabled bool) (*
 		bot, err = tgbotapi.NewBotAPI(token)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
+		return nil, fmt.Errorf("failed telegram bot: %w", err)
 	}
 
 	return &Notification{
@@ -50,7 +50,7 @@ func (n *Notification) Send(ctx context.Context, title, content string) error {
 		return nil
 	}
 
-	message := fmt.Sprintf("%s\n\n%s", title, content)
+	message := fmt.Sprintf("%s:\n%s", title, content)
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
