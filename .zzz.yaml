@@ -1,0 +1,28 @@
+dev: false
+title: zzz
+frequency: 2
+dirfilter:
+- tmp
+- .git
+- public
+- scripts
+- vendor
+- logs
+ext:
+- go
+- tmpl
+lang: go
+enablerun: true
+action:
+  before:
+  # - go mod tidy
+  # - go mod vendor
+  - find . -name ".DS_Store" -print -delete
+  - gofmt -w ./
+  after:
+  - ps -ef|grep 'uptimepk web'| grep -v grep | awk '{print $2}' | xargs kill -9
+  - ./uptimepk web &
+  exit:
+  - ps -ef|grep 'uptimepk web'| grep -v grep | awk '{print $2}' | xargs kill -9
+  - rm -rf ./uptimepk
+link: https://github.com/midoks/zzz

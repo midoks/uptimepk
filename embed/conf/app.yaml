@@ -1,0 +1,103 @@
+app_name: uptimepk
+brand_name: uptimepk
+run_user: root
+run_mode: prod
+
+general:
+  menu_file: "menu.json"
+
+admin:
+  user: admin
+  pass: admin
+
+log:
+  # The log format either "json" or "text"
+  format: "text"
+  root_path: "logs"
+
+session:
+  # The session provider, either "memory", "file", or "redis".
+  provider: memory
+  # The configuration for respective provider:
+  # - memory: does not need any config yet
+  # - file: session file path, e.g. `data/sessions`
+  # - redis: network=tcp,addr=:6379,password=macaron,db=0,pool_size=100,idle_timeout=180
+  provider_config: data/sessions
+  # The cookie name to store the session identifier.
+  cookie_name: uptimepk
+  # Whether to set cookie in HTTPS only.
+  cookie_secure: false
+  # The GC interval in seconds for session data.
+  gc_interval: 3600
+  # The maximum life time in seconds for a session.
+  max_life_time: 86400
+  # The cookie name for CSRF token.
+  csrf_cookie_name: _csrf
+
+web:
+  # The protocol that is used to serve direct traffic to the application.
+  # Currently supports "http", "https", "fcgi" and "unix".
+  protocol: http
+  # The address to be listened by the application.
+  http_addr: 0.0.0.0
+
+  # The port number to be listened by the application.
+  http_port: 9191
+  admin_path: "uptimepk"
+  # The minimum allowed TLS version, currently supports "TLS10", "TLS11", "TLS12", and "TLS13".
+  tls_min_version: TLS12
+  # File permission when serve traffic via Unix domain socket.
+  unix_socket_permission: 666
+  # Local (DMZ) URL for workers (e.g. SSH update) accessing web service.
+  # In most cases you do not need to change the default value.
+  # Alter it only if your SSH server node is not the same as HTTP node.
+  local_root_url: %(protocol)s://%(http_addr)s:%(http_port)s/
+
+  # Whether to disable logging in router.
+  disable_router_log: true
+  # Whether to enable application level GZIP compression.
+  enable_gzip: true
+
+  # Whether to enable to load assets (i.e. "conf", "templates", "public") from disk instead of embedded bindata.
+  load_assets_from_disk: false
+
+  # The landing page URL for anonymous users, the value should not include
+  # subpath that is handled by the reverse proxy.
+  landing_url: /
+
+  access_control_allow_origin: "*"
+  ip_white: "*"
+
+security:
+  # Whether to show the install page, set this to "true" to bypass it.
+  install_lock: false
+  # The secret to encrypt cookie values, 2FA code, etc.
+  # !!CHANGE THIS TO KEEP YOUR USER DATA SAFE!!
+  secret_key: "!#@FDEWREWR&*(uptimepk)"
+  # The days remembered for auto-login.
+  login_remember_days: 7
+  # The cookie name to store auto-login information.
+  cookie_remember_name: uppk_incredible
+  # The cookie name to store logged in username.
+  cookie_username: uppk_awesome
+  # Whether to set secure cookie.
+  cookie_secure: false
+  # Whether to set cookie to indicate user login status.
+  enable_login_status_cookie: true
+  # The cookie name to store user login status.
+  login_status_cookie_name: login_status
+
+database:
+  # Database type: sqlite3, mysql, postgres
+  type: sqlite3
+  # SQLite database path
+  path: data/uptimepk.db
+  # Database table prefix
+  table_prefix: uppk_
+  # MySQL/PostgreSQL settings (only used if type is mysql or postgres)
+  hostname: 127.0.0.1
+  hostport: 3306
+  name: uptimepk
+  user: root
+  password: 
+  ssl_mode: disable

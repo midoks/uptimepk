@@ -1,0 +1,18 @@
+package middleware
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"uptimepk/internal/conf"
+)
+
+func CheckInstalledAfter() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if conf.Security.InstallLock {
+			c.String(200, "Installed")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}

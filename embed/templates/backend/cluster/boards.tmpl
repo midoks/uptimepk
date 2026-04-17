@@ -1,0 +1,130 @@
+{[template "backend/common/header.tmpl" .]}
+
+<div class="layui-fluid">
+    <div class="layui-col-md12" style="padding: 5px;">
+        <div class="layui-card">
+            <div class="layui-card-body">
+
+                <div class="layui-tab layui-tab-brief">
+                    <ul class="layui-tab-title" id="status">
+                        {[range $menu := .submenu]}
+                            <li data-status="{[$menu.Number]}" {[if eq (print "/" $.admin_path "/" $menu.Link) $.CurrentPath]}class="layui-this"{[end]}><a href="/{[$.admin_path]}/{[$menu.Link]}?cluster_id={[$.cluster_id]}">{[$menu.Name]}</a></li>
+                        {[end]}
+                    </ul>
+                </div>
+
+                <div class="cluster-boards" style="margin-top: 10px;">
+                    <div class="layui-row layui-col-space10">
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">集群</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    11 <span style="font-size: 12px; color: #999;">个</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">边缘节点</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    101 <span style="font-size: 12px; color: #999;">个</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">API节点</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    1 <span style="font-size: 12px; color: #999;">个</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">用户</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    7 <span style="font-size: 12px; color: #999;">个</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">网站</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    255 <span style="font-size: 12px; color: #999;">个</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">本周流量</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    12.55 <span style="font-size: 12px; color: #999;">TiB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">昨日流量</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    2.4 TiB
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">当天独立IP</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    4,862,009
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">当天流量</div>
+                                <div style="font-size: 22px; color: #333;">
+                                    1.35
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md2">
+                            <div style="border: 1px solid #f2f2f2; padding: 12px 16px; background: #fff;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">上次登录</div>
+                                <div style="font-size: 14px; color: #333;">
+                                    加拿大
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+layui.config({base: '/static/layuiadmin/'}).use(['table','jquery'], function(){
+///
+var admin = layui.admin
+,$ = layui.$
+,form = layui.form
+,table = layui.table;
+
+
+///
+});
+</script>
+
+
+<script type="text/html" id="cmdTpl">
+<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('【{{d.username}}】'+'编辑','edit?id={{d.id}}',500,400)">详情</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.id}}')">设置</a>
+</script>
+
+{[template "backend/common/footer.tmpl" .]}
