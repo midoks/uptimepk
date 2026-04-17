@@ -8,7 +8,7 @@
                 <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
                 <form class="layui-form" action="" id="comic_form" onclick="return false;">
 
-                    <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/add',800,500)">
+                    <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/add',800,600)">
                         <i class="layui-icon layui-icon-add-circle"></i> 添加
                     </button>
 
@@ -83,7 +83,7 @@ table.on('toolbar', function(obj){
 
 
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/add?id={{d.id}}',800,500)">修改</a>
+<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/add?id={{d.id}}',800,600)">修改</a>
 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/delete','{{d.id}}')">删除</a>
 </script>
 
