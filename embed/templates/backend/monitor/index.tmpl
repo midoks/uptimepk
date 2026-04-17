@@ -5,19 +5,12 @@
         <div class="layui-card">
             <div class="layui-card-body">
 
-                <div class="layui-tab layui-tab-brief">
-                    <ul class="layui-tab-title" id="status">
-                        <li data-status="1" class="layui-this">集群</li>
-                        <li data-status="2" >
-                            <a href="/{[.admin_path]}/clusters/node">节点</a>
-                        </li>
-
-                        <li data-status="3"><a href="/{[.admin_path]}/clusters/create">创建集群</a></li>
-                    </ul>
-                </div>
-
                 <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
                 <form class="layui-form" action="" id="comic_form" onclick="return false;">
+
+                    <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/add',800,500)">
+                        <i class="layui-icon layui-icon-add-circle"></i> 添加
+                    </button>
 
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline mr0">
@@ -51,12 +44,12 @@ var admin = layui.admin
 
 table.render({
     elem: '#list',
-    url: '/{[.admin_path]}/clusters/list',
+    url: '/{[.admin_path]}/monitor/list',
     title: '数据表',
     cols: [[
-        {field:'name', title:'集群名称', toolbar: '#nameTpl',},
-        {field:'num', title:'节点数'},
-        {field:'num_online', title:'在线节点数'},
+        {field:'name', title:'名称', toolbar: '#nameTpl',},
+        {field:'type', title:'类型'},
+        {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
     page: true
@@ -78,14 +71,20 @@ table.on('toolbar', function(obj){
 });
 </script>
 
-
-<script type="text/html" id="nameTpl">
-    <a class="mlink" href="/{[.admin_path]}/clusters/cluster/boards?cluster_id={{d.id}}">{{d.name}}</a>
+<script type="text/html" id="statusTpl">
+{{# if (d.status == 1){ }}
+<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
+{{# } else if (d.status == 0) { }}
+<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="status">已暂停</a>
+{{# } }}
 </script>
 
+
+
+
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-xs" href="/{[.admin_path]}/clusters/cluster/boards?cluster_id={{d.id}}">详情</a>
-<a class="layui-btn layui-btn-xs" href="/{[.admin_path]}/clusters/cluster/settings?cluster_id={{d.id}}">设置</a>
+<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/add?id={{d.id}}',800,500)">修改</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/delete','{{d.id}}')">删除</a>
 </script>
 
 {[template "backend/common/footer.tmpl" .]}

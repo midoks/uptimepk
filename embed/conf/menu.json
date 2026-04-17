@@ -20,7 +20,7 @@
             {
                 "code": "monitor_list",
                 "name": "监控列表",
-                "path": "/monitor/list",
+                "path": "/monitor",
                 "subapi":[
                     {
                         "code":"monitor_list",

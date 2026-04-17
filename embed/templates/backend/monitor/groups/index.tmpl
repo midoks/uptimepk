@@ -51,15 +51,13 @@ table.on('tool(list)', function(obj){
 });
 
 function opStatus(obj){
-    layer.confirm('你真的更改状态吗?', { closeBtn: 2, icon: 3 }, function() {
-        $.post('/{[.admin_path]}/monitor/group/trigger_status', {'id':obj.data.id}, function(data) {
-            showMsg(data.msg,function(){
-                if (data.code>-1){
-                    location.reload();
-                }
-            },{icon:data.code>-1?1:2});
-        },'json');
-    });
+    $.post('/{[.admin_path]}/monitor/group/trigger_status', {"id":obj.data.id}, function(data) {
+        showMsg(data.msg,function(){
+            if (data.code>-1){
+                location.reload();
+            }
+        },{icon:data.code>-1?1:2});
+    },'json');
 }
 
 ///
@@ -75,7 +73,7 @@ function opStatus(obj){
 </script>
 
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/group/add?id={{d.id}}',500,250)">修改</a>
+<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/group/add?id={{d.id}}',500,350)">修改</a>
 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/group/delete','{{d.id}}')">删除</a>
 </script>
 

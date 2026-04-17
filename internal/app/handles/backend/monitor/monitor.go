@@ -48,7 +48,7 @@ func GetSubMenu() []form.SubMenu {
 		{
 			Number: 7,
 			Name:   "其它操作",
-			Link:   "clusters/cluster/delete",
+			Link:   "monitor/cluster/delete",
 		},
 	}
 	return menu
@@ -56,33 +56,33 @@ func GetSubMenu() []form.SubMenu {
 
 func Home(c *gin.Context) {
 	data := common.CommonVer(c)
-	c.HTML(http.StatusOK, "backend/cluster/index.tmpl", data)
+	c.HTML(http.StatusOK, "backend/monitor/index.tmpl", data)
 }
 
-func Create(c *gin.Context) {
+func Add(c *gin.Context) {
 	data := common.CommonVer(c)
-	c.HTML(http.StatusOK, "backend/cluster/create.tmpl", data)
+	c.HTML(http.StatusOK, "backend/monitor/add.tmpl", data)
 }
 
 func MonitorBoards(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSubMenu()
 	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/cluster/boards.tmpl", data)
+	c.HTML(http.StatusOK, "backend/monitor/boards.tmpl", data)
 }
 
 func MonitorList(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSubMenu()
 	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/cluster/list.tmpl", data)
+	c.HTML(http.StatusOK, "backend/monitor/list.tmpl", data)
 }
 
 func MonitorDelete(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSubMenu()
 	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/cluster/delete.tmpl", data)
+	c.HTML(http.StatusOK, "backend/monitor/delete.tmpl", data)
 }
 
 func Edit(c *gin.Context) {

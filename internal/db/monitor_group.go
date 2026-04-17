@@ -3,11 +3,10 @@ package db
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"uptimepk/internal/model"
-
-	"github.com/pkg/errors"
 )
 
 func GetMonitorGroupList(page, size int) ([]model.MonitorGroup, int64, error) {
@@ -44,7 +43,7 @@ func MonitorGroupTriggerStatus(tx *gorm.DB, id int64) error {
 	if tx == nil {
 		tx = db
 	}
-	var data model.Admin
+	var data model.MonitorGroup
 	if err := tx.First(&data, id).Error; err != nil {
 		return errors.Wrapf(err, "failed get monitor group")
 	}
@@ -56,12 +55,12 @@ func MonitorGroupTriggerStatus(tx *gorm.DB, id int64) error {
 		status = true
 	}
 
-	data.UpdateTime = time.Now().Unix()
-	data.Status = status
-
-	if err := tx.Model(&model.Admin{}).
+	if err := tx.Model(&model.MonitorGroup{}).
 		Where("id = ?", id).
-		Updates(&data).Error; err != nil {
+		Updates(map[string]interface{}{
+			"status":      status,
+			"update_time": time.Now().Unix(),
+		}).Error; err != nil {
 		return err
 	}
 	return nil

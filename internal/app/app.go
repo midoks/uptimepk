@@ -126,9 +126,10 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.GET("/admin/recipients/tasks", backend_admin.RecipientsTasks)
 	backstage_admin.GET("/admin/recipients/logs", backend_admin.RecipientsLogs)
 
-	// 边缘节点
+	// 监控管理
 	backstage_admin.GET("/monitor", backend_monitor.Home)
-	backstage_admin.POST("/monitor/create", backend_monitor.PostCreate)
+	backstage_admin.GET("/monitor/add", backend_monitor.Add)
+	backstage_admin.POST("/monitor/add", backend_monitor.PostCreate)
 	backstage_admin.GET("/monitor/list", backend_monitor.List)
 	backstage_admin.POST("/monitor/delete", backend_monitor.Delete)
 
@@ -138,8 +139,6 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.POST("/monitor/group/add", backend_monitor.PostMonitorGroupsAdd)
 	backstage_admin.POST("/monitor/group/delete", backend_monitor.MonitorGroupsDelete)
 	backstage_admin.POST("/monitor/group/trigger_status", backend_monitor.MonitorGroupsTriggerStatus)
-
-	backstage_admin.GET("/monitor/delete", backend_monitor.MonitorDelete)
 
 	// 日志审计
 	backstage_admin.GET("/log", backend_log.Home)
@@ -179,7 +178,13 @@ func initRuote(r *gin.Engine) {
 	if err != nil {
 		panic(err)
 	}
-	r.StaticFS("/static", http.FS(staticFS))
+	// 设置静态文件缓存为一周
+	staticHandler := http.StripPrefix("/static", http.FileServer(http.FS(staticFS)))
+	r.GET("/static/*filepath", func(c *gin.Context) {
+		c.Header("Cache-Control", "public, max-age=604800") // 604800 秒 = 7 天
+		c.Header("Permissions-Policy", "unload=*")
+		staticHandler.ServeHTTP(c.Writer, c.Request)
+	})
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
@@ -201,6 +206,12 @@ func Run() {
 	if conf.Web.EnableGzip {
 		r.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
+
+	// 设置 Permissions-Policy 头，允许 unload 事件
+	r.Use(func(c *gin.Context) {
+		c.Header("Permissions-Policy", "unload=*")
+		c.Next()
+	})
 
 	// if conf.App.Debug {
 	// 	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {

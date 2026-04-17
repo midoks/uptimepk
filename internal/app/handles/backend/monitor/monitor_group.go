@@ -27,7 +27,7 @@ func MonitorGroupsAdd(c *gin.Context) {
 		if err == nil {
 			cg_data, err := db.GetMonitorGroupByID(qid)
 			if err == nil {
-				data["data"] = cg_data
+				data["Data"] = cg_data
 			}
 		}
 	}
