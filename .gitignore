@@ -33,3 +33,4 @@ go.work.sum
 /logs
 /custom
 uptimepk
+*.DS_Store
