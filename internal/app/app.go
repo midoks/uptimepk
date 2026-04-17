@@ -130,7 +130,7 @@ func initRuoteAdmin(r *gin.Engine) {
 	// 监控管理
 	backstage_admin.GET("/monitor", backend_monitor.Home)
 	backstage_admin.GET("/monitor/add", backend_monitor.Add)
-	backstage_admin.POST("/monitor/add", backend_monitor.PostCreate)
+	backstage_admin.POST("/monitor/add", backend_monitor.PostAdd)
 	backstage_admin.GET("/monitor/list", backend_monitor.List)
 	backstage_admin.POST("/monitor/delete", backend_monitor.Delete)
 

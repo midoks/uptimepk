@@ -66,7 +66,7 @@
                     <td>名称 *</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input type="text" name="name" autocomplete="off" class="layui-input" value="" placeholder="名称">
+                            <input type="text" name="name" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Name]}{[end]}" placeholder="名称">
                         </div>
                         <br/>
                         <p class="layui-font-12">填写一个容易识别的名称。</p>
@@ -77,11 +77,11 @@
                     <td>类型 *</td>
                     <td>
                         <div class="layui-input-inline">
-                            <select name="media_type" lay-verify="required" lay-search lay-filter="media">
+                            <select name="type" lay-verify="required" lay-search lay-filter="type">
                                 <option value="">[选择类型]</option>
-                                <option value="http">HTTP(S)</option>
-                                <option value="tcp">TCP</option>
-                                <option value="udp">UDP</option>
+                                <option value="http" {[if .Data]}{[if eq .Data.Type "http" ]}selected{[end]}{[end]}>HTTP(S)</option>
+                                <option value="tcp" {[if .Data]}{[if eq .Data.Type "tcp" ]}selected{[end]}{[end]}>TCP</option>
+                                <option value="udp" {[if .Data]}{[if eq .Data.Type "udp" ]}selected{[end]}{[end]}>UDP</option>
                             </select>
                         </div>
                         <br/>
@@ -94,7 +94,7 @@
                         <td>监控地址 *</td>
                         <td>
                             <div class="layui-input-line">
-                                <input type="text" name="addr" autocomplete="off" class="layui-input" placeholder="请输入目标地址">
+                                <input type="text" name="addr" autocomplete="off" class="layui-input" placeholder="请输入目标地址" value="{[if .Data]}{[.Data.GetHttpTypeParams.Addr]}{[end]}">
                             </div>
                             <p class="layui-font-12">监控地址。</p>
                         </td>
@@ -106,7 +106,7 @@
                         <td>主机名</td>
                         <td>
                             <div class="layui-input-line">
-                                <input type="text" name="host" autocomplete="off" class="layui-input" placeholder="">
+                                <input type="text" name="tcp_host" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetTcpTypeParams.Host]}{[end]}">
                             </div>
                         </td>
                     </tr>
@@ -115,7 +115,7 @@
                         <td>端口</td>
                         <td>
                             <div class="layui-input-line">
-                                <input type="text" name="port" autocomplete="off" class="layui-input" placeholder="">
+                                <input type="number" name="tcp_port" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetTcpTypeParams.Port]}{[end]}">
                             </div>
                         </td>
                     </tr>
@@ -126,7 +126,7 @@
                         <td>主机名</td>
                         <td>
                             <div class="layui-input-line">
-                                <input type="text" name="host" autocomplete="off" class="layui-input" placeholder="">
+                                <input type="text" name="udp_host" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetUdpTypeParams.Host]}{[end]}">
                             </div>
                         </td>
                     </tr>
@@ -135,7 +135,7 @@
                         <td>端口</td>
                         <td>
                             <div class="layui-input-line">
-                                <input type="text" name="port" autocomplete="off" class="layui-input" placeholder="">
+                                <input type="number" name="udp_port" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetUdpTypeParams.Port]}{[end]}">
                             </div>
                         </td>
                     </tr>
@@ -147,7 +147,7 @@
                         <div>
                             <div class="layui-inline">
                                 <div class="layui-input-inline">
-                                    <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="60">
+                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="60">
                                 </div>
                                 <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                             </div>
@@ -161,7 +161,7 @@
                     <td>重试次数</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="100">
+                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="100">
                         </div>
                         <p class="layui-font-12">服务被标记为故障并发送通知之前的最大重试次数</p>
                     </td>
@@ -190,6 +190,16 @@
                 </tr>
 
                 <tr class="more_table hide">
+                    <td>启用当前检测</td>
+                    <td>
+                        <input type="checkbox" name="status"
+                        {[if .Data]}{[if .Data.Status]}checked{[end]}
+                        {[else]}checked
+                        {[end]}> 
+                    </td>
+                </tr>
+
+                <tr class="more_table hide">
                     <td>备注</td>
                     <td><textarea id="editor2" name="mark" class="layui-textarea" style="min-height:100px;" placeholder="">{[if .Data]}{[.Data.Mark]}{[end]}</textarea></td>
                 </tr>
@@ -199,6 +209,7 @@
 
 
         <div class="layui-form-item" style="text-align: center;">
+            <input type="hidden" name="id" value="{[if .Data]}{[.Data.ID]}{[end]}">
             <button class="layui-btn" lay-filter="submit_monitor" lay-submit>保存</button>
         </div>
     </form>
@@ -216,22 +227,34 @@ var admin = layui.admin
 ,form = layui.form
 ,table = layui.table;
 
-
-form.on('select(media)', function(data){
+function initType(data){
     $('.id_http,.id_tcp,.id_udp').hide();
-    if (data.value === 'http') {
+    if (data === 'http') {
         $('.id_http').show();
-    } else if (data.value === 'tcp') {
+    } else if (data === 'tcp') {
         $('.id_tcp').show();
-    } else if (data.value === 'udp') {
+    } else if (data === 'udp') {
         $('.id_udp').show();
     }
+}
+
+var data = $('select[name=type]').val();
+initType(data);
+
+form.on('select(type)', function(data){
+    initType(data.value);
 });
 
 
 form.on("submit(submit_monitor)", function(data){
     var index = layer.load();
     var field = data.field;
+
+    if (field['status'] == "on"){
+        field['status'] = 1;
+    } else {
+        field['status'] = 0;
+    }
 
     $.post("/{[$.admin_path]}/monitor/add", field, function(res) {
         showMsg(res.msg, function(){

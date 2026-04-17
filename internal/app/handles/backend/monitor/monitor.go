@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	// "fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,87 +14,9 @@ import (
 	"uptimepk/internal/model"
 )
 
-func GetSubMenu() []form.SubMenu {
-	menu := []form.SubMenu{
-		{
-			Number: 1,
-			Name:   "集群看板",
-			Link:   "clusters/cluster/boards",
-		},
-		{
-			Number: 2,
-			Name:   "节点列表",
-			Link:   "clusters/cluster/list",
-		},
-		{
-			Number: 3,
-			Name:   "创建节点",
-			Link:   "clusters/cluster/create_node",
-		},
-		{
-			Number: 4,
-			Name:   "安装升级",
-			Link:   "clusters/cluster/upgrade",
-		},
-		{
-			Number: 5,
-			Name:   "节点分组",
-			Link:   "clusters/cluster/groups",
-		},
-		{
-			Number: 6,
-			Name:   "集群设置",
-			Link:   "clusters/cluster/settings",
-		},
-		{
-			Number: 7,
-			Name:   "其它操作",
-			Link:   "monitor/cluster/delete",
-		},
-	}
-	return menu
-}
-
 func Home(c *gin.Context) {
 	data := common.CommonVer(c)
 	c.HTML(http.StatusOK, "backend/monitor/index.tmpl", data)
-}
-
-func Add(c *gin.Context) {
-	data := common.CommonVer(c)
-	c.HTML(http.StatusOK, "backend/monitor/add.tmpl", data)
-}
-
-func MonitorBoards(c *gin.Context) {
-	data := common.CommonVer(c)
-	data["submenu"] = GetSubMenu()
-	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/monitor/boards.tmpl", data)
-}
-
-func MonitorList(c *gin.Context) {
-	data := common.CommonVer(c)
-	data["submenu"] = GetSubMenu()
-	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/monitor/list.tmpl", data)
-}
-
-func MonitorDelete(c *gin.Context) {
-	data := common.CommonVer(c)
-	data["submenu"] = GetSubMenu()
-	data["cluster_id"] = c.Query("cluster_id")
-	c.HTML(http.StatusOK, "backend/monitor/delete.tmpl", data)
-}
-
-func Edit(c *gin.Context) {
-	id := c.Query("id")
-	idInt, _ := strconv.ParseInt(id, 10, 64)
-
-	admin_data, _ := db.GetAdminByID(idInt)
-
-	data := common.CommonVer(c)
-	data["Data"] = admin_data
-	c.HTML(http.StatusOK, "backend/cluster/edit.tmpl", data)
 }
 
 func List(c *gin.Context) {
@@ -107,20 +30,72 @@ func List(c *gin.Context) {
 	common.SuccessLayuiResp(c, count, "ok", result)
 }
 
-func PostCreate(c *gin.Context) {
-	var field form.MonitorCreate
+func Add(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["id"] = c.Query("id")
+	if data["id"] != "" {
+		qid, err := strconv.ParseInt(data["id"].(string), 10, 64)
+		if err == nil {
+			monitor_data, err := db.GetMonitorByID(qid)
+			if err == nil {
+				data["Data"] = monitor_data
+			}
+		}
+	}
+	c.HTML(http.StatusOK, "backend/monitor/add.tmpl", data)
+}
+
+func PostAdd(c *gin.Context) {
+	var field form.MonitorAdd
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
 
-	monitor := &model.Monitor{
+	common_data := &model.Monitor{
 		Name:       field.Name,
+		Type:       field.Type,
+		Status:     field.Status,
+		Interval:   field.Interval,
+		MaxRetries: field.MaxRetries,
+		Timeout:    field.Timeout,
 		CreateTime: time.Now().Unix(),
 		UpdateTime: time.Now().Unix(),
 	}
 
-	if err := db.GetDb().Create(monitor).Error; err != nil {
+	if field.Type == "http" {
+		common_data.SetHttpTypeParams(model.MonitorHttpTypeParams{
+			Addr: field.Addr,
+		})
+	}
+
+	if field.Type == "tcp" {
+		common_data.SetTcpTypeParams(model.MonitorTcpTypeParams{
+			Host: field.TcpHost,
+			Port: field.TcpPort,
+		})
+	}
+
+	if field.Type == "udp" {
+		common_data.SetUdpTypeParams(model.MonitorUdpTypeParams{
+			Host: field.UdpHost,
+			Port: field.UdpPort,
+		})
+	}
+
+	if field.ID != 0 {
+		_, err := db.GetMonitorByID(field.ID)
+		if err == nil {
+			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
+				common.ErrorResp(c, err, -1)
+				return
+			}
+			common.SuccessResp(c)
+			return
+		}
+	}
+
+	if err := db.GetDb().Create(common_data).Error; err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}

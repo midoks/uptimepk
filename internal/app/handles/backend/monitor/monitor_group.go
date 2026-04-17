@@ -15,7 +15,6 @@ import (
 
 func MonitorGroups(c *gin.Context) {
 	data := common.CommonVer(c)
-	data["submenu"] = GetSubMenu()
 	c.HTML(http.StatusOK, "backend/monitor/groups/index.tmpl", data)
 }
 
