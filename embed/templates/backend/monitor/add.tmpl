@@ -63,25 +63,26 @@
             <colgroup><col width="150"><col></colgroup>
             <tbody>
                 <tr>
-                    <td>媒介名称 *</td>
+                    <td>名称 *</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input type="text" name="name" autocomplete="off" class="layui-input" value="" placeholder="媒介名称">
+                            <input type="text" name="name" autocomplete="off" class="layui-input" value="" placeholder="名称">
                         </div>
                         <br/>
-                        <p class="layui-font-12">给当前媒介填写一个容易识别的名称。</p>
+                        <p class="layui-font-12">填写一个容易识别的名称。</p>
                     </td>
                 </tr>
 
                 <tr>
-                    <td>媒介类型 *</td>
+                    <td>类型 *</td>
                     <td>
                         <div class="layui-input-inline">
                             <select name="media_type" lay-verify="required" lay-search lay-filter="media">
-                                <option value="">[选择媒介类型]</option>
-                                <option value="telegram">Telegram</option>
-                                <option value="email">邮件</option>
-                                <option value="webhook">WebHook</option>
+                                <option value="">[选择类型]</option>
+                                <option value="http">HTTP</option>
+                                <option value="tcp">TCP</option>
+                                <option value="udp">UDP</option>
+                                <option value="mysql">MySQL</option>
                             </select>
                         </div>
                         <br/>
@@ -287,7 +288,7 @@ form.on("submit(submit_recipients)", function(data){
     var index = layer.load();
     var field = data.field;
 
-    $.post("/{[$.admin_path]}/admin/recipients/instances/add", field, function(res) {
+    $.post("/{[$.admin_path]}/monitor/add", field, function(res) {
         showMsg(res.msg, function(){
             layer.close(index);
             if(res.code > -1){

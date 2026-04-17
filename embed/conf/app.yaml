@@ -24,7 +24,7 @@ session:
   # - redis: network=tcp,addr=:6379,password=macaron,db=0,pool_size=100,idle_timeout=180
   provider_config: data/sessions
   # The cookie name to store the session identifier.
-  cookie_name: uptimepk
+  cookie_name: app_uptimepk
   # Whether to set cookie in HTTPS only.
   cookie_secure: false
   # The GC interval in seconds for session data.

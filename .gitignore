@@ -34,3 +34,4 @@ go.work.sum
 /custom
 uptimepk
 *.DS_Store
+/vendor

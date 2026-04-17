@@ -9,6 +9,7 @@ import (
 
 	// "time"
 
+	// gbrotli "github.com/anargu/gin-brotli"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -202,8 +203,11 @@ func Run() {
 	store := cookie.NewStore([]byte(conf.Security.SecretKey))
 	r.Use(sessions.Sessions(conf.Session.CookieName, store))
 
-	// 启用 gzip 压缩
+	// 启用压缩
 	if conf.Web.EnableGzip {
+		// 先添加 brotli 压缩（比 gzip 压缩率更高）
+		// r.Use(gbrotli.Brotli(gbrotli.DefaultCompression))
+		// 再添加 gzip 压缩作为 fallback
 		r.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
 
