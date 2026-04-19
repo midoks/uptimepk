@@ -1,6 +1,8 @@
 package monitor
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,20 +113,17 @@ func MonitorGroupsDelete(c *gin.Context) {
 }
 
 func MonitorGroupsSort(c *gin.Context) {
-	var field form.IDs
-	if err := c.ShouldBindJSON(&field); err != nil {
-		// 尝试绑定表单数据
-		field.Ids = c.PostForm("ids")
-		if field.Ids == "" {
-			common.ErrorResp(c, err, -1)
+	idsStr := c.PostForm("ids")
+	if idsStr == "" {
+		idsStr = c.Query("ids")
+		if idsStr == "" {
+			common.ErrorResp(c, errors.New("ids parameter is required"), -1)
 			return
 		}
 	}
 
-	fmt.Println("Ids:", Ids)
-
 	// 解析 ID 列表
-	idStrs := strings.Split(field.Ids, ",")
+	idStrs := strings.Split(idsStr, ",")
 	tx := db.GetDb().Begin()
 
 	for i, idStr := range idStrs {
