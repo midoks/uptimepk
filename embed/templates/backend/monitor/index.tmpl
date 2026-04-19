@@ -6,11 +6,22 @@
             <div class="layui-card-body">
 
                 <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
-                <form class="layui-form" action="" id="comic_form" onclick="return false;">
+                <form class="layui-form" action="" id="monitor_form" onclick="return false;">
 
                     <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/add',800,600)">
                         <i class="layui-icon layui-icon-add-circle"></i> 添加
                     </button>
+
+                    <div class="layui-inline mr0">
+                        <div class="layui-input-inline h30">
+                            <select name="gid" id="gid" class="layui-input h30">
+                                <option value="">分组</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARN">WARN</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline mr0">
@@ -48,7 +59,8 @@ table.render({
     title: '数据表',
     cols: [[
         {field:'name', title:'名称',},
-        {field:'type', title:'类型'},
+        {field:'gid', title:'分组',width:120, toolbar:"#gidTpl"},
+        {field:'type', title:'类型',width:120},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
@@ -76,6 +88,13 @@ table.on('toolbar', function(obj){
 <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
 {{# } else if (d.status == 0) { }}
 <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="status">已暂停</a>
+{{# } }}
+</script>
+
+<script type="text/html" id="gidTpl">
+{{# if (d.gid == 1){ }}
+<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
+{{# } else if (d.gid == 0) { }}-
 {{# } }}
 </script>
 

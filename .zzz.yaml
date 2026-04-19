@@ -24,5 +24,5 @@ action:
   - ./uptimepk web &
   exit:
   - ps -ef|grep 'uptimepk web'| grep -v grep | awk '{print $2}' | xargs kill -9
-  # - rm -rf ./uptimepk
+  - rm -rf ./uptimepk
 link: https://github.com/midoks/zzz
