@@ -26,9 +26,9 @@ func MonitorGroupsAdd(c *gin.Context) {
 	if data["id"] != "" {
 		qid, err := strconv.ParseInt(data["id"].(string), 10, 64)
 		if err == nil {
-			cg_data, err := db.GetMonitorGroupByID(qid)
+			mg_data, err := db.GetMonitorGroupByID(qid)
 			if err == nil {
-				data["Data"] = cg_data
+				data["Data"] = mg_data
 			}
 		}
 	}
@@ -79,7 +79,12 @@ func PostMonitorGroupsAdd(c *gin.Context) {
 	if field.ID != 0 {
 		_, err := db.GetMonitorGroupByID(field.ID)
 		if err == nil {
-			if err := db.GetDb().Model(&model.MonitorGroup{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
+			if err := db.GetDb().Model(&model.MonitorGroup{}).Where("id = ?", field.ID).Updates(map[string]interface{}{
+				"name":        field.Name,
+				"real_time":   field.RealTime,
+				"status":      field.Status,
+				"update_time": common_data.UpdateTime,
+			}).Error; err != nil {
 				common.ErrorResp(c, err, -1)
 				return
 			}
