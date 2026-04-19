@@ -140,6 +140,7 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.POST("/monitor/group/add", backend_monitor.PostMonitorGroupsAdd)
 	backstage_admin.POST("/monitor/group/delete", backend_monitor.MonitorGroupsDelete)
 	backstage_admin.POST("/monitor/group/trigger_status", backend_monitor.MonitorGroupsTriggerStatus)
+	backstage_admin.POST("/monitor/group/sort", backend_monitor.MonitorGroupsSort)
 
 	// 日志审计
 	backstage_admin.GET("/log", backend_log.Home)

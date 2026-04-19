@@ -11,14 +11,13 @@ import (
 )
 
 func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64, error) {
-	mm := db.Model(&model.MonitorGroup{})
 	var count int64
-	if err := mm.Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get cluster group")
+	if err := db.Model(&model.MonitorGroup{}).Count(&count).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get cluster group count")
 	}
 
 	var list []model.MonitorGroup
-	if err := db.Order(columnName("id")).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	if err := db.Order(columnName("order") + " ASC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		return nil, 0, errors.WithStack(err)
 	}
 
@@ -26,16 +25,39 @@ func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64
 		return []entity.MonitorGroupEntityList{}, count, nil
 	}
 
-	result := make([]entity.MonitorGroupEntityList, 0, len(list))
+	// 收集所有分组的 ID
+	groupIDs := make([]int64, len(list))
+	for i, item := range list {
+		groupIDs[i] = item.ID
+	}
 
-	for _, item := range list {
-		var num int64
-		db.Model(&model.Monitor{}).Where("gid = ?", item.ID).Count(&num)
-		entityItem := entity.MonitorGroupEntityList{
+	// 使用子查询一次性获取所有分组的监控数量
+	type groupCount struct {
+		GID int64 `gorm:"column:gid"`
+		Num int64 `gorm:"column:num"`
+	}
+	var counts []groupCount
+	if err := db.Model(&model.Monitor{}).
+		Select("gid, COUNT(*) as num").
+		Where("gid IN ?", groupIDs).
+		Group("gid").
+		Find(&counts).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get monitor counts")
+	}
+
+	// 将计数转换为 map，方便查找
+	countMap := make(map[int64]int64, len(counts))
+	for _, c := range counts {
+		countMap[c.GID] = c.Num
+	}
+
+	// 构建结果
+	result := make([]entity.MonitorGroupEntityList, len(list))
+	for i, item := range list {
+		result[i] = entity.MonitorGroupEntityList{
 			MonitorGroup: item,
-			MonitorNum:   num,
+			MonitorNum:   countMap[item.ID],
 		}
-		result = append(result, entityItem)
 	}
 	return result, count, nil
 }

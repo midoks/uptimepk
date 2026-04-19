@@ -3,6 +3,7 @@ package monitor
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -107,4 +108,46 @@ func MonitorGroupsDelete(c *gin.Context) {
 		return
 	}
 	common.ErrorResp(c, err, -1)
+}
+
+func MonitorGroupsSort(c *gin.Context) {
+	// 尝试绑定 JSON
+	var field struct {
+		Ids string `json:"ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&field); err != nil {
+		// 尝试绑定表单数据
+		field.Ids = c.PostForm("ids")
+		if field.Ids == "" {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+	}
+
+	// 解析 ID 列表
+	idStrs := strings.Split(field.Ids, ",")
+	tx := db.GetDb().Begin()
+
+	for i, idStr := range idStrs {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			tx.Rollback()
+			common.ErrorResp(c, err, -1)
+			return
+		}
+
+		// 更新排序字段
+		if err := tx.Model(&model.MonitorGroup{}).Where("id = ?", id).Update("order", i+1).Error; err != nil {
+			tx.Rollback()
+			common.ErrorResp(c, err, -1)
+			return
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	common.SuccessResp(c)
 }

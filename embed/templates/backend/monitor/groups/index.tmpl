@@ -1,5 +1,6 @@
 {[template "backend/common/header.tmpl" .]}
 
+
 <div class="layui-fluid">
     <div class="layui-col-md12" style="padding: 5px;">
         <div class="layui-card">
@@ -26,18 +27,60 @@ var admin = layui.admin
 ,form = layui.form
 ,table = layui.table;
 
-table.render({
+var tableIns = table.render({
     elem: '#list',
     url: '/{[.admin_path]}/monitor/group/list',
     title: '数据表',
     cols: [[
+        {type: 'numbers', title: '', width: 60},
+        // {type: 'checkbox', width: 40},
+        {field:'order', title:'排序', width: 80},
         {field:'name', title:'分组名称'},
         {field:'monitor_num', title:'监控数'},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
     ]],
-    page: true
+    page: true,
+    done: function(res, curr, count){
+        // 表格渲染完成后初始化排序
+        initSortable();
+    }
 });
+
+function initSortable(){
+    // 初始化拖动排序
+    $('.layui-table-body').sortable({
+        items: 'tr',
+        cursor: 'move',
+        axis: 'y',
+        containment: '.layui-table-body',
+        update: function(event, ui){
+            // 获取排序后的顺序
+            var ids = [];
+            $('.layui-table-body tr').each(function(index, item){
+                var dataIndex = $(item).attr('data-index');
+                if(dataIndex !== undefined) {
+                    // 获取行数据
+                    var rowData = tableIns.cache[dataIndex];
+                    if(rowData && rowData.id) {
+                        ids.push(rowData.id);
+                    }
+                }
+            });
+            
+            if(ids.length > 0) {
+                // 发送排序更新请求
+                $.post('/{[.admin_path]}/monitor/group/sort', {ids: ids.join(',')}, function(data) {
+                    showMsg(data.msg, function(){
+                        if(data.code > -1) {
+                            tableIns.reload();
+                        }
+                    }, {icon: data.code > -1 ? 1 : 2});
+                }, 'json');
+            }
+        }
+    }).disableSelection();
+}
 
 table.on('toolbar', function(obj){
     switch(obj.event){

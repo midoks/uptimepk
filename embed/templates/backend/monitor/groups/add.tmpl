@@ -73,9 +73,7 @@
                     <td>支持实时操作</td>
                     <td>
                         <input type="checkbox" name="real_time"
-                        {[if .Data]}{[if .Data.RealTime]}checked{[end]}
-                        {[else]}checked
-                        {[end]}> 
+                        {[if .Data]}{[if .Data.RealTime]}checked{[end]}{[end]}> 
                          <p class="layui-font-12">针对telegram命令操作。</p>
                     </td>
                 </tr>
