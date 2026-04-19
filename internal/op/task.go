@@ -94,8 +94,7 @@ func ReloadTelegramTask() {
 					fmt.Printf("failed to start bot: %v\n", err)
 					continue
 				}
-
-				fmt.Printf("Bot %d reloaded successfully\n", botID)
+				// fmt.Printf("Bot %d reloaded successfully\n", botID)
 			}
 		}
 	}
@@ -142,7 +141,7 @@ func InitTelegramTask() {
 				continue
 			}
 
-			fmt.Printf("Bot %d started successfully\n", botID)
+			// fmt.Printf("Bot %d started successfully\n", botID)
 		}
 
 	}

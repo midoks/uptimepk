@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.org/x/net/proxy"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type MessageHandler func(update tgbotapi.Update, bot *tgbotapi.BotAPI) error
@@ -65,23 +67,26 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 					bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
 				}
 			} else {
-				fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
+				// fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
 				bot, err = tgbotapi.NewBotAPI(token)
 			}
 
 			if err != nil {
-				fmt.Printf("Failed to create bot with proxy: %v\n", err)
+				// 只在首次错误时输出日志，避免日志刷屏
+				if !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
+					fmt.Printf("Failed to create bot with proxy: %v\n", err)
+				}
 			}
 		} else {
-			fmt.Printf("Failed to parse proxy URL: %v\n", parseErr)
+			// fmt.Printf("Failed to parse proxy URL: %v\n", parseErr)
 			bot, err = tgbotapi.NewBotAPI(token)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
 				fmt.Printf("Failed to create bot without proxy: %v\n", err)
 			}
 		}
 	} else {
 		bot, err = tgbotapi.NewBotAPI(token)
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
 			fmt.Printf("Failed to create bot: %v\n", err)
 		}
 	}
@@ -100,7 +105,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 				existingBot.running = false
 			}
 			delete(m.bots, existingID)
-			fmt.Printf("Removed existing bot with same token: %d\n", existingID)
+			// fmt.Printf("Removed existing bot with same token: %d\n", existingID)
 			// 等待足够的时间确保 Telegram 服务器释放旧的连接
 			time.Sleep(5 * time.Second)
 			break
@@ -129,21 +134,20 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 			DropPendingUpdates: true,
 		}
 		_, _ = bot.Request(deleteConfig)
-		fmt.Println("Webhook deleted")
 
 		// 使用同步的 getUpdates 清除旧的更新状态
 		// 使用一个很大的 offset 值来跳过所有待处理的更新
-		skipConfig := tgbotapi.NewUpdate(999999999)
+		skipConfig := tgbotapi.NewUpdate(0)
 		skipConfig.Timeout = 1
 		updates, err := bot.GetUpdates(skipConfig)
 		if err != nil {
-			fmt.Printf("Failed to clear old updates: %v\n", err)
+			fmt.Printf("failed to clear old updates: %v\n", err)
 		} else {
-			fmt.Printf("Cleared %d old updates\n", len(updates))
+			fmt.Printf("cleared %d old updates\n", len(updates))
 		}
 		// 等待足够的时间确保状态完全传播
 		time.Sleep(2 * time.Second)
-		fmt.Println("Cleared old updates state")
+		fmt.Println("cleared old updates state")
 	}
 
 	if err != nil || bot == nil {
@@ -162,7 +166,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 	m.bots[id] = newBot
 	//debug
 	bot.Debug = false
-	fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
+	// fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
 
 	return nil
 }
@@ -183,7 +187,7 @@ func (m *Manager) StartBot(id int64) error {
 	bot.StopChan = make(chan struct{})
 	bot.running = true
 	go m.runBot(bot)
-	fmt.Printf("Bot %d started\n", id)
+	// fmt.Printf("Bot %d started\n", id)
 	return nil
 }
 
@@ -202,7 +206,7 @@ func (m *Manager) StopBot(id int64) error {
 
 	close(bot.StopChan)
 	bot.running = false
-	fmt.Printf("Bot %d stopped\n", id)
+	// fmt.Printf("Bot %d stopped\n", id)
 	return nil
 }
 
@@ -259,7 +263,7 @@ func (m *Manager) RemoveBot(id int64) error {
 	}
 
 	delete(m.bots, id)
-	fmt.Printf("Bot %d removed\n", id)
+	// fmt.Printf("Bot %d removed\n", id)
 	return nil
 }
 
@@ -274,7 +278,7 @@ func (m *Manager) RemoveAllBots() error {
 			time.Sleep(500 * time.Millisecond)
 		}
 		delete(m.bots, id)
-		fmt.Printf("Bot %d removed\n", id)
+		// fmt.Printf("Bot %d removed\n", id)
 	}
 	m.mutex.Unlock()
 	// 等待所有 bot 实例完全停止
