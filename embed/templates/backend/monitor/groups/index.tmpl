@@ -34,7 +34,7 @@ tableIns = table.render({
     url: '/{[.admin_path]}/monitor/group/list',
     title: '数据表',
     cols: [[
-        {type: 'numbers', title: '', width: 60},
+        {type: 'order', title: '', width: 60, toolbar:"#dragTpl"},
         {field:'name', title:'分组名称'},
         {field:'monitor_num', title:'监控数'},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
@@ -107,7 +107,7 @@ function initSortable(){
                         console.log('Sort response:', data);
                         showMsg(data.msg, function(){
                             if(data.code > -1 || data.Code > -1) {
-                                tableIns.reload();
+                             
                             }
                         }, {icon: (data.code > -1 || data.Code > -1) ? 1 : 2});
                     },
@@ -146,6 +146,11 @@ function opStatus(obj){
 
 ///
 });
+</script>
+
+
+<script type="text/html" id="dragTpl">
+<div style="cursor: move; text-align: center; color: #999;"><i class="layui-icon layui-icon-more"></i></div>
 </script>
 
 <script type="text/html" id="statusTpl">
