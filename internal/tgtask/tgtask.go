@@ -209,7 +209,6 @@ func (m *Manager) StopBot(id int64) error {
 func (m *Manager) runBot(bot *Bot) {
 	defer func() {
 		bot.running = false
-		fmt.Printf("Bot goroutine exited\n")
 	}()
 
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -220,9 +219,7 @@ func (m *Manager) runBot(bot *Bot) {
 	for {
 		select {
 		case <-bot.StopChan:
-			// 先停止接收更新
 			bot.BotAPI.StopReceivingUpdates()
-			fmt.Printf("Bot stopped\n")
 			return
 		case update := <-updates:
 			if update.Message == nil {
