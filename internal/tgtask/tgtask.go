@@ -60,7 +60,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 					Proxy:           http.ProxyURL(u),
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
 				}
-				client := &http.Client{Transport: transport, Timeout: 10 * time.Second}
+				client := &http.Client{Transport: transport, Timeout: 30 * time.Second}
 				bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
 			} else {
 				fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
@@ -108,7 +108,8 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 	}
 
 	m.bots[id] = newBot
-	bot.Debug = true
+	//debug
+	// bot.Debug = true
 	fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
 
 	return nil
@@ -156,6 +157,8 @@ func (m *Manager) StopBot(id int64) error {
 func (m *Manager) runBot(bot *Bot) {
 	defer func() {
 		bot.running = false
+		// 停止接收更新
+		bot.BotAPI.StopReceivingUpdates()
 	}()
 
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -172,8 +175,7 @@ func (m *Manager) runBot(bot *Bot) {
 				continue
 			}
 
-			fmt.Printf("收到来自 [%s] 的消息: %s\n", update.Message.From.UserName, update.Message.Text)
-
+			// fmt.Printf("收到来自 [%s] 的消息: %s\n", update.Message.From.UserName, update.Message.Text)
 			if bot.MessageHandler != nil {
 				if err := bot.MessageHandler(update, bot.BotAPI); err != nil {
 					fmt.Printf("处理消息失败: %v\n", err)
@@ -212,17 +214,20 @@ func (m *Manager) RemoveBot(id int64) error {
 
 func (m *Manager) RemoveAllBots() error {
 	m.mutex.Lock()
-	defer m.mutex.Unlock()
 
 	for id, bot := range m.bots {
 		if bot.running {
 			close(bot.StopChan)
 			bot.running = false
+			// 等待一小段时间，确保 bot 完全停止
+			time.Sleep(100 * time.Millisecond)
 		}
 		delete(m.bots, id)
 		fmt.Printf("Bot %d removed\n", id)
 	}
-
+	m.mutex.Unlock()
+	// 等待所有 bot 实例完全停止
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 

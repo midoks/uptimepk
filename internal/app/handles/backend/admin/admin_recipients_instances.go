@@ -147,7 +147,9 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 			common.ErrorResp(c, err, -1)
 			return
 		}
-		op.ReloadTelegramTask()
+		if field.MediaType == "telegram" {
+			op.ReloadTelegramTask()
+		}
 		common.SuccessResp(c)
 		return
 	}
@@ -158,7 +160,9 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 		return
 	}
 
-	op.ReloadTelegramTask()
+	if field.MediaType == "telegram" {
+		op.ReloadTelegramTask()
+	}
 	common.SuccessResp(c)
 }
 

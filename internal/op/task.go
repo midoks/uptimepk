@@ -61,8 +61,6 @@ func ReloadTelegramTask() {
 		fmt.Printf("failed to remove all bots: %v\n", err)
 	}
 
-	fmt.Println("Telegram tasks reloaded start")
-
 	// 重新添加和启动机器人
 	if len(telegram_list) > 0 {
 		for _, data := range telegram_list {
@@ -97,8 +95,6 @@ func ReloadTelegramTask() {
 			}
 		}
 	}
-
-	fmt.Println("Telegram tasks reloaded")
 }
 
 func InitTelegramTask() {
