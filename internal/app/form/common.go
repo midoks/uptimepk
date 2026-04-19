@@ -21,3 +21,7 @@ type Page struct {
 type ID struct {
 	ID int64 `form:"id"`
 }
+
+type IDs struct {
+	Ids string `json:"ids" binding:"required"`
+}
