@@ -17,7 +17,7 @@ func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64
 	}
 
 	var list []model.MonitorGroup
-	if err := db.Order(columnName("order") + " DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	if err := db.Order(columnName("order") + " ASC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		return nil, 0, errors.WithStack(err)
 	}
 

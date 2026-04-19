@@ -35,7 +35,6 @@ tableIns = table.render({
     title: '数据表',
     cols: [[
         {type: 'numbers', title: '', width: 60},
-        {field:'order', title:'排序', width: 80},
         {field:'name', title:'分组名称'},
         {field:'monitor_num', title:'监控数'},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
@@ -54,17 +53,26 @@ tableIns = table.render({
 function initSortable(){
     console.log('Initializing sortable...');
     
+    // 查找表格body元素
+    var tableBody = $('.layui-table-body');
+    console.log('Found table body elements:', tableBody.length);
+    
+    if(tableBody.length === 0) {
+        console.error('Table body not found');
+        return;
+    }
+    
     // 初始化拖动排序
-    $('.layui-table-body').sortable({
+    tableBody.sortable({
         items: 'tr[data-index]',
         cursor: 'move',
         axis: 'y',
-        containment: '.layui-table-body',
         update: function(event, ui){
             console.log('Sort update triggered');
             
             // 获取排序后的顺序
             var ids = [];
+            var seen = new Set();
             console.log('Stored table data:', tableData);
             
             $('.layui-table-body tr[data-index]').each(function(index, item){
@@ -73,8 +81,14 @@ function initSortable(){
                 if(dataIndex !== undefined) {
                     var idx = parseInt(dataIndex);
                     if(tableData[idx] && tableData[idx].id) {
-                        ids.push(tableData[idx].id);
-                        console.log('Added id:', tableData[idx].id);
+                        var id = tableData[idx].id;
+                        if(!seen.has(id)) {
+                            ids.push(id);
+                            seen.add(id);
+                            console.log('Added id:', id);
+                        } else {
+                            console.log('Skipping duplicate id:', id);
+                        }
                     }
                 }
             });
@@ -84,15 +98,23 @@ function initSortable(){
             if(ids.length > 0) {
                 console.log('Sending sort request...');
                 // 发送排序更新请求
-                $.post('/{[.admin_path]}/monitor/group/sort', {ids: ids.join(',')}, function(data) {
-                    console.log('Sort response:', data);
-                    showMsg(data.msg, function(){
-                        if(data.code > -1 || data.Code > -1) {
-                            tableIns.reload();
-                        }
-                    }, {icon: (data.code > -1 || data.Code > -1) ? 1 : 2});
-                }, 'json').fail(function(xhr, status, error){
-                    console.error('Sort request failed:', error);
+                $.ajax({
+                    url: '/{[.admin_path]}/monitor/group/sort',
+                    type: 'POST',
+                    data: {ids: ids.join(',')},
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log('Sort response:', data);
+                        showMsg(data.msg, function(){
+                            if(data.code > -1 || data.Code > -1) {
+                                tableIns.reload();
+                            }
+                        }, {icon: (data.code > -1 || data.Code > -1) ? 1 : 2});
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Sort request failed:', error);
+                        console.error('Response text:', xhr.responseText);
+                    }
                 });
             }
         }
