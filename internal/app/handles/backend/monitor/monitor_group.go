@@ -111,10 +111,7 @@ func MonitorGroupsDelete(c *gin.Context) {
 }
 
 func MonitorGroupsSort(c *gin.Context) {
-	// 尝试绑定 JSON
-	var field struct {
-		Ids string `json:"ids" binding:"required"`
-	}
+	var field form.IDs
 	if err := c.ShouldBindJSON(&field); err != nil {
 		// 尝试绑定表单数据
 		field.Ids = c.PostForm("ids")
@@ -123,6 +120,8 @@ func MonitorGroupsSort(c *gin.Context) {
 			return
 		}
 	}
+
+	fmt.Println("Ids:", Ids)
 
 	// 解析 ID 列表
 	idStrs := strings.Split(field.Ids, ",")
