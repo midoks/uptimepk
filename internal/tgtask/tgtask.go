@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"golang.org/x/net/proxy"
 )
 
 type MessageHandler func(update tgbotapi.Update, bot *tgbotapi.BotAPI) error
@@ -34,6 +35,57 @@ func init() {
 	botManager = &Manager{
 		bots: make(map[int64]*Bot),
 	}
+}
+
+func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
+	if proxyURL != "" {
+		u, parseErr := url.Parse(proxyURL)
+		if parseErr == nil {
+			// fmt.Printf("Using proxy: %s\n", u.String())
+
+			// 支持 HTTP/HTTPS/SOCKS5 代理
+			if u.Scheme == "http" || u.Scheme == "https" {
+				transport := &http.Transport{
+					Proxy:           http.ProxyURL(u),
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+				}
+				client := &http.Client{Transport: transport, Timeout: 30 * time.Second}
+				bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
+			} else if u.Scheme == "socks5" {
+				dialer, dialErr := proxy.FromURL(u, proxy.Direct)
+				if dialErr != nil {
+					fmt.Printf("Failed to create SOCKS5 proxy dialer: %v\n", dialErr)
+					bot, err = tgbotapi.NewBotAPI(token)
+				} else {
+					transport := &http.Transport{
+						Dial:            dialer.Dial,
+						TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+					}
+					client := &http.Client{Transport: transport, Timeout: 30 * time.Second}
+					bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
+				}
+			} else {
+				fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
+				bot, err = tgbotapi.NewBotAPI(token)
+			}
+
+			if err != nil {
+				fmt.Printf("Failed to create bot with proxy: %v\n", err)
+			}
+		} else {
+			fmt.Printf("Failed to parse proxy URL: %v\n", parseErr)
+			bot, err = tgbotapi.NewBotAPI(token)
+			if err != nil {
+				fmt.Printf("Failed to create bot without proxy: %v\n", err)
+			}
+		}
+	} else {
+		bot, err = tgbotapi.NewBotAPI(token)
+		if err != nil {
+			fmt.Printf("Failed to create bot: %v\n", err)
+		}
+	}
+	return
 }
 
 func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler MessageHandler) error {
@@ -65,46 +117,10 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 	// 等待足够的时间确保所有 bot 实例完全停止
 	time.Sleep(3 * time.Second)
 
-	fmt.Printf("Creating bot with token: %s, proxy: %s\n", token, proxyURL)
-
-	var bot *tgbotapi.BotAPI
+	// fmt.Printf("creating bot with token: %s, proxy: %s\n", token, proxyURL)
 	var err error
-
-	if proxyURL != "" {
-		u, parseErr := url.Parse(proxyURL)
-		if parseErr == nil {
-			fmt.Printf("Using proxy: %s\n", u.String())
-
-			// 支持 HTTP/HTTPS 代理
-			if u.Scheme == "http" || u.Scheme == "https" {
-				transport := &http.Transport{
-					Proxy:           http.ProxyURL(u),
-					TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
-				}
-				client := &http.Client{Transport: transport, Timeout: 30 * time.Second}
-				bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
-			} else {
-				fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
-				bot, err = tgbotapi.NewBotAPI(token)
-			}
-
-			if err != nil {
-				fmt.Printf("Failed to create bot with proxy: %v\n", err)
-			}
-		} else {
-			fmt.Printf("Failed to parse proxy URL: %v\n", parseErr)
-			bot, err = tgbotapi.NewBotAPI(token)
-			if err != nil {
-				fmt.Printf("Failed to create bot without proxy: %v\n", err)
-			}
-		}
-	} else {
-		fmt.Println("No proxy specified, creating bot directly")
-		bot, err = tgbotapi.NewBotAPI(token)
-		if err != nil {
-			fmt.Printf("Failed to create bot: %v\n", err)
-		}
-	}
+	var bot *tgbotapi.BotAPI
+	bot, err = GetBotByProxy(token, proxyURL)
 
 	// webhook deleted to avoid conflicts
 	if err == nil && bot != nil {
@@ -145,7 +161,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 
 	m.bots[id] = newBot
 	//debug
-	bot.Debug = true
+	bot.Debug = false
 	fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
 
 	return nil

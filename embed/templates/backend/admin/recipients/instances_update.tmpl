@@ -85,7 +85,7 @@
                                         <div class="layui-inline">
                                             <div class="layui-input-inline" style="float: left;">
                                                 <select name="telegram_proxy_scheme" lay-verify="required" lay-search lay-filter="telegram_proxy_scheme">
-                                                    <option value="socket5" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramProxyScheme "socket5" ]}selected{[end]}{[end]}>socket5://</option>
+                                                    <option value="socks5" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramProxyScheme "socks5" ]}selected{[end]}{[end]}>socks5://</option>
                                                     <option value="https" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramProxyScheme "https" ]}selected{[end]}{[end]}>https://</option>
                                                     <option value="http" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramProxyScheme "http" ]}selected{[end]}{[end]}>http://</option>
                                                 </select>
