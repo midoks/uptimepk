@@ -63,7 +63,7 @@
             <colgroup><col width="150"><col></colgroup>
             <tbody>
                 <tr>
-                    <td>名称 *</td>
+                    <td>名称</td>
                     <td>
                         <div class="layui-input-inline">
                             <input type="text" name="name" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Name]}{[end]}" placeholder="名称">
@@ -74,7 +74,21 @@
                 </tr>
 
                 <tr>
-                    <td>类型 *</td>
+                    <td>分组</td>
+                    <td>
+                        <div class="layui-input-inline">
+                            <select name="gid" id="gid" class="layui-input h30">
+                                <option value="">分组</option>
+                                {[range $g := .groups]}
+                                <option value="{[$g.ID]}">{[$g.Name]}</option>
+                                {[end]}
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>类型</td>
                     <td>
                         <div class="layui-input-inline">
                             <select name="type" lay-verify="required" lay-search lay-filter="type">
@@ -147,12 +161,12 @@
                         <div>
                             <div class="layui-inline">
                                 <div class="layui-input-inline">
-                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Interval]}{[end]}">
+                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Interval]}{[.Data.Interval]}{[else]}60{[end]}{[end]}">
                                 </div>
                                 <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                             </div>
                         </div>
-                        <p class="layui-font-12">心跳间隔 (检测频率 60 秒)</p>
+                        <p class="layui-font-12">心跳间隔 (检测频率 {[if .Data]}{[if .Data.Interval]}{[else]}60{[end]}{[end]} 秒)</p>
                     </td>
                 </tr>
 
@@ -161,7 +175,7 @@
                     <td>重试次数</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.MaxRetries]}{[end]}">
+                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.MaxRetries]}{[.Data.MaxRetries]}{[else]}3{[end]}{[end]}">
                         </div>
                         <p class="layui-font-12">服务被标记为故障并发送通知之前的最大重试次数</p>
                     </td>
@@ -173,7 +187,7 @@
                     <td>
                         <div class="layui-inline">
                             <div class="layui-input-inline">
-                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Timeout]}{[end]}">
+                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Timeout]}{[.Data.Timeout]}{[else]}5{[end]}{[end]}">
                             </div>
                             <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                         </div>

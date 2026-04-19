@@ -2,6 +2,7 @@ package form
 
 type MonitorAdd struct {
 	ID         int64  `form:"id"`
+	Gid        int64  `form:"gid"` // gid
 	Name       string `form:"name"`
 	Type       string `form:"type"`
 	Addr       string `form:"addr"`
@@ -12,13 +13,8 @@ type MonitorAdd struct {
 	Interval   int    `form:"interval"`    // interval
 	MaxRetries int    `form:"max_retries"` // max_retries
 	Timeout    int    `form:"timeout"`     // timeout
-	Status     bool   `form:"status"`
-}
-
-type MonitorSubMenu struct {
-	Number int64  `form:"number"`
-	Name   string `form:"name"`
-	Link   string `form:"link"`
+	Status     bool   `form:"status"`      // status
+	Mark       string `form:"mark"`        // mark
 }
 
 type MonitorGroupAdd struct {

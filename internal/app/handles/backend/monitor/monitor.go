@@ -16,6 +16,10 @@ import (
 
 func Home(c *gin.Context) {
 	data := common.CommonVer(c)
+
+	groups, _ := db.GetMonitorGroupAll()
+	data["groups"] = groups
+
 	c.HTML(http.StatusOK, "backend/monitor/index.tmpl", data)
 }
 
@@ -26,7 +30,11 @@ func List(c *gin.Context) {
 		return
 	}
 
-	result, count, _ := db.GetMonitorList(field.Page, field.Limit)
+	result, count, err := db.GetMonitorList(field.Page, field.Limit)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
 	common.SuccessLayuiResp(c, count, "ok", result)
 }
 
@@ -42,6 +50,9 @@ func Add(c *gin.Context) {
 			}
 		}
 	}
+
+	groups, _ := db.GetMonitorGroupAll()
+	data["groups"] = groups
 	c.HTML(http.StatusOK, "backend/monitor/add.tmpl", data)
 }
 
@@ -59,6 +70,7 @@ func PostAdd(c *gin.Context) {
 		Interval:   field.Interval,
 		MaxRetries: field.MaxRetries,
 		Timeout:    field.Timeout,
+		Gid:        field.Gid,
 		CreateTime: time.Now().Unix(),
 		UpdateTime: time.Now().Unix(),
 	}

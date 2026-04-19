@@ -10,8 +10,8 @@ import (
 	// "uptimepk/internal/op"
 )
 
-func GetSysAdvancedSubMenu() []form.MonitorSubMenu {
-	menu := []form.MonitorSubMenu{
+func GetSysAdvancedSubMenu() []form.SubMenu {
+	menu := []form.SubMenu{
 		{
 			Number: 1,
 			Name:   "数据库",

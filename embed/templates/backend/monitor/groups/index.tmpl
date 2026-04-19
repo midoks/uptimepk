@@ -107,7 +107,7 @@ function initSortable(){
                         console.log('Sort response:', data);
                         showMsg(data.msg, function(){
                             if(data.code > -1 || data.Code > -1) {
-                             
+                                tableIns.reload();
                             }
                         }, {icon: (data.code > -1 || data.Code > -1) ? 1 : 2});
                     },

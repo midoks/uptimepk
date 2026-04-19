@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -52,6 +53,13 @@ func initTemp(r *gin.Engine) {
 		},
 		"Contains": func(s, substr string) bool {
 			return strings.Contains(s, substr)
+		},
+		"json": func(v interface{}) string {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "[]"
+			}
+			return string(b)
 		},
 	}
 

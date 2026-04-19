@@ -16,9 +16,9 @@
                         <div class="layui-input-inline h30">
                             <select name="gid" id="gid" class="layui-input h30">
                                 <option value="">分组</option>
-                                <option value="INFO">INFO</option>
-                                <option value="WARN">WARN</option>
-                                <option value="ERROR">ERROR</option>
+                                {[range $g := .groups]}
+                                <option value="{[$g.ID]}">{[$g.Name]}</option>
+                                {[end]}
                             </select>
                         </div>
                     </div>
@@ -44,6 +44,31 @@
 </div>
 
 <script type="text/javascript">
+//分组映射
+console.log('Groups data:', {[.groups | json]});
+var groupMapStr = {[.groups | json]};
+console.log('GroupMap string:', groupMapStr);
+var groupMap = [];
+try {
+    groupMap = JSON.parse(groupMapStr);
+    console.log('Parsed groupMap:', groupMap);
+} catch (e) {
+    console.error('Failed to parse groupMap:', e);
+    groupMap = [];
+}
+console.log('GroupMap type:', typeof groupMap);
+console.log('GroupMap is array:', Array.isArray(groupMap));
+var groupNameMap = {};
+if (Array.isArray(groupMap)) {
+    groupMap.forEach(function(group) {
+        groupNameMap[group.id] = group.name;
+        console.log('Added group:', group.id, group.name);
+    });
+} else {
+    console.error('groupMap is not an array:', groupMap);
+    groupMap = [];
+}
+console.log('GroupNameMap:', groupNameMap);
 
 layui.config({base: '/static/layuiadmin/'}).use(['table','jquery'], function(){
 ///
@@ -51,6 +76,7 @@ var admin = layui.admin
 ,$ = layui.$
 ,form = layui.form
 ,table = layui.table;
+
 
 
 table.render({
@@ -64,14 +90,21 @@ table.render({
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
-    page: true
+    page: true,
+    done: function(res, curr, count){
+        console.log('Table response:', res);
+        console.log('Current page:', curr);
+        console.log('Total count:', count);
+    }
 });
+
 
 
 table.on('tool(list)', function(obj){
     switch(obj.event){
     };
 });
+
 
 table.on('toolbar', function(obj){
     switch(obj.event){
@@ -91,11 +124,16 @@ table.on('toolbar', function(obj){
 {{# } }}
 </script>
 
+
+
 <script type="text/html" id="gidTpl">
-{{# if (d.gid == 1){ }}
-<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
-{{# } else if (d.gid == 0) { }}-
+{{# var groupName = '-'; }}
+{{# if(d.gid == 0) { }}
+  {{# groupName = '-'; }}
+{{# } else { }}
+  {{# groupName = groupNameMap[d.gid] || d.gid; }}
 {{# } }}
+<span class="layui-badge layui-bg-blue">{{groupName}}</span>
 </script>
 
 

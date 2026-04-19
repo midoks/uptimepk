@@ -62,6 +62,14 @@ func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64
 	return result, count, nil
 }
 
+func GetMonitorGroupAll() ([]model.MonitorGroup, error) {
+	var list []model.MonitorGroup
+	if err := db.Order(columnName("order") + " ASC").Find(&list).Error; err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return list, nil
+}
+
 func AddMonitorGroup(tx *gorm.DB, name string, clusterId int64) error {
 	if tx == nil {
 		tx = db

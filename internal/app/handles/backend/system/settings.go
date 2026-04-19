@@ -14,8 +14,29 @@ import (
 	utils "uptimepk/internal/utils"
 )
 
-func GetSysBaseSubMenu() []form.MonitorSubMenu {
-	menu := []form.MonitorSubMenu{
+func GetSysSubMenu() []form.SubMenu {
+	menu := []form.SubMenu{
+		{
+			Number: 1,
+			Name:   "管理员界面设置",
+			Link:   "system/settings",
+		},
+		{
+			Number: 2,
+			Name:   "个人资料",
+			Link:   "system/settings/profile",
+		},
+		{
+			Number: 3,
+			Name:   "登录设置",
+			Link:   "system/settings/login",
+		},
+	}
+	return menu
+}
+
+func GetSysBaseSubMenu() []form.SubMenu {
+	menu := []form.SubMenu{
 		{
 			Number: 1,
 			Name:   "管理员界面设置",

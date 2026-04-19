@@ -151,6 +151,7 @@ func Init(d *gorm.DB) {
 		new(model.AdminRecipientsTasks),
 		new(model.Monitor),
 		new(model.MonitorGroup),
+		new(model.MonitorLog),
 		new(model.DbNode),
 		new(model.Log),
 		new(model.User),
