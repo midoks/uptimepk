@@ -161,12 +161,12 @@
                         <div>
                             <div class="layui-inline">
                                 <div class="layui-input-inline">
-                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Interval]}{[.Data.Interval]}{[else]}60{[end]}{[end]}">
+                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Interval]}{[.Data.Interval]}{[else]}60{[end]}{[else]}60{[end]}">
                                 </div>
                                 <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                             </div>
                         </div>
-                        <p class="layui-font-12">心跳间隔 (检测频率 {[if .Data]}{[if .Data.Interval]}{[else]}60{[end]}{[end]} 秒)</p>
+                        <p class="layui-font-12">心跳间隔 (检测频率 {[if .Data]}{[if .Data.Interval]}{[.Data.Interval]}{[else]}60{[end]}{[else]}60{[end]} 秒)</p>
                     </td>
                 </tr>
 
@@ -175,7 +175,7 @@
                     <td>重试次数</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.MaxRetries]}{[.Data.MaxRetries]}{[else]}3{[end]}{[end]}">
+                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.MaxRetries]}{[.Data.MaxRetries]}{[else]}3{[end]}{[else]}3{[end]}">
                         </div>
                         <p class="layui-font-12">服务被标记为故障并发送通知之前的最大重试次数</p>
                     </td>
@@ -187,7 +187,7 @@
                     <td>
                         <div class="layui-inline">
                             <div class="layui-input-inline">
-                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Timeout]}{[.Data.Timeout]}{[else]}5{[end]}{[end]}">
+                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="{[if .Data]}{[if .Data.Timeout]}{[.Data.Timeout]}{[else]}5{[end]}{[else]}5{[end]}">
                             </div>
                             <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                         </div>
