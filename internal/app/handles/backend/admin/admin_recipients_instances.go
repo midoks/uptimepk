@@ -147,6 +147,7 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 			common.ErrorResp(c, err, -1)
 			return
 		}
+		op.ReloadTelegramTask()
 		common.SuccessResp(c)
 		return
 	}

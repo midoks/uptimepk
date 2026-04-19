@@ -85,6 +85,15 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 		}
 	}
 
+	//Webhook deleted to avoid conflicts
+	if err == nil && bot != nil {
+		// 先删除 webhook，避免与其他实例冲突
+		deleteConfig := tgbotapi.DeleteWebhookConfig{
+			DropPendingUpdates: true,
+		}
+		_, _ = bot.Request(deleteConfig)
+	}
+
 	if err != nil || bot == nil {
 		return fmt.Errorf("failed to create bot: %v", err)
 	}
