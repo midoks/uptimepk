@@ -302,6 +302,12 @@ form.on("submit(submit_recipients)", function(data){
         field['status'] = 0;
     }
 
+    if (field['telegram_listen_enable'] == "on"){
+        field['telegram_listen_enable'] = 1;
+    } else {
+        field['telegram_listen_enable'] = 0;
+    }
+
     $.post("/{[$.admin_path]}/admin/recipients/instances/add", field, function(res) {
         showMsg(res.msg, function(){
             layer.close(index);

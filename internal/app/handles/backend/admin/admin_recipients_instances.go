@@ -111,10 +111,12 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 
 	if field.MediaType == "telegram" {
 		common_data.SetTelegramParams(model.AdminMediaTelegramParams{
-			Token:               field.Token,
-			SendID:              fmt.Sprintf("%d", field.SendID),
-			TelegramProxyScheme: field.TelegramProxyScheme,
-			TelegramProxyValue:  field.TelegramProxyValue,
+			Token:                  field.Token,
+			SendID:                 fmt.Sprintf("%d", field.SendID),
+			TelegramProxyScheme:    field.TelegramProxyScheme,
+			TelegramProxyValue:     field.TelegramProxyValue,
+			TelegramListenEnable:   field.TelegramListenEnable,
+			TelegramListenStrategy: field.TelegramListenStrategy,
 		})
 	}
 
