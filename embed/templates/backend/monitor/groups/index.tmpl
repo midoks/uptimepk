@@ -27,13 +27,14 @@ var admin = layui.admin
 ,form = layui.form
 ,table = layui.table;
 
-var tableIns = table.render({
+var tableIns, tableData = [];
+
+tableIns = table.render({
     elem: '#list',
     url: '/{[.admin_path]}/monitor/group/list',
     title: '数据表',
     cols: [[
         {type: 'numbers', title: '', width: 60},
-        // {type: 'checkbox', width: 40},
         {field:'order', title:'排序', width: 80},
         {field:'name', title:'分组名称'},
         {field:'monitor_num', title:'监控数'},
@@ -42,44 +43,62 @@ var tableIns = table.render({
     ]],
     page: true,
     done: function(res, curr, count){
+        // 存储表格数据
+        tableData = res.data;
+        console.log('Table data stored:', tableData);
         // 表格渲染完成后初始化排序
         initSortable();
     }
 });
 
 function initSortable(){
+    console.log('Initializing sortable...');
+    
     // 初始化拖动排序
     $('.layui-table-body').sortable({
-        items: 'tr',
+        items: 'tr[data-index]',
         cursor: 'move',
         axis: 'y',
         containment: '.layui-table-body',
         update: function(event, ui){
+            console.log('Sort update triggered');
+            
             // 获取排序后的顺序
             var ids = [];
-            $('.layui-table-body tr').each(function(index, item){
+            console.log('Stored table data:', tableData);
+            
+            $('.layui-table-body tr[data-index]').each(function(index, item){
                 var dataIndex = $(item).attr('data-index');
+                console.log('Found row with data-index:', dataIndex);
                 if(dataIndex !== undefined) {
-                    // 获取行数据
-                    var rowData = tableIns.cache[dataIndex];
-                    if(rowData && rowData.id) {
-                        ids.push(rowData.id);
+                    var idx = parseInt(dataIndex);
+                    if(tableData[idx] && tableData[idx].id) {
+                        ids.push(tableData[idx].id);
+                        console.log('Added id:', tableData[idx].id);
                     }
                 }
             });
             
+            console.log('Final ids:', ids);
+            
             if(ids.length > 0) {
+                console.log('Sending sort request...');
                 // 发送排序更新请求
                 $.post('/{[.admin_path]}/monitor/group/sort', {ids: ids.join(',')}, function(data) {
+                    console.log('Sort response:', data);
                     showMsg(data.msg, function(){
-                        if(data.code > -1) {
+                        if(data.code > -1 || data.Code > -1) {
                             tableIns.reload();
                         }
-                    }, {icon: data.code > -1 ? 1 : 2});
-                }, 'json');
+                    }, {icon: (data.code > -1 || data.Code > -1) ? 1 : 2});
+                }, 'json').fail(function(xhr, status, error){
+                    console.error('Sort request failed:', error);
+                });
             }
         }
     }).disableSelection();
+    
+    console.log('Sortable initialized');
 }
 
 table.on('toolbar', function(obj){
