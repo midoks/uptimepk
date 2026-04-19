@@ -2,6 +2,7 @@ package op
 
 import (
 	"fmt"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -12,6 +13,7 @@ import (
 
 // 未选择策略
 func TelegramMessageHandlerStrategyNone(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
+	fmt.Printf("处理消息[none]: %s\n", update.Message.Text)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "监控面板未选择策略。")
 	_, err := bot.Send(msg)
 	return err
@@ -19,8 +21,7 @@ func TelegramMessageHandlerStrategyNone(update tgbotapi.Update, bot *tgbotapi.Bo
 
 // 默认策略
 func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
-	// 这里可以添加自定义的业务逻辑
-	fmt.Printf("处理消息: %s\n", update.Message.Text)
+	fmt.Printf("处理消息[default]: %s\n", update.Message.Text)
 
 	// 示例：根据消息内容做不同处理
 	switch update.Message.Text {
@@ -60,6 +61,9 @@ func ReloadTelegramTask() {
 	if err := manager.RemoveAllBots(); err != nil {
 		fmt.Printf("failed to remove all bots: %v\n", err)
 	}
+
+	// 等待足够的时间确保所有 bot 实例完全停止
+	time.Sleep(3 * time.Second)
 
 	// 重新添加和启动机器人
 	if len(telegram_list) > 0 {

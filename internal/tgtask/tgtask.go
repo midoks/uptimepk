@@ -38,11 +38,32 @@ func init() {
 
 func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler MessageHandler) error {
 	m.mutex.Lock()
-	defer m.mutex.Unlock()
+
+	// 检查是否存在相同 token 的 bot
+	for existingID, existingBot := range m.bots {
+		if existingBot.Token == token {
+			// 先停止并删除旧的 bot
+			if existingBot.running {
+				close(existingBot.StopChan)
+				existingBot.running = false
+			}
+			delete(m.bots, existingID)
+			fmt.Printf("Removed existing bot with same token: %d\n", existingID)
+			// 等待足够的时间确保 Telegram 服务器释放旧的连接
+			time.Sleep(5 * time.Second)
+			break
+		}
+	}
 
 	if _, exists := m.bots[id]; exists {
+		m.mutex.Unlock()
 		return fmt.Errorf("bot with id %d already exists", id)
 	}
+
+	m.mutex.Unlock()
+
+	// 等待足够的时间确保所有 bot 实例完全停止
+	time.Sleep(3 * time.Second)
 
 	fmt.Printf("Creating bot with token: %s, proxy: %s\n", token, proxyURL)
 
@@ -85,13 +106,28 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 		}
 	}
 
-	//Webhook deleted to avoid conflicts
+	// webhook deleted to avoid conflicts
 	if err == nil && bot != nil {
 		// 先删除 webhook，避免与其他实例冲突
 		deleteConfig := tgbotapi.DeleteWebhookConfig{
 			DropPendingUpdates: true,
 		}
 		_, _ = bot.Request(deleteConfig)
+		fmt.Println("Webhook deleted")
+
+		// 使用同步的 getUpdates 清除旧的更新状态
+		// 使用一个很大的 offset 值来跳过所有待处理的更新
+		skipConfig := tgbotapi.NewUpdate(999999999)
+		skipConfig.Timeout = 1
+		updates, err := bot.GetUpdates(skipConfig)
+		if err != nil {
+			fmt.Printf("Failed to clear old updates: %v\n", err)
+		} else {
+			fmt.Printf("Cleared %d old updates\n", len(updates))
+		}
+		// 等待足够的时间确保状态完全传播
+		time.Sleep(2 * time.Second)
+		fmt.Println("Cleared old updates state")
 	}
 
 	if err != nil || bot == nil {
@@ -109,7 +145,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 
 	m.bots[id] = newBot
 	//debug
-	// bot.Debug = true
+	bot.Debug = true
 	fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
 
 	return nil
@@ -157,8 +193,7 @@ func (m *Manager) StopBot(id int64) error {
 func (m *Manager) runBot(bot *Bot) {
 	defer func() {
 		bot.running = false
-		// 停止接收更新
-		bot.BotAPI.StopReceivingUpdates()
+		fmt.Printf("Bot goroutine exited\n")
 	}()
 
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -169,6 +204,9 @@ func (m *Manager) runBot(bot *Bot) {
 	for {
 		select {
 		case <-bot.StopChan:
+			// 先停止接收更新
+			bot.BotAPI.StopReceivingUpdates()
+			fmt.Printf("Bot stopped\n")
 			return
 		case update := <-updates:
 			if update.Message == nil {
@@ -220,7 +258,7 @@ func (m *Manager) RemoveAllBots() error {
 			close(bot.StopChan)
 			bot.running = false
 			// 等待一小段时间，确保 bot 完全停止
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 		delete(m.bots, id)
 		fmt.Printf("Bot %d removed\n", id)
