@@ -1,7 +1,7 @@
 package tgtask
 
 import (
-	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -36,7 +36,7 @@ func init() {
 	}
 }
 
-func (m *Manager) AddBot(id int64, token, proxy string, chatID int64, handler MessageHandler) error {
+func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler MessageHandler) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -44,21 +44,29 @@ func (m *Manager) AddBot(id int64, token, proxy string, chatID int64, handler Me
 		return fmt.Errorf("bot with id %d already exists", id)
 	}
 
-	fmt.Printf("Creating bot with token: %s, proxy: %s\n", token, proxy)
+	fmt.Printf("Creating bot with token: %s, proxy: %s\n", token, proxyURL)
 
 	var bot *tgbotapi.BotAPI
 	var err error
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if proxy != "" {
-		u, parseErr := url.Parse(proxy)
+	if proxyURL != "" {
+		u, parseErr := url.Parse(proxyURL)
 		if parseErr == nil {
 			fmt.Printf("Using proxy: %s\n", u.String())
-			tr := &http.Transport{Proxy: http.ProxyURL(u)}
-			client := &http.Client{Transport: tr, Timeout: 10 * time.Second}
-			bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
+
+			// 支持 HTTP/HTTPS 代理
+			if u.Scheme == "http" || u.Scheme == "https" {
+				transport := &http.Transport{
+					Proxy:           http.ProxyURL(u),
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+				}
+				client := &http.Client{Transport: transport, Timeout: 10 * time.Second}
+				bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
+			} else {
+				fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
+				bot, err = tgbotapi.NewBotAPI(token)
+			}
+
 			if err != nil {
 				fmt.Printf("Failed to create bot with proxy: %v\n", err)
 			}
@@ -77,15 +85,13 @@ func (m *Manager) AddBot(id int64, token, proxy string, chatID int64, handler Me
 		}
 	}
 
-	_ = ctx
-
 	if err != nil || bot == nil {
 		return fmt.Errorf("failed to create bot: %v", err)
 	}
 
 	newBot := &Bot{
 		Token:          token,
-		Proxy:          proxy,
+		Proxy:          proxyURL,
 		ChatID:         chatID,
 		BotAPI:         bot,
 		StopChan:       make(chan struct{}),

@@ -29,6 +29,14 @@ func GetAdminRecipientsInstancesByID(id int64) (*model.AdminMediaInstance, error
 	return &u, nil
 }
 
+func GetAdminRecipientsInstancesByTelegram() ([]model.AdminMediaInstance, error) {
+	var list []model.AdminMediaInstance
+	if err := db.Where("media_type = ?", "telegram").Find(&list).Error; err != nil {
+		return nil, errors.Wrapf(err, "failed get telegram list data")
+	}
+	return list, nil
+}
+
 func AdminRecipientsInstancesDeleteByID(tx *gorm.DB, id int64) error {
 	if tx == nil {
 		tx = db

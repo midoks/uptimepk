@@ -11,7 +11,7 @@ import (
 
 // 未选择策略
 func TelegramMessageHandlerStrategyNone(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "未选择")
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "监控面板未选择策略。")
 	_, err := bot.Send(msg)
 	return err
 }
@@ -42,40 +42,48 @@ func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.
 func InitTgTask() {
 	manager := tgtask.GetManager()
 
-	recipient_data, err := db.GetAdminRecipientsInstancesByID(1)
+	telegram_list, err := db.GetAdminRecipientsInstancesByTelegram()
 	if err != nil {
-		fmt.Printf("Failed to get recipient data: %v\n", err)
+		fmt.Printf("failed to get recipient data: %v\n", err)
 		return
 	}
 
-	if recipient_data == nil {
-		fmt.Println("No recipient data found")
+	if len(telegram_list) == 0 {
 		return
 	}
 
-	fmt.Printf("Recipient data: ID=%d, MediaType=%s\n", recipient_data.ID, recipient_data.MediaType)
-
-	if recipient_data.MediaType == "telegram" {
-		tp, err := recipient_data.GetTelegramParams()
+	for _, data := range telegram_list {
+		tp, err := data.GetTelegramParams()
 		if err != nil {
-			fmt.Printf("Failed to get telegram params: %v\n", err)
-			return
+			fmt.Printf("failed to get telegram params: %v\n", err)
+			continue
 		}
 
-		// fmt.Printf("Telegram params: Token=%s, Proxy=%s\n", tp.Token, recipient_data.GetTelegramProxy())
-		botID := recipient_data.ID
-		if err := manager.AddBot(botID, tp.Token, recipient_data.GetTelegramProxy(), 0, TelegramMessageHandlertrategyDefault); err != nil {
-			fmt.Printf("Failed to add bot: %v\n", err)
-			return
+		if tp.TelegramListenEnable {
+			botID := data.ID
+
+			if tp.TelegramListenStrategy == "" || tp.TelegramListenStrategy == "none" {
+				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, TelegramMessageHandlerStrategyNone); err != nil {
+					fmt.Printf("failed to add bot: %v\n", err)
+					continue
+				}
+			}
+
+			if tp.TelegramListenStrategy == "default" {
+				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, TelegramMessageHandlertrategyDefault); err != nil {
+					fmt.Printf("failed to add bot: %v\n", err)
+					continue
+				}
+			}
+
+			if err := manager.StartBot(botID); err != nil {
+				fmt.Printf("failed to start bot: %v\n", err)
+				continue
+			}
+
+			fmt.Printf("Bot %d started successfully\n", botID)
 		}
 
-		if err := manager.StartBot(botID); err != nil {
-			fmt.Printf("Failed to start bot: %v\n", err)
-			return
-		}
-
-		fmt.Printf("Bot %d started successfully\n", botID)
-	} else {
-		fmt.Printf("MediaType is not telegram: %s\n", recipient_data.MediaType)
 	}
+
 }

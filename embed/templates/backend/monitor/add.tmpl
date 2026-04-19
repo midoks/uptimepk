@@ -147,7 +147,7 @@
                         <div>
                             <div class="layui-inline">
                                 <div class="layui-input-inline">
-                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="60">
+                                    <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Interval]}{[end]}">
                                 </div>
                                 <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                             </div>
@@ -161,7 +161,7 @@
                     <td>重试次数</td>
                     <td>
                         <div class="layui-input-inline">
-                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="100">
+                            <input style="width: 60px;" type="number" name="max_retries" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.MaxRetries]}{[end]}">
                         </div>
                         <p class="layui-font-12">服务被标记为故障并发送通知之前的最大重试次数</p>
                     </td>
@@ -173,7 +173,7 @@
                     <td>
                         <div class="layui-inline">
                             <div class="layui-input-inline">
-                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="30">
+                                <input style="width: 60px;" type="number" name="timeout" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.Timeout]}{[end]}">
                             </div>
                             <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
                         </div>
