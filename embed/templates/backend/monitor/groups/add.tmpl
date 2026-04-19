@@ -70,6 +70,17 @@
                 </tr>
 
                 <tr>
+                    <td>支持实时操作</td>
+                    <td>
+                        <input type="checkbox" name="real_time"
+                        {[if .Data]}{[if .Data.RealTime]}checked{[end]}
+                        {[else]}checked
+                        {[end]}> 
+                         <p class="layui-font-12">针对telegram命令批量操作。</p>
+                    </td>
+                </tr>
+
+                <tr>
                     <td>启用当前分组</td>
                     <td>
                         <input type="checkbox" name="status"
@@ -109,6 +120,12 @@ form.on("submit(submit_group)", function(data){
         field['status'] = 1;
     } else {
         field['status'] = 0;
+    }
+
+    if (field['real_time'] == "on"){
+        field['real_time'] = 1;
+    } else {
+        field['real_time'] = 0;
     }
 
     $.post("/{[$.admin_path]}/monitor/group/add", field, function(res) {

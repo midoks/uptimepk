@@ -61,8 +61,9 @@ func PostMonitorGroupsAdd(c *gin.Context) {
 	}
 
 	common_data := &model.MonitorGroup{
-		Name:   field.Name,
-		Status: field.Status,
+		Name:     field.Name,
+		Status:   field.Status,
+		RealTime: field.RealTime,
 	}
 
 	common_data.UpdateTime = time.Now().Unix()

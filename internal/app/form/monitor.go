@@ -22,9 +22,10 @@ type MonitorSubMenu struct {
 }
 
 type MonitorGroupAdd struct {
-	ID     int64  `form:"id"`
-	Name   string `form:"name"`
-	Status bool   `form:"status"`
+	ID       int64  `form:"id"`
+	Name     string `form:"name"`
+	RealTime bool   `form:"real_time"`
+	Status   bool   `form:"status"`
 }
 
 type MonitorCreateNode struct {
