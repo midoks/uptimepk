@@ -32,13 +32,11 @@ func runWeb(c *cli.Context) error {
 	log.Init()
 	db.InitDb()
 
-	// 暂时注释掉条件以便调试
-	// if conf.Security.InstallLock {
 	// 初始化telegram监听任务
-	op.InitTgTask()
-	// }
+	if conf.Security.InstallLock {
+		op.InitTelegramTask()
+	}
 
-	//
 	app.Run()
 	return nil
 }

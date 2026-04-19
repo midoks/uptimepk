@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"uptimepk/internal/db"
+	"uptimepk/internal/model"
 	"uptimepk/internal/tgtask"
 )
 
@@ -24,22 +25,81 @@ func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.
 	// 示例：根据消息内容做不同处理
 	switch update.Message.Text {
 	case "/start":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hello! I'm your uptime monitoring bot.")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "YES.")
 		_, err := bot.Send(msg)
 		return err
 	case "/status":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "All systems are running smoothly!")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "正常运行!")
 		_, err := bot.Send(msg)
 		return err
 	default:
 		// 默认回复
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "I received your message: "+update.Message.Text)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
 		_, err := bot.Send(msg)
 		return err
 	}
 }
 
-func InitTgTask() {
+func ReloadTelegramTask() {
+	manager := tgtask.GetManager()
+
+	// 获取当前的 Telegram 配置
+	telegram_list, err := db.GetAdminRecipientsInstancesByTelegram()
+	if err != nil {
+		fmt.Printf("failed to get recipient data: %v\n", err)
+		return
+	}
+
+	// 创建当前配置的映射，用于快速查找
+	currentConfigs := make(map[int64]*model.AdminMediaInstance)
+	for i := range telegram_list {
+		currentConfigs[telegram_list[i].ID] = &telegram_list[i]
+	}
+
+	// 移除所有现有的机器人
+	if err := manager.RemoveAllBots(); err != nil {
+		fmt.Printf("failed to remove all bots: %v\n", err)
+	}
+
+	// 重新添加和启动机器人
+	if len(telegram_list) > 0 {
+		for _, data := range telegram_list {
+			tp, err := data.GetTelegramParams()
+			if err != nil {
+				fmt.Printf("failed to get telegram params: %v\n", err)
+				continue
+			}
+
+			if tp.TelegramListenEnable {
+				botID := data.ID
+
+				var handler tgtask.MessageHandler
+				switch tp.TelegramListenStrategy {
+				case "default":
+					handler = TelegramMessageHandlertrategyDefault
+				default:
+					handler = TelegramMessageHandlerStrategyNone
+				}
+
+				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, handler); err != nil {
+					fmt.Printf("failed to add bot: %v\n", err)
+					continue
+				}
+
+				if err := manager.StartBot(botID); err != nil {
+					fmt.Printf("failed to start bot: %v\n", err)
+					continue
+				}
+
+				fmt.Printf("Bot %d reloaded successfully\n", botID)
+			}
+		}
+	}
+
+	fmt.Println("Telegram tasks reloaded")
+}
+
+func InitTelegramTask() {
 	manager := tgtask.GetManager()
 
 	telegram_list, err := db.GetAdminRecipientsInstancesByTelegram()
@@ -62,18 +122,17 @@ func InitTgTask() {
 		if tp.TelegramListenEnable {
 			botID := data.ID
 
-			if tp.TelegramListenStrategy == "" || tp.TelegramListenStrategy == "none" {
-				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, TelegramMessageHandlerStrategyNone); err != nil {
-					fmt.Printf("failed to add bot: %v\n", err)
-					continue
-				}
+			var handler tgtask.MessageHandler
+			switch tp.TelegramListenStrategy {
+			case "default":
+				handler = TelegramMessageHandlertrategyDefault
+			default:
+				handler = TelegramMessageHandlerStrategyNone
 			}
 
-			if tp.TelegramListenStrategy == "default" {
-				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, TelegramMessageHandlertrategyDefault); err != nil {
-					fmt.Printf("failed to add bot: %v\n", err)
-					continue
-				}
+			if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, handler); err != nil {
+				fmt.Printf("failed to add bot: %v\n", err)
+				continue
 			}
 
 			if err := manager.StartBot(botID); err != nil {
@@ -85,5 +144,4 @@ func InitTgTask() {
 		}
 
 	}
-
 }

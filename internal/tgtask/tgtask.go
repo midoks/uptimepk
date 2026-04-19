@@ -201,6 +201,22 @@ func (m *Manager) RemoveBot(id int64) error {
 	return nil
 }
 
+func (m *Manager) RemoveAllBots() error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	for id, bot := range m.bots {
+		if bot.running {
+			close(bot.StopChan)
+			bot.running = false
+		}
+		delete(m.bots, id)
+		fmt.Printf("Bot %d removed\n", id)
+	}
+
+	return nil
+}
+
 func GetManager() *Manager {
 	return botManager
 }
