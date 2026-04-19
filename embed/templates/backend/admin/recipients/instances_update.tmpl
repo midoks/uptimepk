@@ -99,6 +99,36 @@ curl https://api.telegram.org 出现2XX、3XX、4XX之类提示时说明能够�
 curl -x "你的代理服务地址" https://api.telegram.org 来测试你的代理是否可用。</p>
                                     </td>
                                 </tr>
+
+        
+
+                                <tr class="id_telegram bls">
+                                    <td>启用当前Telegram监听</td>
+                                    <td>
+                                        <input type="checkbox" name="telegram_listen_enable"
+                                        {[if .Data]}{[if .Data.GetTelegramParams.TelegramListenEnable]}checked{[end]}
+                                        {[else]}checked
+                                        {[end]}>
+
+                                        <p class="layui-font-12">开启后，可根据不同的策略，返回不同的响应</p>
+                                    </td>
+                                </tr>
+
+                                <tr class="id_telegram bls" style="display:none;">
+                                    <td>Telegram监听策略</td>
+                                    <td>
+                                        <div class="layui-inline">
+                                            <div class="layui-input-inline" style="float: left;">
+                                                <select name="telegram_listen_strategy" lay-verify="required" lay-search lay-filter="telegram_listen_strategy">
+                                                    <option value="none" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramListenStrategy "none" ]}selected{[end]}{[end]}>无</option>
+                                                    <option value="default" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramListenStrategy "default" ]}selected{[end]}{[end]}>默认</option>
+                                                </select>
+                                            </div>
+                
+                                        </div>
+                                        <p class="layui-font-12"></p>
+                                    </td>
+                                </tr>
                             </div>
 
                             <div id="id_webhook">

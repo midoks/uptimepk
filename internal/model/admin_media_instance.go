@@ -20,10 +20,12 @@ type AdminMediaInstance struct {
 }
 
 type AdminMediaTelegramParams struct {
-	Token               string `json:"token"`
-	SendID              string `json:"send_id"`
-	TelegramProxyScheme string `json:"telegram_proxy_scheme"`
-	TelegramProxyValue  string `json:"telegram_proxy_value"`
+	Token                  string `json:"token"`
+	SendID                 string `json:"send_id"`
+	TelegramProxyScheme    string `json:"telegram_proxy_scheme"`
+	TelegramProxyValue     string `json:"telegram_proxy_value"`
+	TelegramListenEnable   bool   `json:"telegram_listen_enable"`
+	TelegramListenStrategy string `json:"telegram_listen_strategy"`
 }
 
 type AdminMediaWebhookParams struct {
