@@ -4,8 +4,25 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
+
 	"uptimepk/internal/model"
 )
+
+func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
+	cluster := db.Model(&model.MonitorLog{})
+	var count int64
+	if err := cluster.Count(&count).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get server count")
+	}
+
+	var list []model.MonitorLog
+	if err := db.Order(columnName("id")).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+		return nil, 0, errors.WithStack(err)
+	}
+	return list, count, nil
+}
 
 // CreateMonitorLog 创建并插入监控日志
 func CreateMonitorLog(monitorID int64, isConnect bool, size int, speed float64, errorMsg string, maxRetries int) error {
@@ -31,4 +48,12 @@ func CreateMonitorLog(monitorID int64, isConnect bool, size int, speed float64, 
 
 	// 插入监控日志
 	return GetDb().Create(monitorLog).Error
+}
+
+func MonitorLogDeleteByID(tx *gorm.DB, id int64) error {
+	if tx == nil {
+		tx = GetDb()
+	}
+	var d model.MonitorLog
+	return tx.Where("id = ?", id).Delete(&d).Error
 }

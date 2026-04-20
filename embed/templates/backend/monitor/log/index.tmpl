@@ -6,12 +6,6 @@
         <div class="layui-card">
             <div class="layui-card-body">
 
-                <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
-                    <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/group/add',500,350)">
-                        <i class="layui-icon layui-icon-add-circle"></i> 添加
-                    </button>
-                </div>
-
                 <div id="list"></div>
             </div>
         </div>
@@ -34,10 +28,14 @@ tableIns = table.render({
     url: '/{[.admin_path]}/monitor/log/list',
     title: '数据表',
     cols: [[
-        {type: 'order', title: '', width: 60, toolbar:"#dragTpl"},
-        {field:'name', title:'分组名称'},
-        {field:'monitor_num', title:'监控数'},
-        {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
+        {field:'id', title:'ID', width:80},
+        {field:'monitor_id', title:'监控ID', width:100},
+        {field:'day', title:'日期', width:120, templet: function(d){return String(d.day).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
+        {field:'time', title:'时间', width:100, templet: function(d){return String(d.hour).padStart(2,'0')+':'+String(d.minute).padStart(2,'0')}},
+        {field:'is_connect', title:'状态', width:80, templet: function(d){return d.is_connect?'<span style="color:green">正常</span>':'<span style="color:red">失败</span>'}},
+        {field:'size', title:'大小(B)', width:100},
+        {field:'speed', title:'耗时(ms)', width:100},
+        {field:'error_msg', title:'错误信息', width:200},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
     ]],
     page: true,
@@ -49,22 +47,8 @@ tableIns = table.render({
 });
 </script>
 
-
-<script type="text/html" id="dragTpl">
-<div style="cursor: move; text-align: center; color: #999;"><i class="layui-icon layui-icon-more"></i></div>
-</script>
-
-<script type="text/html" id="statusTpl">
-{{# if (d.status == 1){ }}
-<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
-{{# } else if (d.status == 0) { }}
-<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="status">已暂停</a>
-{{# } }}
-</script>
-
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/group/add?id={{d.id}}',500,350)">修改</a>
-<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/group/delete','{{d.id}}')">删除</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/log/delete','{{d.id}}')">删除</a>
 </script>
 
 {[template "backend/common/footer.tmpl" .]}

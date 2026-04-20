@@ -7,6 +7,7 @@ import (
 
 	"uptimepk/internal/app/common"
 	"uptimepk/internal/app/form"
+	"uptimepk/internal/db"
 )
 
 func MonitorLog(c *gin.Context) {
@@ -22,10 +23,7 @@ func MonitorLogList(c *gin.Context) {
 		return
 	}
 
-	// TODO: 实现 GetMonitorLogList 函数
-	// result, count, _ := db.GetMonitorLogList(field.Page, field.Limit)
-	var result []interface{}
-	count := int64(0)
+	result, count, _ := db.GetMonitorLogList(field.Page, field.Limit)
 	common.SuccessLayuiResp(c, count, "ok", result)
 }
 
@@ -36,12 +34,10 @@ func MonitorLogDelete(c *gin.Context) {
 		return
 	}
 
-	// TODO: 实现 MonitorLogDeleteByID 函数
-	// err := db.MonitorLogDeleteByID(nil, field.ID)
-	// if err == nil {
-	// 	common.SuccessResp(c)
-	// 	return
-	// }
-	// common.ErrorResp(c, err, -1)
-	common.SuccessResp(c)
+	err := db.MonitorLogDeleteByID(nil, field.ID)
+	if err == nil {
+		common.SuccessResp(c)
+		return
+	}
+	common.ErrorResp(c, err, -1)
 }
