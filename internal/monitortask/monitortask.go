@@ -84,7 +84,7 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 	}
 
 	// 验证 cron 表达式
-	if _, err := cron.ParseStandard(cronExpr); err != nil {
+	if _, err := m.cron.Parse(cronExpr); err != nil {
 		return fmt.Errorf("invalid cron expression: %v", err)
 	}
 
@@ -152,7 +152,7 @@ func (m *Manager) UpdateTaskCron(taskID string, cronExpr string) error {
 	}
 
 	// 验证 cron 表达式
-	if _, err := cron.ParseStandard(cronExpr); err != nil {
+	if _, err := m.cron.Parse(cronExpr); err != nil {
 		return fmt.Errorf("invalid cron expression: %v", err)
 	}
 

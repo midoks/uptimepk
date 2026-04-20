@@ -13,6 +13,7 @@ type Monitor struct {
 	MaxRetries int    `json:"max_retries"`          // max_retries
 	Timeout    int    `json:"timeout"`              // timeout
 	Mark       string `json:"mark"`                 // mark
+	IsDeleted  bool   `json:"is_deleted"`           // is_deleted
 	CreateTime int64  `json:"create_time"`          // create_time
 	UpdateTime int64  `json:"update_time"`          // update_time
 }
