@@ -64,7 +64,15 @@ func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64
 
 func GetMonitorGroupAll() ([]model.MonitorGroup, error) {
 	var list []model.MonitorGroup
-	if err := db.Order(columnName("order") + " ASC").Find(&list).Error; err != nil {
+	if err := db.Order(columnName("order")+" ASC").Where("status", 1).Find(&list).Error; err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return list, nil
+}
+
+func GetMonitorGroupAllByRelatedTg() ([]model.MonitorGroup, error) {
+	var list []model.MonitorGroup
+	if err := db.Order(columnName("order")+" ASC").Where("status", 1).Where("real_time", 1).Find(&list).Error; err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return list, nil

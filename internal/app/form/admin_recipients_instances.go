@@ -12,15 +12,18 @@ type AdminRecipientsInstances struct {
 	TelegramProxyValue     string `form:"telegram_proxy_value"`
 	TelegramListenEnable   bool   `form:"telegram_listen_enable"`
 	TelegramListenStrategy string `form:"telegram_listen_strategy"`
-	EmailSmtp              string `form:"email_smtp"`
-	EmailUsername          string `form:"email_username"`
-	EmailPassword          string `form:"email_password"`
-	EmailFrom              string `form:"email_from"`
-	WebhookUrl             string `form:"webhook_url"`
-	WebhookMethod          string `form:"webhook_method"`
-	Count                  int64  `form:"count" binding:"required"`
-	Minutes                int64  `form:"minutes" binding:"required"`
-	Status                 bool   `form:"status"`
+	RelateMonitorGroupID   int64  `form:"relate_monitor_group_id"`
+
+	EmailSmtp     string `form:"email_smtp"`
+	EmailUsername string `form:"email_username"`
+	EmailPassword string `form:"email_password"`
+	EmailFrom     string `form:"email_from"`
+
+	WebhookUrl    string `form:"webhook_url"`
+	WebhookMethod string `form:"webhook_method"`
+	Count         int64  `form:"count" binding:"required"`
+	Minutes       int64  `form:"minutes" binding:"required"`
+	Status        bool   `form:"status"`
 }
 
 type AdminRecipientsInstancesTest struct {

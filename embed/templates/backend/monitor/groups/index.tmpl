@@ -37,6 +37,7 @@ tableIns = table.render({
         {type: 'order', title: '', width: 60, toolbar:"#dragTpl"},
         {field:'name', title:'分组名称'},
         {field:'monitor_num', title:'监控数'},
+        {field:'real_time', title:'TG关联', toolbar:"#tgTpl"},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
     ]],
@@ -151,6 +152,14 @@ function opStatus(obj){
 
 <script type="text/html" id="dragTpl">
 <div style="cursor: move; text-align: center; color: #999;"><i class="layui-icon layui-icon-more"></i></div>
+</script>
+
+<script type="text/html" id="tgTpl">
+{{# if (d.real_time == 1){ }}
+<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="real_time">是</a>
+{{# } else if (d.real_time == 0) { }}
+<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="real_time">否</a>
+{{# } }}
 </script>
 
 <script type="text/html" id="statusTpl">

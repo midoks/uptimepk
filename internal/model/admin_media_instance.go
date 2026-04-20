@@ -26,6 +26,7 @@ type AdminMediaTelegramParams struct {
 	TelegramProxyValue     string `json:"telegram_proxy_value"`
 	TelegramListenEnable   bool   `json:"telegram_listen_enable"`
 	TelegramListenStrategy string `json:"telegram_listen_strategy"`
+	RelateMonitorGroupID   int64  `form:"relate_monitor_group_id"`
 }
 
 type AdminMediaWebhookParams struct {

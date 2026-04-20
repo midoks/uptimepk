@@ -178,7 +178,8 @@ func (t *MonitorTask) runTcpMonitor() error {
 	// 记录监控日志
 	speedMs := duration.Seconds() * 1000 // 转换为毫秒
 	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
-		return fmt.Printf("failed to insert monitor log: %v\n", err)
+		fmt.Printf("failed to insert monitor log: %v\n", err)
+		return err
 	}
 	return nil
 }

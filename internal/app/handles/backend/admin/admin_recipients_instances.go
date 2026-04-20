@@ -26,6 +26,9 @@ func RecipientsInstances(c *gin.Context) {
 
 func RecipientsInstancesAdd(c *gin.Context) {
 	data := common.CommonVer(c)
+
+	groups, _ := db.GetMonitorGroupAllByRelatedTg()
+	data["groups"] = groups
 	c.HTML(http.StatusOK, "backend/admin/recipients/instances_add.tmpl", data)
 }
 
@@ -37,6 +40,9 @@ func RecipientsInstancesDetails(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["id"] = id
 	data["Data"] = recipient_data
+
+	groups, _ := db.GetMonitorGroupAllByRelatedTg()
+	data["groups"] = groups
 	c.HTML(http.StatusOK, "backend/admin/recipients/instances_details.tmpl", data)
 }
 
@@ -48,6 +54,9 @@ func RecipientsInstancesUpdate(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["id"] = id
 	data["Data"] = recipient_data
+
+	groups, _ := db.GetMonitorGroupAllByRelatedTg()
+	data["groups"] = groups
 	c.HTML(http.StatusOK, "backend/admin/recipients/instances_update.tmpl", data)
 }
 
@@ -118,6 +127,7 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 			TelegramProxyValue:     field.TelegramProxyValue,
 			TelegramListenEnable:   field.TelegramListenEnable,
 			TelegramListenStrategy: field.TelegramListenStrategy,
+			RelateMonitorGroupID:   field.RelateMonitorGroupID,
 		})
 	}
 

@@ -6,9 +6,10 @@ type MonitorAdd struct {
 	Name string `form:"name"`
 	Type string `form:"type"`
 
-	Addr         string `form:"addr"`
-	CheckContent string `form:"check_content"`
-	UserAgent    string `form:"user_agent"`
+	Addr                 string `form:"addr"`
+	CheckContent         string `form:"check_content"`
+	UserAgent            string `form:"user_agent"`
+	RelateMonitorGroupID int64  `form:"relate_monitor_group_id"`
 
 	TcpHost string `form:"tcp_host"`
 	TcpPort int    `form:"tcp_port"`
