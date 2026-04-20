@@ -1,9 +1,10 @@
-package tools
+package utils
 
 import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 )
 
 func GetPublicIP() (ip string, err error) {
@@ -60,4 +61,38 @@ func GetAllIPs() ([]string, error) {
 	}
 
 	return ips, nil
+}
+
+// NewHTTPClient 创建一个优化的 HTTP 客户端
+func NewHTTPClient(timeout time.Duration) *http.Client {
+	// 创建一个自定义的传输层
+	transport := &http.Transport{
+		// 设置连接池
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		// 设置连接超时
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		// 设置 TLS 握手超时
+		TLSHandshakeTimeout: 10 * time.Second,
+		// 禁用 HTTP/2
+		ForceAttemptHTTP2: false,
+	}
+
+	// 创建 HTTP 客户端
+	client := &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// 允许重定向，最多重定向 10 次
+			if len(via) >= 10 {
+				return http.ErrUseLastResponse
+			}
+			return nil
+		},
+	}
+
+	return client
 }

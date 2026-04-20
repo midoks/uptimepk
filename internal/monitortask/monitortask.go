@@ -112,7 +112,10 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 
 	// 如果管理器未运行，启动它
 	if !m.running {
-		m.Start()
+		// 直接启动，避免死锁
+		m.cron.Start()
+		m.running = true
+		fmt.Println("Task manager started")
 	}
 
 	return nil
