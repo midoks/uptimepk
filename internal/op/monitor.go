@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"uptimepk/internal/db"
@@ -44,6 +45,13 @@ func (t *MonitorTask) Run() error {
 
 // runHttpMonitor 执行HTTP监控
 func (t *MonitorTask) runHttpMonitor() error {
+	// 获取HTTP监控参数
+	params, err := t.monitor.GetHttpTypeParams()
+	if err != nil {
+		SysLog(err.Error())
+		return err
+	}
+
 	// 记录重定向次数
 	redirectCount := 0
 
@@ -53,18 +61,11 @@ func (t *MonitorTask) runHttpMonitor() error {
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			redirectCount = len(via)
 			// 允许重定向，最多重定向 10 次
-			if len(via) >= 10 {
+			if len(via) >= t.monitor.MaxRetries {
 				return http.ErrUseLastResponse
 			}
 			return nil
 		},
-	}
-
-	// 获取HTTP监控参数
-	params, err := t.monitor.GetHttpTypeParams()
-	if err != nil {
-		SysLog(err.Error())
-		return err
 	}
 
 	// 初始化监控日志参数
@@ -72,42 +73,51 @@ func (t *MonitorTask) runHttpMonitor() error {
 	size := 0
 	var duration time.Duration
 	errorMsg := ""
+	var resp *http.Response
 
 	// 发送HTTP请求
 	startTime := time.Now()
-	resp, err := client.Get(params.Addr)
+	req, err := http.NewRequest("GET", params.Addr, nil)
 	if err != nil {
 		errorMsg = err.Error()
 	} else {
-		defer resp.Body.Close()
-
-		// 计算响应时间
-		duration = time.Since(startTime)
-
-		// 读取响应内容
-		body, err := io.ReadAll(resp.Body)
+		// 设置 User-Agent
+		if params.UserAgent != "" {
+			req.Header.Set("User-Agent", params.UserAgent)
+		}
+		resp, err = client.Do(req)
 		if err != nil {
 			errorMsg = err.Error()
 		} else {
-			// 检查状态码
-			isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
-			size = len(body)
+			defer resp.Body.Close()
 
-			// 记录监控结果
-			fmt.Printf("HTTP monitor for %s: %s\n", t.monitor.Name, params.Addr)
-			fmt.Printf("Status code: %d\n", resp.StatusCode)
-			fmt.Printf("Response time: %v\n", duration)
-			fmt.Printf("Response size: %d bytes\n", size)
-			if redirectCount > 0 {
-				fmt.Printf("Redirect count: %d\n", redirectCount)
-				fmt.Printf("Final URL: %s\n", resp.Request.URL.String())
-			}
-
-			// 输出监控状态
-			if isValid {
-				fmt.Printf("HTTP monitor %s: OK\n", t.monitor.Name)
+			duration = time.Since(startTime)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				errorMsg = err.Error()
 			} else {
-				fmt.Printf("HTTP monitor %s: WARNING - Status code %d\n", t.monitor.Name, resp.StatusCode)
+				// 检查状态码
+				isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
+				size = len(body)
+
+				// 记录监控结果
+				// fmt.Printf("HTTP monitor for %s: %s\n", t.monitor.Name, params.Addr)
+				// fmt.Printf("Status code: %d\n", resp.StatusCode)
+				// fmt.Printf("Response time: %v\n", duration)
+				// fmt.Printf("Response size: %d bytes\n", size)
+				// if redirectCount > 0 {
+				// 	fmt.Printf("Redirect count: %d\n", redirectCount)
+				// 	fmt.Printf("Final URL: %s\n", resp.Request.URL.String())
+				// }
+
+				//检查内容
+				if params.CheckContent != "" {
+					bodyStr := string(body)
+					if !strings.Contains(bodyStr, params.CheckContent) {
+						isValid = false
+						errorMsg = fmt.Sprintf("response does not contain expected content: %s", params.CheckContent)
+					}
+				}
 			}
 		}
 	}
@@ -117,7 +127,8 @@ func (t *MonitorTask) runHttpMonitor() error {
 	if duration > 0 {
 		speedMs = duration.Seconds() * 1000 // 转换为毫秒
 	}
-	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, t.monitor.MaxRetries); err != nil {
+
+	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, redirectCount); err != nil {
 		fmt.Printf("Failed to insert monitor log: %v\n", err)
 	}
 
@@ -189,53 +200,18 @@ func (t *MonitorTask) runUdpMonitor() error {
 	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
 	conn, err := net.DialTimeout("udp", addr, time.Duration(t.monitor.Timeout)*time.Second)
 	if err != nil {
-		// 记录错误监控日志
 		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
 		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
-			fmt.Printf("Failed to insert monitor log: %v\n", err)
+			return err
 		}
-
-		return fmt.Errorf("UDP connection failed: %v", err)
+		return fmt.Errorf("udp connection failed: %v", err)
 	}
 	defer conn.Close()
 
-	// 发送测试数据
-	testData := []byte("ping")
-	_, err = conn.Write(testData)
-	if err != nil {
-		// 记录错误监控日志
-		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
-			fmt.Printf("Failed to insert monitor log: %v\n", err)
-		}
-
-		return fmt.Errorf("UDP write failed: %v", err)
-	}
-
-	// 设置读取超时
-	conn.SetReadDeadline(time.Now().Add(time.Duration(t.monitor.Timeout) * time.Second))
-
-	// 读取响应
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		// UDP可能没有响应，这是正常的
-		fmt.Printf("UDP monitor for %s: %s:%d\n", t.monitor.Name, params.Host, params.Port)
-		fmt.Printf("No response received (normal for UDP)\n")
-	} else {
-		fmt.Printf("UDP monitor for %s: %s:%d\n", t.monitor.Name, params.Host, params.Port)
-		fmt.Printf("Response: %s\n", string(buf[:n]))
-	}
-
-	// 计算消耗时间
 	duration := time.Since(startTime)
-	fmt.Printf("Response time: %v\n", duration)
-	fmt.Printf("UDP monitor %s: OK\n", t.monitor.Name)
-
-	// 记录监控日志
 	speedMs := duration.Seconds() * 1000 // 转换为毫秒
 	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
-		fmt.Printf("Failed to insert monitor log: %v\n", err)
+		return err
 	}
 
 	return nil
@@ -244,7 +220,7 @@ func (t *MonitorTask) runUdpMonitor() error {
 // InitMonitorask 初始化监控任务
 func InitMonitorask() {
 	fmt.Println("Starting to initialize monitor tasks...")
-	manager := monitortask.GetManager()
+	mt_manager := monitortask.GetManager()
 
 	// 使用分页查询，支持大量数据
 	pageSize := 100
@@ -257,12 +233,12 @@ func InitMonitorask() {
 		offset := (page - 1) * pageSize
 
 		// 只查询启用的监控，减少数据量
+		// .Where("is_deleted = ?", 0)
 		if err := db.GetDb().Where("status = ?", true).Offset(offset).Limit(pageSize).Find(&monitors).Error; err != nil {
 			fmt.Printf("Failed to get monitor list (page %d): %v\n", page, err)
 			break
 		}
 
-		// 如果没有更多数据，退出循环
 		if len(monitors) == 0 {
 			break
 		}
@@ -283,7 +259,7 @@ func InitMonitorask() {
 			cronExpr := fmt.Sprintf("*/%d * * * * *", monitor.Interval)
 
 			// 添加任务到管理器
-			if err := manager.AddTask(task, cronExpr); err != nil {
+			if err := mt_manager.AddTask(task, cronExpr); err != nil {
 				fmt.Printf("Failed to add monitor task %s: %v\n", monitor.Name, err)
 				continue
 			}
@@ -301,11 +277,11 @@ func InitMonitorask() {
 	}
 
 	// 启动任务管理器
-	manager.Start()
+	mt_manager.Start()
 	fmt.Printf("Monitor tasks initialized: %d total, %d added\n", totalCount, addedCount)
 
 	// 列出所有任务，确认所有任务都已添加
-	tasks := manager.ListTasks()
+	tasks := mt_manager.ListTasks()
 	fmt.Printf("Total tasks added: %d\n", len(tasks))
 	for _, task := range tasks {
 		fmt.Printf("Task: %s (ID: %s, Cron: %s)\n", task.Name, task.ID, task.CronExpr)
