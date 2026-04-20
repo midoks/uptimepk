@@ -161,9 +161,8 @@ func (t *MonitorTask) runTcpMonitor() error {
 		// 记录错误监控日志
 		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
 		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
-			fmt.Printf("Failed to insert monitor log: %v\n", err)
+			fmt.Printf("failed to insert monitor log: %v\n", err)
 		}
-
 		return fmt.Errorf("TCP connection failed: %v", err)
 	}
 	defer conn.Close()
@@ -179,9 +178,8 @@ func (t *MonitorTask) runTcpMonitor() error {
 	// 记录监控日志
 	speedMs := duration.Seconds() * 1000 // 转换为毫秒
 	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
-		fmt.Printf("Failed to insert monitor log: %v\n", err)
+		return fmt.Printf("failed to insert monitor log: %v\n", err)
 	}
-
 	return nil
 }
 
@@ -192,7 +190,6 @@ func (t *MonitorTask) runUdpMonitor() error {
 		SysLog(err.Error())
 		return err
 	}
-
 	// 记录开始时间
 	startTime := time.Now()
 
@@ -213,7 +210,6 @@ func (t *MonitorTask) runUdpMonitor() error {
 	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
 		return err
 	}
-
 	return nil
 }
 
