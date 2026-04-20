@@ -1,0 +1,70 @@
+{[template "backend/common/header.tmpl" .]}
+
+
+<div class="layui-fluid">
+    <div class="layui-col-md12" style="padding: 5px;">
+        <div class="layui-card">
+            <div class="layui-card-body">
+
+                <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
+                    <button type="button" class="layui-btn layui-btn-sm" onclick="Admin.open('添加','/{[$.admin_path]}/monitor/group/add',500,350)">
+                        <i class="layui-icon layui-icon-add-circle"></i> 添加
+                    </button>
+                </div>
+
+                <div id="list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+layui.config({base: '/static/layuiadmin/'}).use(['table','jquery'], function(){
+///
+var admin = layui.admin
+,$ = layui.$
+,form = layui.form
+,table = layui.table;
+
+var tableIns, tableData = [];
+
+tableIns = table.render({
+    elem: '#list',
+    url: '/{[.admin_path]}/monitor/log/list',
+    title: '数据表',
+    cols: [[
+        {type: 'order', title: '', width: 60, toolbar:"#dragTpl"},
+        {field:'name', title:'分组名称'},
+        {field:'monitor_num', title:'监控数'},
+        {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
+        {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
+    ]],
+    page: true,
+    done: function(res, curr, count){
+    }
+});
+
+///
+});
+</script>
+
+
+<script type="text/html" id="dragTpl">
+<div style="cursor: move; text-align: center; color: #999;"><i class="layui-icon layui-icon-more"></i></div>
+</script>
+
+<script type="text/html" id="statusTpl">
+{{# if (d.status == 1){ }}
+<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="status">已启用</a>
+{{# } else if (d.status == 0) { }}
+<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="status">已暂停</a>
+{{# } }}
+</script>
+
+<script type="text/html" id="cmdTpl">
+<a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/group/add?id={{d.id}}',500,350)">修改</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/group/delete','{{d.id}}')">删除</a>
+</script>
+
+{[template "backend/common/footer.tmpl" .]}

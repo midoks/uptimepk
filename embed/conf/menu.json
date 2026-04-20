@@ -25,89 +25,27 @@
                     {
                         "code":"monitor_list",
                         "path": "/clusters/create"
-                    },
-                    {
-                        "code":"monitor_list",
-                        "path": "/clusters/update"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/boards"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/list"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/create_node"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/install"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/upgrade"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/settings"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/settings/health"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/delete"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/groups"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/cluster/settings"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/boards"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/install"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/details"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/logs"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/settings"
-                    },
-                    {
-                        "code":"clusters",
-                        "path": "/clusters/node/settings/ssh"
                     }
-                    
                 ]
             },
             {
-                "code": "monitor/group",
+                "code": "monitor_group",
                 "name": "监控分组",
                 "path": "/monitor/group",
                 "subapi":[
                     {
-                        "code":"monitor/group",
+                        "code":"monitor_group",
+                        "path": "/clusters/create"
+                    }
+                ]
+            },
+            {
+                "code": "monitor_log",
+                "name": "监控日志",
+                "path": "/monitor/log",
+                "subapi":[
+                    {
+                        "code":"monitor_log",
                         "path": "/clusters/create"
                     }
                 ]

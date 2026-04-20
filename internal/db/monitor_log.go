@@ -27,7 +27,6 @@ func CreateMonitorLog(monitorID int64, isConnect bool, size int, speed float64, 
 		ErrorMsg:   errorMsg,
 		MaxRetries: maxRetries,
 		CreateTime: timestamp,
-		UpdateTime: timestamp,
 	}
 
 	// 插入监控日志

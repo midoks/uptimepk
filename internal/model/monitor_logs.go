@@ -12,5 +12,4 @@ type MonitorLog struct {
 	ErrorMsg   string  `json:"error_msg"`            // error_msg
 	MaxRetries int     `json:"max_retries"`          // max_retries
 	CreateTime int64   `json:"create_time"`          // create_time
-	UpdateTime int64   `json:"update_time"`          // update_time
 }
