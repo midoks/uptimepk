@@ -109,9 +109,9 @@ form.on('submit(table-sreach)', function(){
 
 <script type="text/html" id="isVaildTpl">
 {{# if(d.is_valid == 1){ }}
-<span style="color:green;margin-right:2px;" data-speed="{{d.speed}}" data-size="{{d.size}}" data-hour="{{d.hour}}" data-minute="{{d.minute}}" class="speed-tip">●</span>
+<span style="color:green;text-align:center;display:block;" data-speed="{{d.speed}}" data-size="{{d.size}}" data-hour="{{d.hour}}" data-minute="{{d.minute}}" class="speed-tip">●</span>
 {{# } else if(d.is_valid == 0){ }}
-<span style="color:red;margin-right:2px;" data-error="{{d.error_msg}}" data-hour="{{d.hour}}" data-minute="{{d.minute}}" class="error-tip">●</span>
+<span style="color:red;text-align:center;display:block;" data-error="{{d.error_msg}}" data-hour="{{d.hour}}" data-minute="{{d.minute}}" class="error-tip">●</span>
 {{# } }}
 </script>
 
