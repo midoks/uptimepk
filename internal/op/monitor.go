@@ -76,14 +76,15 @@ func InitMonitorask() {
 	manager := monitortask.GetManager()
 
 	// 从数据库获取所有监控
-	monitors, _, err := db.GetMonitorList(1, 1000)
-	if err != nil {
+	var monitors []model.Monitor
+	if err := db.GetDb().Find(&monitors).Error; err != nil {
 		fmt.Printf("Failed to get monitor list: %v\n", err)
 		return
 	}
 
 	// 为每个监控创建任务
 	for _, monitor := range monitors {
+		fmt.Println("monitor:", monitor)
 		if !monitor.Status {
 			continue // 跳过禁用的监控
 		}

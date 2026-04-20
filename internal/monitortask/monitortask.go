@@ -83,10 +83,7 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 		return fmt.Errorf("task with id %s already exists", taskID)
 	}
 
-	// 验证 cron 表达式
-	if _, err := m.cron.Parse(cronExpr); err != nil {
-		return fmt.Errorf("invalid cron expression: %v", err)
-	}
+	// 验证 cron 表达式将在 AddFunc 中自动进行
 
 	// 添加到 cron
 	entryID, err := m.cron.AddFunc(cronExpr, func() {
@@ -151,10 +148,7 @@ func (m *Manager) UpdateTaskCron(taskID string, cronExpr string) error {
 		return fmt.Errorf("task with id %s not found", taskID)
 	}
 
-	// 验证 cron 表达式
-	if _, err := m.cron.Parse(cronExpr); err != nil {
-		return fmt.Errorf("invalid cron expression: %v", err)
-	}
+	// 验证 cron 表达式将在 AddFunc 中自动进行
 
 	// 移除旧的任务
 	m.cron.Remove(taskInfo.EntryID)

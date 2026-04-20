@@ -35,7 +35,7 @@ func runWeb(c *cli.Context) error {
 	// 初始化telegram监听任务
 	if conf.Security.InstallLock {
 		op.InitTelegramTask()
-		op.InitMonitorask()
+		go op.InitMonitorask()
 	}
 
 	app.Run()
