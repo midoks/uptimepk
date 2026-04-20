@@ -46,12 +46,13 @@
 
 <script type="text/javascript">
 
-layui.config({base: '/static/layuiadmin/'}).use(['table','jquery'], function(){
+layui.config({base: '/static/layuiadmin/'}).use(['table','jquery','layer'], function(){
 ///
 var admin = layui.admin
 ,$ = layui.$
 ,form = layui.form
-,table = layui.table;
+,table = layui.table
+,layer = layui.layer;
 
 var tableIns, tableData = [];
 
@@ -62,29 +63,44 @@ tableIns = table.render({
     cols: [[
         {field:'id', title:'ID', width:80},
         {field:'monitor_id', title:'监控ID', width:100},
-        {field:'day', title:'日期', width:120, templet: function(d){return (d.day+'').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
-        {field:'time', title:'时间', width:100, templet: function(d){return String(d.hour).padStart(2,'0')+':'+String(d.minute).padStart(2,'0')}},
-        {field:'is_valid', title:'状态', width:50, toolbar: "#isVaildTpl"},
-        {field:'size', title:'大小(Byte)', width:100},
-        {field:'speed', title:'耗时(ms)', width:100},
-        {field:'error_msg', title:'错误信息'},
+        {field:'day', title:'日期', templet: function(d){return (d.day+'').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
+        {field:'hour', title:'小时', templet: function(d){return String(d.hour).padStart(2,'0');}},
+        {field:'minute', title:'分钟', templet: function(d){return String(d.minute).padStart(2,'0');}},
+        {field:'is_valid', title:'状态', toolbar: "#isVaildTpl"},
+        {field:'size', title:'大小(Byte)'},
+        {field:'speed', title:'耗时(ms)'},
         {field:'create_time', title:'创建时间', width:185, templet: function(d){return layui.util.toDateString(d.create_time * 1000, 'yyyy-MM-dd HH:mm:ss');}},
         {title:'操作', toolbar: '#cmdTpl', width:70, fixed: 'right'}
     ]],
     page: true,
     done: function(res, curr, count){
+        $('#list').next('.layui-table-view').find('span[data-error]').on('mouseenter', function(){
+            var errorMsg = $(this).attr('data-error');
+            if(errorMsg){
+                layer.tips(errorMsg, this, {tips: [1, '#FF5722']});
+            }
+        }).on('mouseleave', function(){
+            layer.closeAll('tips');
+        });
     }
 });
 
+
+// search
+form.on('submit(table-sreach)', function(){
+    loadList(1, 10);
+    return false;
+});
 ///
 });
+
 </script>
 
 <script type="text/html" id="isVaildTpl">
 {{# if(d.is_valid == 1){ }}
 <span style="color:green;text-align:center;display:block;">●</span>
 {{# }else if(d.is_valid == 0){ }}
-<span style="color:red;text-align:center;display:block;">●</span>
+<span style="color:red;text-align:center;display:block;" data-error="{{d.error_msg}}">●</span>
 {{# } }}
 </script>
 
