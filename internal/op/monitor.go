@@ -68,7 +68,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 	}
 
 	// 初始化监控日志参数
-	isConnect := false
+	isValid := false
 	size := 0
 	var duration time.Duration
 	errorMsg := ""
@@ -90,7 +90,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 			errorMsg = err.Error()
 		} else {
 			// 检查状态码
-			isConnect = resp.StatusCode >= 200 && resp.StatusCode < 300
+			isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
 			size = len(body)
 
 			// 记录监控结果
@@ -104,7 +104,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 			}
 
 			// 输出监控状态
-			if isConnect {
+			if isValid {
 				fmt.Printf("HTTP monitor %s: OK\n", t.monitor.Name)
 			} else {
 				fmt.Printf("HTTP monitor %s: WARNING - Status code %d\n", t.monitor.Name, resp.StatusCode)
@@ -117,7 +117,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 	if duration > 0 {
 		speedMs = duration.Seconds() * 1000 // 转换为毫秒
 	}
-	if err := db.CreateMonitorLog(t.monitor.ID, isConnect, size, speedMs, errorMsg, t.monitor.MaxRetries); err != nil {
+	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, t.monitor.MaxRetries); err != nil {
 		fmt.Printf("Failed to insert monitor log: %v\n", err)
 	}
 

@@ -6,7 +6,7 @@ type MonitorLog struct {
 	Day        int64   `json:"day"`                  // day
 	Hour       int64   `json:"hour"`                 // hour
 	Minute     int     `json:"minute"`               // minute
-	IsConnect  bool    `json:"is_connect"`           // is_connect
+	IsValid    bool    `json:"is_valid"`             // is_valid
 	Size       int64   `json:"size"`                 // size (byte)
 	Speed      float64 `json:"speed"`                // speed (ms)
 	ErrorMsg   string  `json:"error_msg"`            // error_msg

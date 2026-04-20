@@ -36,3 +36,7 @@ uptimepk
 *.DS_Store
 /vendor
 *.sh
+*.db
+*.log
+uptimepk_test
+cookies.txt

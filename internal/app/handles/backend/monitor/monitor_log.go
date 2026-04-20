@@ -23,7 +23,11 @@ func MonitorLogList(c *gin.Context) {
 		return
 	}
 
-	result, count, _ := db.GetMonitorLogList(field.Page, field.Limit)
+	result, count, err := db.GetMonitorLogList(field.Page, field.Limit)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
 	common.SuccessLayuiResp(c, count, "ok", result)
 }
 

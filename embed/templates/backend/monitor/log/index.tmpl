@@ -6,6 +6,38 @@
         <div class="layui-card">
             <div class="layui-card-body">
 
+                <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
+                <form class="layui-form" action="" id="monitor_form" onclick="return false;">
+
+                    <div class="layui-inline mr0">
+                        <div class="layui-input-inline mr0">
+                            <input name="times" id="date_range" class="layui-input date-icon h30" type="text" placeholder="请选择日期范围" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="layui-inline mr0">
+                        <div class="layui-input-inline h30">
+                            <select name="gid" id="gid" class="layui-input h30">
+                                <option value="">类型</option>
+                                <option value="monitor_id">监控ID</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="layui-inline mr0">
+                        <div class="layui-input-inline mr0">
+                            <input type="text" name="key" placeholder="关键词" autocomplete="off" class="layui-input h30" value="">
+                        </div>
+                    </div>
+
+
+                    <div class="layui-inline mr0">
+                        <button class="layui-btn layui-btn-sm" id="table-sreach" data-id="list" lay-submit lay-filter="table-sreach"><i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                    </div>
+                </form>
+                </div>
+
                 <div id="list"></div>
             </div>
         </div>
@@ -30,13 +62,14 @@ tableIns = table.render({
     cols: [[
         {field:'id', title:'ID', width:80},
         {field:'monitor_id', title:'监控ID', width:100},
-        {field:'day', title:'日期', width:120, templet: function(d){return String(d.day).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
+        {field:'day', title:'日期', width:120, templet: function(d){return (d.day+'').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
         {field:'time', title:'时间', width:100, templet: function(d){return String(d.hour).padStart(2,'0')+':'+String(d.minute).padStart(2,'0')}},
-        {field:'is_connect', title:'状态', width:80, templet: function(d){return d.is_connect?'<span style="color:green">正常</span>':'<span style="color:red">失败</span>'}},
-        {field:'size', title:'大小(B)', width:100},
+        {field:'is_valid', title:'状态', width:50, toolbar: "#isVaildTpl"},
+        {field:'size', title:'大小(Byte)', width:100},
         {field:'speed', title:'耗时(ms)', width:100},
-        {field:'error_msg', title:'错误信息', width:200},
-        {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
+        {field:'error_msg', title:'错误信息'},
+        {field:'create_time', title:'创建时间', width:185, templet: function(d){return layui.util.toDateString(d.create_time * 1000, 'yyyy-MM-dd HH:mm:ss');}},
+        {title:'操作', toolbar: '#cmdTpl', width:70, fixed: 'right'}
     ]],
     page: true,
     done: function(res, curr, count){
@@ -45,6 +78,14 @@ tableIns = table.render({
 
 ///
 });
+</script>
+
+<script type="text/html" id="isVaildTpl">
+{{# if(d.is_valid == 1){ }}
+<span style="color:green;text-align:center;display:block;">●</span>
+{{# }else if(d.is_valid == 0){ }}
+<span style="color:red;text-align:center;display:block;">●</span>
+{{# } }}
 </script>
 
 <script type="text/html" id="cmdTpl">
