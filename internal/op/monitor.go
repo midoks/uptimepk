@@ -44,12 +44,6 @@ func (t *MonitorTask) Run() error {
 
 // runHttpMonitor 执行HTTP监控
 func (t *MonitorTask) runHttpMonitor() error {
-	params, err := t.monitor.GetHttpTypeParams()
-	if err != nil {
-		SysLog(err.Error())
-		return err
-	}
-
 	// 记录重定向次数
 	redirectCount := 0
 
@@ -66,49 +60,73 @@ func (t *MonitorTask) runHttpMonitor() error {
 		},
 	}
 
+	// 获取HTTP监控参数
+	params, err := t.monitor.GetHttpTypeParams()
+	if err != nil {
+		SysLog(err.Error())
+		return err
+	}
+
+	// 初始化监控日志参数
+	isConnect := false
+	size := 0
+	var duration time.Duration
+	errorMsg := ""
+
+	// 发送HTTP请求
 	startTime := time.Now()
 	resp, err := client.Get(params.Addr)
 	if err != nil {
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, time.Since(startTime).String(), err.Error(), t.monitor.MaxRetries); err != nil {
-			fmt.Printf("Failed to insert monitor log: %v\n", err)
-		}
-		return fmt.Errorf("HTTP request failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// 计算消耗时间
-	duration := time.Since(startTime)
-
-	// 读取响应内容
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		// 插入错误监控日志
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, duration.String(), err.Error(), t.monitor.MaxRetries); err != nil {
-			fmt.Printf("Failed to insert monitor log: %v\n", err)
-		}
-
-		return fmt.Errorf("failed to read response body: %v", err)
-	}
-
-	// 记录监控结果
-	fmt.Printf("HTTP monitor for %s: %s\n", t.monitor.Name, params.Addr)
-	fmt.Printf("Status code: %d\n", resp.StatusCode)
-	fmt.Printf("Response time: %v\n", duration)
-	fmt.Printf("Response size: %d bytes\n", len(body))
-	if redirectCount > 0 {
-		fmt.Printf("Redirect count: %d\n", redirectCount)
-		fmt.Printf("Final URL: %s\n", resp.Request.URL.String())
-	}
-
-	// 检查状态码是否正常
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		fmt.Printf("HTTP monitor %s: OK\n", t.monitor.Name)
+		errorMsg = err.Error()
 	} else {
-		fmt.Printf("HTTP monitor %s: WARNING - Status code %d\n", t.monitor.Name, resp.StatusCode)
+		defer resp.Body.Close()
+
+		// 计算响应时间
+		duration = time.Since(startTime)
+
+		// 读取响应内容
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			errorMsg = err.Error()
+		} else {
+			// 检查状态码
+			isConnect = resp.StatusCode >= 200 && resp.StatusCode < 300
+			size = len(body)
+
+			// 记录监控结果
+			fmt.Printf("HTTP monitor for %s: %s\n", t.monitor.Name, params.Addr)
+			fmt.Printf("Status code: %d\n", resp.StatusCode)
+			fmt.Printf("Response time: %v\n", duration)
+			fmt.Printf("Response size: %d bytes\n", size)
+			if redirectCount > 0 {
+				fmt.Printf("Redirect count: %d\n", redirectCount)
+				fmt.Printf("Final URL: %s\n", resp.Request.URL.String())
+			}
+
+			// 输出监控状态
+			if isConnect {
+				fmt.Printf("HTTP monitor %s: OK\n", t.monitor.Name)
+			} else {
+				fmt.Printf("HTTP monitor %s: WARNING - Status code %d\n", t.monitor.Name, resp.StatusCode)
+			}
+		}
 	}
 
-	if err := db.CreateMonitorLog(t.monitor.ID, resp.StatusCode >= 200 && resp.StatusCode < 300, len(body), duration.String(), "", t.monitor.MaxRetries); err != nil {
+	// 记录监控日志
+	speedMs := 0.0
+	if duration > 0 {
+		speedMs = duration.Seconds() * 1000 // 转换为毫秒
+	}
+	if err := db.CreateMonitorLog(t.monitor.ID, isConnect, size, speedMs, errorMsg, t.monitor.MaxRetries); err != nil {
 		fmt.Printf("Failed to insert monitor log: %v\n", err)
+	}
+
+	// 返回错误（如果有）
+	if errorMsg != "" {
+		if resp != nil {
+			return fmt.Errorf("failed to read response body: %v", errorMsg)
+		}
+		return fmt.Errorf("HTTP request failed: %v", errorMsg)
 	}
 
 	return nil
@@ -129,8 +147,9 @@ func (t *MonitorTask) runTcpMonitor() error {
 	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
 	conn, err := net.DialTimeout("tcp", addr, time.Duration(t.monitor.Timeout)*time.Second)
 	if err != nil {
-		// 插入错误监控日志
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, time.Since(startTime).String(), err.Error(), t.monitor.MaxRetries); err != nil {
+		// 记录错误监控日志
+		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
+		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
 			fmt.Printf("Failed to insert monitor log: %v\n", err)
 		}
 
@@ -146,8 +165,9 @@ func (t *MonitorTask) runTcpMonitor() error {
 	fmt.Printf("Response time: %v\n", duration)
 	fmt.Printf("TCP monitor %s: OK\n", t.monitor.Name)
 
-	// 插入监控日志
-	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, duration.String(), "", t.monitor.MaxRetries); err != nil {
+	// 记录监控日志
+	speedMs := duration.Seconds() * 1000 // 转换为毫秒
+	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
 		fmt.Printf("Failed to insert monitor log: %v\n", err)
 	}
 
@@ -169,8 +189,9 @@ func (t *MonitorTask) runUdpMonitor() error {
 	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
 	conn, err := net.DialTimeout("udp", addr, time.Duration(t.monitor.Timeout)*time.Second)
 	if err != nil {
-		// 插入错误监控日志
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, time.Since(startTime).String(), err.Error(), t.monitor.MaxRetries); err != nil {
+		// 记录错误监控日志
+		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
+		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
 			fmt.Printf("Failed to insert monitor log: %v\n", err)
 		}
 
@@ -182,8 +203,9 @@ func (t *MonitorTask) runUdpMonitor() error {
 	testData := []byte("ping")
 	_, err = conn.Write(testData)
 	if err != nil {
-		// 插入错误监控日志
-		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, time.Since(startTime).String(), err.Error(), t.monitor.MaxRetries); err != nil {
+		// 记录错误监控日志
+		speedMs := time.Since(startTime).Seconds() * 1000 // 转换为毫秒
+		if err := db.CreateMonitorLog(t.monitor.ID, false, 0, speedMs, err.Error(), t.monitor.MaxRetries); err != nil {
 			fmt.Printf("Failed to insert monitor log: %v\n", err)
 		}
 
@@ -210,8 +232,9 @@ func (t *MonitorTask) runUdpMonitor() error {
 	fmt.Printf("Response time: %v\n", duration)
 	fmt.Printf("UDP monitor %s: OK\n", t.monitor.Name)
 
-	// 插入监控日志
-	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, duration.String(), "", t.monitor.MaxRetries); err != nil {
+	// 记录监控日志
+	speedMs := duration.Seconds() * 1000 // 转换为毫秒
+	if err := db.CreateMonitorLog(t.monitor.ID, true, 0, speedMs, "", t.monitor.MaxRetries); err != nil {
 		fmt.Printf("Failed to insert monitor log: %v\n", err)
 	}
 
