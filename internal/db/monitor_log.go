@@ -8,7 +8,7 @@ import (
 )
 
 // CreateMonitorLog 创建并插入监控日志
-func CreateMonitorLog(monitorID int64, isConnect bool, size string, speed string, errorMsg string, maxRetries int) error {
+func CreateMonitorLog(monitorID int64, isConnect bool, size int, speed string, errorMsg string, maxRetries int) error {
 	// 获取当前时间
 	now := time.Now()
 	year, month, day := now.Date()
@@ -33,9 +33,9 @@ func CreateMonitorLog(monitorID int64, isConnect bool, size string, speed string
 		MonitorID:  strconv.FormatInt(monitorID, 10),
 		Day:        int64(year*10000 + int(month)*100 + day),
 		Hour:       int64(hour),
-		Minute:     strconv.Itoa(minute),
+		Minute:     minute,
 		IsConnect:  isConnect,
-		Size:       size,
+		Size:       int64(size),
 		Speed:      speedMs,
 		ErrorMsg:   errorMsg,
 		MaxRetries: maxRetries,
