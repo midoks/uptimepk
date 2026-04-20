@@ -4,12 +4,11 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	// log "github.com/sirupsen/logrus"
-
+	"uptimepk/internal/app/entity"
 	"uptimepk/internal/model"
 )
 
-func GetMonitorList(page, size int) ([]model.Monitor, int64, error) {
+func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
 	cluster := db.Model(&model.Monitor{})
 	var count int64
 	if err := cluster.Count(&count).Error; err != nil {
@@ -18,9 +17,23 @@ func GetMonitorList(page, size int) ([]model.Monitor, int64, error) {
 
 	var list []model.Monitor
 	if err := db.Order(columnName("id")).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
-		return nil, 0, errors.WithStack(err)
+		return nil, 0, errors.Wrap(err, "failed get monitor list")
 	}
-	return list, count, nil
+
+	if len(list) == 0 {
+		return []entity.MonitorEntityList{}, count, nil
+	}
+
+	result := make([]entity.MonitorEntityList, len(list))
+	for i, item := range list {
+		loglist, _, _ := GetMonitorLogListByMonitorID(item.ID, 1, 10)
+		result[i] = entity.MonitorEntityList{
+			Monitor: item,
+			LogList: loglist,
+		}
+	}
+
+	return result, count, nil
 }
 
 func GetMonitorByID(id int64) (*model.Monitor, error) {

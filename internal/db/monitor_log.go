@@ -34,6 +34,29 @@ func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
 	return list, count, nil
 }
 
+func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.MonitorLog, int64, error) {
+	// 确保 page 至少为 1
+	if page <= 0 {
+		page = 1
+	}
+	// 确保 size 至少为 1
+	if size <= 0 {
+		size = 10
+	}
+
+	mmlog := GetDb().Model(&model.MonitorLog{})
+	var count int64
+	if err := mmlog.Count(&count).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get monitor log count")
+	}
+
+	var list []model.MonitorLog
+	if err := GetDb().Where("monitor_id = ? ", monitor_id).Order(columnName("id") + " desc").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get monitor log list")
+	}
+	return list, count, nil
+}
+
 // CreateMonitorLog 创建并插入监控日志
 func CreateMonitorLog(monitorID int64, isValid bool, size int, speed float64, errorMsg string, maxRetries int) error {
 	// 获取当前时间
