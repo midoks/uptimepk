@@ -1,6 +1,8 @@
 package db
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
@@ -42,6 +44,33 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 		return nil, errors.Wrapf(err, "failed get admin")
 	}
 	return &u, nil
+}
+
+func MonitorTriggerStatus(tx *gorm.DB, id int64) error {
+	if tx == nil {
+		tx = db
+	}
+	var data model.Monitor
+	if err := tx.First(&data, id).Error; err != nil {
+		return errors.Wrapf(err, "failed get monitor group")
+	}
+
+	var status bool
+	if data.Status {
+		status = false
+	} else {
+		status = true
+	}
+
+	if err := tx.Model(&model.Monitor{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":      status,
+			"update_time": time.Now().Unix(),
+		}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func MonitorDeleteByID(tx *gorm.DB, id int64) error {

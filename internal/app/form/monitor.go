@@ -1,15 +1,21 @@
 package form
 
 type MonitorAdd struct {
-	ID         int64  `form:"id"`
-	Gid        int64  `form:"gid"` // gid
-	Name       string `form:"name"`
-	Type       string `form:"type"`
-	Addr       string `form:"addr"`
-	TcpHost    string `form:"tcp_host"`
-	TcpPort    int    `form:"tcp_port"`
-	UdpHost    string `form:"udp_host"`
-	UdpPort    int    `form:"udp_port"`
+	ID   int64  `form:"id"`
+	Gid  int64  `form:"gid"` // gid
+	Name string `form:"name"`
+	Type string `form:"type"`
+
+	Addr         string `form:"addr"`
+	CheckContent string `form:"check_content"`
+	UserAgent    string `form:"user_agent"`
+
+	TcpHost string `form:"tcp_host"`
+	TcpPort int    `form:"tcp_port"`
+
+	UdpHost string `form:"udp_host"`
+	UdpPort int    `form:"udp_port"`
+
 	Interval   int    `form:"interval"`    // interval
 	MaxRetries int    `form:"max_retries"` // max_retries
 	Timeout    int    `form:"timeout"`     // timeout

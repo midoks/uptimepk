@@ -19,7 +19,9 @@ type Monitor struct {
 }
 
 type MonitorHttpTypeParams struct {
-	Addr string `json:"addr"`
+	Addr         string `json:"addr"`
+	CheckContent string `json:"check_content"`
+	UserAgent    string `json:"user_agent"`
 }
 
 type MonitorTcpTypeParams struct {

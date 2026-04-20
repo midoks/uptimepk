@@ -117,6 +117,26 @@
                     </td>
                 </tr>
 
+                <tr class="id_http bls" style="display:none;">
+                    <td>是否包含内容</td>
+                    <td>
+                        <div class="layui-input-line">
+                            <input type="text" name="check_content" autocomplete="off" class="layui-input" placeholder="检查内容" value="{[if $.Data]}{[$.Data.GetHttpTypeParams.CheckContent]}{[end]}">
+                        </div>
+                        <p class="layui-font-12">填写后会检查内容是否包含填写内容，影响状态。</p>
+                    </td>
+                </tr>
+
+                <tr class="id_http bls" style="display:none;">
+                    <td>UserAgent</td>
+                    <td>
+                        <div class="layui-input-line">
+                            <input type="text" name="user_agent" autocomplete="off" class="layui-input" placeholder="" value="{[if $.Data]}{[$.Data.GetHttpTypeParams.UserAgent]}{[end]}">
+                        </div>
+                        <p class="layui-font-12">用户代理</p>
+                    </td>
+                </tr>
+
                 <tr class="id_tcp bls" style="display:none;">
                     <td>主机名</td>
                     <td>

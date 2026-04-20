@@ -77,7 +77,9 @@ func PostAdd(c *gin.Context) {
 
 	if field.Type == "http" {
 		common_data.SetHttpTypeParams(model.MonitorHttpTypeParams{
-			Addr: field.Addr,
+			Addr:         field.Addr,
+			CheckContent: field.CheckContent,
+			UserAgent:    field.UserAgent,
 		})
 	}
 
@@ -113,6 +115,21 @@ func PostAdd(c *gin.Context) {
 	}
 
 	common.SuccessResp(c)
+}
+
+func MonitorTriggerStatus(c *gin.Context) {
+	var field form.ID
+	if err := c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	err := db.MonitorTriggerStatus(nil, field.ID)
+	if err == nil {
+		common.SuccessResp(c)
+		return
+	}
+	common.ErrorResp(c, err, -1)
 }
 
 func Delete(c *gin.Context) {

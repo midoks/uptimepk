@@ -121,16 +121,26 @@ table.render({
 
 
 
-table.on('tool(list)', function(obj){
-    switch(obj.event){
-    };
-});
-
-
 table.on('toolbar', function(obj){
     switch(obj.event){
     };
 });
+
+table.on('tool(list)', function(obj){
+    switch(obj.event){
+        case 'status':opStatus(obj);break;
+    };
+});
+
+function opStatus(obj){
+    $.post('/{[.admin_path]}/monitor/trigger_status', {"id":obj.data.id}, function(data) {
+        showMsg(data.msg,function(){
+            if (data.code>-1){
+                location.reload();
+            }
+        },{icon:data.code>-1?1:2});
+    },'json');
+}
 
 
 ///
