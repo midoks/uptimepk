@@ -184,8 +184,7 @@
         <header>
             <h1>Uptime Status</h1>
             <div class="nav-links">
-                <a href="/">Homepage</a>
-                <a href="https://github.com" target="_blank">GitHub</a>
+                <a href="/">首页</a>
             </div>
         </header>
 
@@ -208,13 +207,67 @@
                 </div>
                 <div class="time-bar">
                     <!-- 60 segments for 60 days -->
-                    {{range $i := seq 60}}
-                        {{if in (slice 5 12 15 16 17 25 35 42 45 46 47 55 59) $i}}
-                            <div class="time-segment down"></div>
-                        {{else}}
-                            <div class="time-segment up"></div>
-                        {{end}}
-                    {{end}}
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
                 </div>
                 <div class="status-footer">
                     <div class="status-stats">今天</div>
@@ -233,9 +286,64 @@
                     </div>
                 </div>
                 <div class="time-bar">
-                    {{range $i := seq 60}}
-                        <div class="time-segment up"></div>
-                    {{end}}
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
                 </div>
                 <div class="status-footer">
                     <div class="status-stats">今天</div>
@@ -253,9 +361,63 @@
                     </div>
                 </div>
                 <div class="time-bar">
-                    {{range $i := seq 60}}
-                        <div class="time-segment up"></div>
-                    {{end}}
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
                 </div>
                 <div class="status-footer">
                     <div class="status-stats">今天</div>
@@ -274,13 +436,63 @@
                     </div>
                 </div>
                 <div class="time-bar">
-                    {{range $i := seq 60}}
-                        {{if in (slice 8 9 20 21 22 23 24 30 31 32 33 48) $i}}
-                            <div class="time-segment down"></div>
-                        {{else}}
-                            <div class="time-segment up"></div>
-                        {{end}}
-                    {{end}}
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
                 </div>
                 <div class="status-footer">
                     <div class="status-stats">今天</div>
@@ -291,8 +503,7 @@
         </div>
 
         <footer>
-            <p>基于 UptimeRobot 接口制作，检测频率 5 分钟</p>
-            <p>© 2026 Uptime Status</p>
+            <p>© 2026 - ∞ UptimePK</p>
         </footer>
     </div>
 

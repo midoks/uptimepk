@@ -14,3 +14,7 @@ type SettingAdminUI struct {
 	ProductName string `form:"product_name" binding:"required"`
 	SystemName  string `form:"system_name" binding:"required"`
 }
+
+type SettingWebUI struct {
+	Name string `form:"name" binding:"required"`
+}

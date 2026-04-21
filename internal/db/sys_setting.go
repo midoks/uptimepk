@@ -9,6 +9,7 @@ import (
 
 const (
 	SettingAdminUI = "admin_ui"
+	SettingWebUI   = "web_ui"
 )
 
 func GetSysSettingByCode(code string) (*model.SysSetting, error) {

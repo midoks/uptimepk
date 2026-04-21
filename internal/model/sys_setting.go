@@ -27,6 +27,11 @@ type SysSettingAdminUIValue struct {
 	SystemName  string `json:"system_name"`  // system_name
 }
 
+type SysSettingWebUIValue struct {
+	Name string `json:"name"` // name
+
+}
+
 func (a *SysSetting) SetLogValue(p SysSettingLogValue) error {
 	b, err := json.Marshal(p)
 	if err != nil {
@@ -57,6 +62,25 @@ func (a *SysSetting) GetAdminUIValue() (SysSettingAdminUIValue, error) {
 }
 
 func (a *SysSetting) SetAdminUIValue(p SysSettingAdminUIValue) error {
+	b, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+	a.Value = string(b)
+	return nil
+}
+
+func (a *SysSetting) GetWebUIValue() (SysSettingWebUIValue, error) {
+	var p SysSettingWebUIValue
+	if a.Value == "" {
+		return p, nil
+	}
+
+	err := json.Unmarshal([]byte(a.Value), &p)
+	return p, err
+}
+
+func (a *SysSetting) SetWebUIValue(p SysSettingWebUIValue) error {
 	b, err := json.Marshal(p)
 	if err != nil {
 		return err

@@ -14,27 +14,6 @@ import (
 	utils "uptimepk/internal/utils"
 )
 
-func GetSysSubMenu() []form.SubMenu {
-	menu := []form.SubMenu{
-		{
-			Number: 1,
-			Name:   "管理员界面设置",
-			Link:   "system/settings",
-		},
-		{
-			Number: 2,
-			Name:   "个人资料",
-			Link:   "system/settings/profile",
-		},
-		{
-			Number: 3,
-			Name:   "登录设置",
-			Link:   "system/settings/login",
-		},
-	}
-	return menu
-}
-
 func GetSysBaseSubMenu() []form.SubMenu {
 	menu := []form.SubMenu{
 		{
@@ -44,11 +23,16 @@ func GetSysBaseSubMenu() []form.SubMenu {
 		},
 		{
 			Number: 2,
+			Name:   "前端界面设置",
+			Link:   "system/settings/web",
+		},
+		{
+			Number: 3,
 			Name:   "个人资料",
 			Link:   "system/settings/profile",
 		},
 		{
-			Number: 3,
+			Number: 4,
 			Name:   "登录设置",
 			Link:   "system/settings/login",
 		},
@@ -59,7 +43,6 @@ func GetSysBaseSubMenu() []form.SubMenu {
 func Home(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
-
 	c.HTML(http.StatusOK, "backend/system/settings.tmpl", data)
 }
 
@@ -83,6 +66,46 @@ func PostHome(c *gin.Context) {
 	_, err := db.GetSysSettingByCode(db.SettingAdminUI)
 	if err == nil {
 		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingAdminUI).Updates(common_data).Error; err != nil {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+		common.SuccessResp(c)
+		return
+	}
+
+	common_data.CreateTime = time.Now().Unix()
+	if err := db.GetDb().Create(common_data).Error; err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	common.SuccessResp(c)
+}
+
+func Web(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysBaseSubMenu()
+	c.HTML(http.StatusOK, "backend/system/settings_web.tmpl", data)
+}
+
+func PostWeb(c *gin.Context) {
+	var field form.SettingWebUI
+	if err := c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	common_data := &model.SysSetting{
+		Code: db.SettingWebUI,
+		Uid:  0,
+	}
+
+	common_data.SetWebUIValue(model.SysSettingWebUIValue{
+		Name: field.Name,
+	})
+	common_data.UpdateTime = time.Now().Unix()
+	_, err := db.GetSysSettingByCode(db.SettingWebUI)
+	if err == nil {
+		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingWebUI).Updates(common_data).Error; err != nil {
 			common.ErrorResp(c, err, -1)
 			return
 		}

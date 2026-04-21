@@ -60,7 +60,7 @@ func PostInstallStep1(c *gin.Context) {
 	if conf.Security.InstallLock {
 		db.InitDb()
 		op.InitAdmin(init_account, init_pass)
-		op.InitSettingData()
+		op.InitSetting()
 	}
 
 	common.SuccessResp(c, gin.H{"token": "安装成功!"})
