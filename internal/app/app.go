@@ -29,7 +29,7 @@ import (
 	backend_system "uptimepk/internal/app/handles/backend/system"
 )
 
-func initTemp(r *gin.Engine) {
+func initTmplFunc(r *gin.Engine) {
 	// Define template functions
 	funcMap := template.FuncMap{
 		"safe": func(str string) template.HTML {
@@ -260,7 +260,7 @@ func Run() {
 	// r.Use(gin.Recovery())
 	r.SetTrustedProxies(nil)
 
-	initTemp(r)
+	initTmplFunc(r)
 	initRuote(r)
 	r.Run(fmt.Sprintf(":%d", conf.Web.HTTPPort))
 }

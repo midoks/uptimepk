@@ -1,17 +1,5 @@
 [
     {
-        "code": "home",
-        "name": "数据看板",
-        "icon": "layui-icon-console",
-        "path": "/index",
-        "subapi":[
-            {
-                "code":"home",
-                "path": "/admin/list"
-            }
-        ]
-    },
-    {
         "code": "monitor",
         "name": "监控管理",
         "icon": "layui-icon-engine",
