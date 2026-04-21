@@ -100,16 +100,6 @@ func (t *MonitorTask) runHttpMonitor() error {
 				isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
 				size = len(body)
 
-				// 记录监控结果
-				// fmt.Printf("HTTP monitor for %s: %s\n", t.monitor.Name, params.Addr)
-				// fmt.Printf("Status code: %d\n", resp.StatusCode)
-				// fmt.Printf("Response time: %v\n", duration)
-				// fmt.Printf("Response size: %d bytes\n", size)
-				// if redirectCount > 0 {
-				// 	fmt.Printf("Redirect count: %d\n", redirectCount)
-				// 	fmt.Printf("Final URL: %s\n", resp.Request.URL.String())
-				// }
-
 				//检查内容
 				if params.CheckContent != "" {
 					bodyStr := string(body)
@@ -129,15 +119,8 @@ func (t *MonitorTask) runHttpMonitor() error {
 	}
 
 	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, redirectCount); err != nil {
-		fmt.Printf("Failed to insert monitor log: %v\n", err)
-	}
-
-	// 返回错误（如果有）
-	if errorMsg != "" {
-		if resp != nil {
-			return fmt.Errorf("failed to read response body: %v", errorMsg)
-		}
-		return fmt.Errorf("HTTP request failed: %v", errorMsg)
+		fmt.Printf("failed to insert monitor log: %v\n", err)
+		return err
 	}
 
 	return nil
@@ -171,9 +154,9 @@ func (t *MonitorTask) runTcpMonitor() error {
 	duration := time.Since(startTime)
 
 	// 记录监控结果
-	fmt.Printf("TCP monitor for %s: %s:%d\n", t.monitor.Name, params.Host, params.Port)
-	fmt.Printf("Response time: %v\n", duration)
-	fmt.Printf("TCP monitor %s: OK\n", t.monitor.Name)
+	// fmt.Printf("TCP monitor for %s: %s:%d\n", t.monitor.Name, params.Host, params.Port)
+	// fmt.Printf("Response time: %v\n", duration)
+	// fmt.Printf("TCP monitor %s: OK\n", t.monitor.Name)
 
 	// 记录监控日志
 	speedMs := duration.Seconds() * 1000 // 转换为毫秒

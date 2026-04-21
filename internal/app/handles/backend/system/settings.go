@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -84,6 +85,13 @@ func PostHome(c *gin.Context) {
 func Web(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
+
+	setting_web_ui_data, err := db.GetSysSettingByCode(db.SettingWebUI)
+
+	fmt.Println("setting_web_ui_data:::", setting_web_ui_data)
+	if err == nil {
+		data["setting_web_ui"] = setting_web_ui_data
+	}
 	c.HTML(http.StatusOK, "backend/system/settings_web.tmpl", data)
 }
 
