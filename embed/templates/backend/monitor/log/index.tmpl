@@ -62,8 +62,8 @@ tableIns = table.render({
     title: '数据表',
     cols: [[
         {field:'id', title:'ID', width:80},
-        {field:'monitor_id', title:'监控ID', width:100},
-        {field:'day', title:'日期', templet: function(d){return (d.day+'').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
+        {field:'monitor_id', title:'监控ID', width:80},
+        {field:'day', title:'日期', width:120,templet: function(d){return (d.day+'').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}},
         {field:'hour', title:'小时', templet: function(d){return String(d.hour).padStart(2,'0');}},
         {field:'minute', title:'分钟', templet: function(d){return String(d.minute).padStart(2,'0');}},
         {field:'is_valid', title:'状态', toolbar: "#isVaildTpl"},

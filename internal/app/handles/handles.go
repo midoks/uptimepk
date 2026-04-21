@@ -16,10 +16,8 @@ func AdminPage(c *gin.Context) {
 }
 
 func Home(c *gin.Context) {
-	// err := op.AddLog(1, "测试")
-	// fmt.Println(err)
 	data := common.CommonVer(c)
-	c.HTML(http.StatusOK, "backend/admin/index.tmpl", data)
+	c.HTML(http.StatusOK, "home/index.tmpl", data)
 }
 
 func NotFound(c *gin.Context) {
