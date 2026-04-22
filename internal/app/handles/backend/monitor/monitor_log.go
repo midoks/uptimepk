@@ -32,13 +32,16 @@ func MonitorLogList(c *gin.Context) {
 }
 
 func MonitorLogDelete(c *gin.Context) {
-	var field form.ID
+	var field struct {
+		ID        int64  `form:"id"`
+		MonitorID string `form:"monitor_id"`
+	}
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
 
-	err := db.MonitorLogDeleteByID(nil, field.ID)
+	err := db.MonitorLogDeleteByID(nil, field.ID, field.MonitorID)
 	if err == nil {
 		common.SuccessResp(c)
 		return

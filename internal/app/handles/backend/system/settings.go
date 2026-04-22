@@ -2,7 +2,7 @@ package server
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"net/http"
 	"time"
 
@@ -87,8 +87,6 @@ func Web(c *gin.Context) {
 	data["submenu"] = GetSysBaseSubMenu()
 
 	setting_web_ui_data, err := db.GetSysSettingByCode(db.SettingWebUI)
-
-	fmt.Println("setting_web_ui_data:::", setting_web_ui_data)
 	if err == nil {
 		data["setting_web_ui"] = setting_web_ui_data
 	}

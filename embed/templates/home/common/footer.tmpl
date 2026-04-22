@@ -1,0 +1,31 @@
+        <footer>
+            <p>基于 UptimeRobot 接口制作，检测频率 5 分钟</p>
+            <p>© 2026 Uptime Status</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const statusCards = document.querySelectorAll('.status-card');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const tabName = this.dataset.tab;
+
+                    statusCards.forEach(card => {
+                        if (tabName === 'all' || card.dataset.category === tabName) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

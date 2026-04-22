@@ -52,7 +52,7 @@ func ParseAdminId(login_uid interface{}) int64 {
 
 func CommonVer(c *gin.Context) map[string]interface{} {
 	data := map[string]interface{}{
-		"title":   "MGOWEB",
+		"title":   "UPPK",
 		"version": conf.App.Version,
 	}
 
@@ -83,6 +83,19 @@ func CommonVer(c *gin.Context) map[string]interface{} {
 	setting_admin_ui_data, err := db.GetSysSettingByCode(db.SettingAdminUI)
 	if err == nil {
 		data["setting_admin_ui"] = setting_admin_ui_data
+	}
+
+	return data
+}
+
+func FrontendCommonVer(c *gin.Context) map[string]interface{} {
+	data := map[string]interface{}{
+		"version": conf.App.Version,
+	}
+
+	setting_web_ui_data, err := db.GetSysSettingByCode(db.SettingWebUI)
+	if err == nil {
+		data["setting_web_ui"] = setting_web_ui_data
 	}
 
 	return data

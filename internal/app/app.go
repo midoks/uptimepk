@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	// "time"
-
 	// gbrotli "github.com/anargu/gin-brotli"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
@@ -17,8 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"uptimepk/embed"
-	"uptimepk/internal/app/handles"
-	"uptimepk/internal/app/handles/install"
 	"uptimepk/internal/app/middleware"
 	"uptimepk/internal/conf"
 
@@ -27,6 +24,8 @@ import (
 	backend_log "uptimepk/internal/app/handles/backend/log"
 	backend_monitor "uptimepk/internal/app/handles/backend/monitor"
 	backend_system "uptimepk/internal/app/handles/backend/system"
+	"uptimepk/internal/app/handles/home"
+	"uptimepk/internal/app/handles/install"
 )
 
 func initTmplFunc(r *gin.Engine) {
@@ -94,10 +93,11 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.Use(middleware.CheckInstalled(), middleware.AuthRequired())
 
 	// 管理员
-	backstage_admin.GET("", backend.HomePage)
-	backstage_admin.GET("/index", handles.Home)
-	backstage_admin.GET("/admin/index", backend_admin.Home)
+	// backstage_admin.GET("", backend.HomePage)
+	backstage_admin.GET("", backend_monitor.Home)
+	backstage_admin.GET("/index", backend_monitor.Home)
 
+	backstage_admin.GET("/admin/index", backend_admin.Home)
 	backstage_admin.GET("/admin/add", backend_admin.Add)
 	backstage_admin.POST("/admin/add", backend_admin.PostAdd)
 	backstage_admin.GET("/admin/list", backend_admin.List)
@@ -190,11 +190,18 @@ func initRuoteInstall(r *gin.Engine) {
 	installGroup.POST("/step1", install.PostInstallStep1)
 }
 
+func initRuoteFrontend(r *gin.Engine) {
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong")
+	})
+	r.Use(middleware.CheckInstalled()).GET("/", home.Index)
+}
+
 func initRuote(r *gin.Engine) {
-	// Static files from embedded filesystem subdir "static"
+	// static files from embedded filesystem subdir "static"
 	staticFS, err := fs.Sub(embed.Static, "static")
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("initRuote:%v", err))
 	}
 	// 设置静态文件缓存为一周
 	staticHandler := http.StripPrefix("/static", http.FileServer(http.FS(staticFS)))
@@ -203,14 +210,10 @@ func initRuote(r *gin.Engine) {
 		c.Header("Permissions-Policy", "unload=*")
 		staticHandler.ServeHTTP(c.Writer, c.Request)
 	})
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
-	})
 
 	initRuoteInstall(r)
 	initRuoteAdmin(r)
-
-	r.Use(middleware.CheckInstalled()).GET("/", handles.Home)
+	initRuoteFrontend(r)
 }
 
 func Run() {

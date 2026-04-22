@@ -159,6 +159,11 @@ func Init(d *gorm.DB) {
 	if err != nil {
 		log.Fatalf("failed migrate database: %s", err.Error())
 	}
+
+	// 创建监控日志分表
+	if err := CreateMonitorLogTable(); err != nil {
+		log.Fatalf("failed create monitor log tables: %s", err.Error())
+	}
 }
 
 func AutoMigrate(dst ...interface{}) error {
