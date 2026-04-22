@@ -1,6 +1,5 @@
         <footer>
-            <p>基于 UptimeRobot 接口制作，检测频率 5 分钟</p>
-            <p>© 2026 Uptime Status</p>
+            <p>系统名称: UPPK | 版本: {[.version]}</p>
         </footer>
     </div>
 
@@ -8,14 +7,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab');
             const statusCards = document.querySelectorAll('.status-card');
-
+            
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
-
+                    
                     const tabName = this.dataset.tab;
-
+                    
                     statusCards.forEach(card => {
                         if (tabName === 'all' || card.dataset.category === tabName) {
                             card.style.display = 'block';
@@ -23,6 +22,63 @@
                             card.style.display = 'none';
                         }
                     });
+                });
+            });
+
+            // 为时间格子添加鼠标悬停事件
+            const timeCells = document.querySelectorAll('.time-cell');
+            timeCells.forEach(cell => {
+                cell.addEventListener('mouseenter', function(e) {
+                    const status = this.dataset.status;
+                    const time = this.dataset.time;
+                    const error = this.dataset.error || '';
+                    
+                    // 创建提示元素
+                    const tip = document.createElement('div');
+                    tip.className = 'time-cell-tip';
+                    tip.style.position = 'absolute';
+                    tip.style.backgroundColor = '#333';
+                    tip.style.color = '#fff';
+                    tip.style.padding = '5px 10px';
+                    tip.style.borderRadius = '4px';
+                    tip.style.fontSize = '12px';
+                    tip.style.zIndex = '1000';
+                    tip.style.pointerEvents = 'none';
+                    tip.style.whiteSpace = 'nowrap';
+                    
+                    // 根据状态设置不同的内容和样式
+                    if (status === 'up') {
+                        tip.innerHTML = `状态: <span style="color: #4CAF50;">正常</span> | 时间: ${time}`;
+                    } else if (status === 'down') {
+                        tip.innerHTML = `状态: <span style="color: #f44336;">故障</span> | 时间: ${time} | 错误: <span style="color: #f44336;">${error}</span>`;
+                    } else {
+                        tip.innerHTML = `状态: <span style="color: #ff9800;">未知</span> | 时间: ${time}`;
+                    }
+                    
+                    document.body.appendChild(tip);
+                    
+                    // 定位提示元素
+                    tip.style.top = `${e.pageY + 10}px`;
+                    tip.style.left = `${e.pageX + 10}px`;
+                    
+                    // 存储提示元素引用
+                    this._tip = tip;
+                });
+                
+                cell.addEventListener('mouseleave', function() {
+                    // 移除提示元素
+                    if (this._tip) {
+                        document.body.removeChild(this._tip);
+                        delete this._tip;
+                    }
+                });
+                
+                cell.addEventListener('mousemove', function(e) {
+                    // 跟随鼠标移动
+                    if (this._tip) {
+                        this._tip.style.top = `${e.pageY + 10}px`;
+                        this._tip.style.left = `${e.pageX + 10}px`;
+                    }
                 });
             });
         });
