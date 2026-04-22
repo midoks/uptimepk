@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logFileName = "mgo.log"
+	logFileName = "uppk.log"
 	logger      *go_logger.Logger
 )
 
