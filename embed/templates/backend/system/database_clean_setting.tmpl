@@ -14,7 +14,7 @@
                 </div>
 
 
-                 <div class="layui-tab layui-tab-brief">
+                <div class="layui-tab layui-tab-brief">
                     <ul class="layui-tab-title" id="status">
                         {[range $db_menu := .database_submenu]}
                             <li data-status="{[$db_menu.Number]}" {[if IsSubOrEq $.CurrentPath (print "/" $.admin_path "/" $db_menu.Link)]}class="layui-this"{[end]}><a href="/{[$.admin_path]}/{[$db_menu.Link]}">{[$db_menu.Name]}</a></li>

@@ -16,5 +16,6 @@ type SettingAdminUI struct {
 }
 
 type SettingWebUI struct {
-	Name string `form:"name" binding:"required"`
+	Name     string `form:"name"`
+	Subtitle string `form:"subtitle"`
 }

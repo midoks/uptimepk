@@ -22,6 +22,16 @@
                             </tr>
 
                             <tr>
+                                <td>副标题 *</td>
+                                <td>
+                                    <div class="layui-input-inline">
+                                        <input type="text" name="subtitle" autocomplete="off" class="layui-input" value="{[if .setting_web_ui]}{[.setting_web_ui.GetWebUIValue.Subtitle]}{[end]}" placeholder="">
+                                    </div>
+                                    <p class="layui-font-12 pt5"></p>
+                                </td>
+                            </tr>
+
+                            <tr>
                                 <td colspan="2" >
                                     <button class="layui-btn" lay-filter="setting_web_ui" lay-submit>保存</button>
                                 </td>

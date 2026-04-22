@@ -106,7 +106,8 @@ func PostWeb(c *gin.Context) {
 	}
 
 	common_data.SetWebUIValue(model.SysSettingWebUIValue{
-		Name: field.Name,
+		Name:     field.Name,
+		Subtitle: field.Subtitle,
 	})
 	common_data.UpdateTime = time.Now().Unix()
 	_, err := db.GetSysSettingByCode(db.SettingWebUI)

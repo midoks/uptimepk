@@ -28,8 +28,8 @@ type SysSettingAdminUIValue struct {
 }
 
 type SysSettingWebUIValue struct {
-	Name string `json:"name"` // name
-
+	Name     string `json:"name"`     // name
+	Subtitle string `json:"subtitle"` // subtitle
 }
 
 func (a *SysSetting) SetLogValue(p SysSettingLogValue) error {

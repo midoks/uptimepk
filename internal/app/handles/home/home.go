@@ -16,6 +16,10 @@ func Index(c *gin.Context) {
 
 	groups, _ := db.GetMonitorGroupAll()
 	data["groups"] = groups
+
+	monitor_list, _, _ := db.GetMonitorListSimple(1, 10)
+	data["monitor_list"] = monitor_list
+
 	c.HTML(http.StatusOK, "home/index.tmpl", data)
 }
 
