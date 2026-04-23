@@ -1,7 +1,7 @@
 package conf
 
 import (
-	// "fmt"
+	"fmt"
 	// "net/url"
 	"os"
 	"path/filepath"
@@ -61,6 +61,8 @@ func InstallConf(data map[string]string) error {
 	// admin_path := fmt.Sprintf("/mgo_%s", randString(6))
 	admin_path := "uptimepk"
 	yamlConfig.Web.AdminPath = admin_path
+
+	fmt.Println(data["dbname"])
 
 	// Update database settings
 	if strings.EqualFold(data["type"], "mysql") {

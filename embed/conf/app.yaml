@@ -85,7 +85,7 @@ security:
   # Whether to set cookie to indicate user login status.
   enable_login_status_cookie: true
   # The cookie name to store user login status.
-  login_status_cookie_name: login_status
+  login_status_cookie_name: uppk_login_status
 
 database:
   # Database type: sqlite3, mysql, postgres
@@ -99,5 +99,5 @@ database:
   hostport: 3306
   name: uptimepk
   user: root
-  password: 
-  ssl_mode: disable
+  password: ""
+  ssl_mode: "false"
