@@ -32,6 +32,7 @@ go.work.sum
 # .vscode/
 /logs
 /custom
+/custom_*
 uptimepk
 *.DS_Store
 /vendor
