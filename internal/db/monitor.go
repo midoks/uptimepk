@@ -14,7 +14,7 @@ func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
 	cluster := db.Model(&model.Monitor{})
 	var count int64
 	if err := cluster.Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get server count")
+		return nil, 0, errors.Wrapf(err, "failed get monitor count")
 	}
 
 	var list []model.Monitor
@@ -42,7 +42,7 @@ func GetMonitorListSimple(page, size int) ([]model.Monitor, int64, error) {
 	cluster := db.Model(&model.Monitor{})
 	var count int64
 	if err := cluster.Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get server count")
+		return nil, 0, errors.Wrapf(err, "failed get monitor count")
 	}
 
 	var list []model.Monitor
