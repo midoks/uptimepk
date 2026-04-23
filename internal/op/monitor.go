@@ -91,21 +91,25 @@ func (t *MonitorTask) runHttpMonitor() error {
 			defer resp.Body.Close()
 
 			duration = time.Since(startTime)
-			body, err := io.ReadAll(resp.Body)
+			// 使用 io.LimitReader 限制读取大小，防止服务器发送过多数据
+			maxSize := int64(10 * 1024 * 1024) // 10MB
+			body, err := io.ReadAll(io.LimitReader(resp.Body, maxSize))
 			if err != nil {
-				errorMsg = err.Error()
-			} else {
-				// 检查状态码
-				isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
-				size = len(body)
+				// 忽略 Content-Length 不匹配的错误
+				if !strings.Contains(err.Error(), "server replied with more than declared Content-Length") {
+					errorMsg = err.Error()
+				}
+			}
+			// 检查状态码
+			isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
+			size = len(body)
 
-				//检查内容
-				if params.CheckContent != "" {
-					bodyStr := string(body)
-					if !strings.Contains(bodyStr, params.CheckContent) {
-						isValid = false
-						errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
-					}
+			//检查内容
+			if params.CheckContent != "" {
+				bodyStr := string(body)
+				if !strings.Contains(bodyStr, params.CheckContent) {
+					isValid = false
+					errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
 				}
 			}
 		}
@@ -194,8 +198,30 @@ func (t *MonitorTask) runUdpMonitor() error {
 	return nil
 }
 
-func xx() {
+func MonitorAddTask(mm model.Monitor) error {
+	mt_manager := monitortask.GetManager()
 
+	// 根据监控间隔生成cron表达式
+	// 例如：每60秒执行一次 -> "*/60 * * * * *"
+	// 使用6字段cron表达式（秒、分、时、日、月、周）
+	cronExpr := fmt.Sprintf("*/%d * * * * *", mm.Interval)
+	task := &MonitorTask{monitor: &mm}
+
+	// 添加任务到管理器
+	if err := mt_manager.AddTask(task, cronExpr); err != nil {
+		return fmt.Errorf("failed to add monitor task %s: %v\n", mm.Name, err)
+	}
+	return nil
+}
+
+func MonitorDeleteTask(mm model.Monitor) error {
+	mt_manager := monitortask.GetManager()
+	task := &MonitorTask{monitor: &mm}
+	// 删除任务
+	if err := mt_manager.RemoveTask(task.ID()); err != nil {
+		return fmt.Errorf("failed to remove monitor task %s: %v\n", mm.Name, err)
+	}
+	return nil
 }
 
 // InitMonitorask 初始化监控任务
@@ -214,9 +240,8 @@ func InitMonitorask() {
 		offset := (page - 1) * pageSize
 
 		// 只查询启用的监控，减少数据量
-		// .Where("is_deleted = ?", 0)
-		if err := db.GetDb().Where("status = ?", true).Offset(offset).Limit(pageSize).Find(&monitors).Error; err != nil {
-			fmt.Printf("Failed to get monitor list (page %d): %v\n", page, err)
+		if err := db.GetDb().Where("status = ?", true).Where("is_deleted = ?", 0).Offset(offset).Limit(pageSize).Find(&monitors).Error; err != nil {
+			fmt.Printf("failed to get monitor list (page %d): %v\n", page, err)
 			break
 		}
 
@@ -224,28 +249,15 @@ func InitMonitorask() {
 			break
 		}
 
-		fmt.Printf("Found %d monitors on page %d\n", len(monitors), page)
+		// fmt.Printf("Found %d monitors on page %d\n", len(monitors), page)
 		totalCount += len(monitors)
-
 		// 为每个监控创建任务
 		for _, monitor := range monitors {
-			fmt.Printf("Processing monitor: %s (ID: %d, Type: %s, Interval: %d)\n",
-				monitor.Name, monitor.ID, monitor.Type, monitor.Interval)
-
-			task := &MonitorTask{monitor: &monitor}
-
-			// 根据监控间隔生成cron表达式
-			// 例如：每60秒执行一次 -> "*/60 * * * * *"
-			// 使用6字段cron表达式（秒、分、时、日、月、周）
-			cronExpr := fmt.Sprintf("*/%d * * * * *", monitor.Interval)
-
-			// 添加任务到管理器
-			if err := mt_manager.AddTask(task, cronExpr); err != nil {
-				fmt.Printf("Failed to add monitor task %s: %v\n", monitor.Name, err)
+			if err := MonitorAddTask(monitor); err != nil {
+				fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
 				continue
 			}
-
-			fmt.Printf("Added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
+			fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
 			addedCount++
 		}
 
