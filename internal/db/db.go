@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	_ "modernc.org/sqlite"
 
 	"uptimepk/internal/conf"
 	"uptimepk/internal/model"
@@ -67,8 +66,9 @@ func InitDb() {
 				log.Fatalf("db name error.")
 			}
 
+			var dsn string
 			if strings.HasPrefix(database.Path, "/") {
-				dB, err = gorm.Open(sqlite.Open(fmt.Sprintf("%s?_journal=WAL&_vacuum=incremental", database.Path)), gormConfig)
+				dsn = database.Path
 			} else {
 				conf_path := conf.WorkDir()
 				custom_dir := fmt.Sprintf("%s/custom", conf_path)
@@ -80,7 +80,35 @@ func InitDb() {
 					os.MkdirAll(db_dir, os.ModePerm)
 				}
 
-				dB, err = gorm.Open(sqlite.Open(fmt.Sprintf("%s?_journal=WAL&_vacuum=incremental", db_file)), gormConfig)
+				dsn = db_file
+			}
+
+			// 使用 github.com/glebarez/sqlite 驱动（不需要 CGO）
+			dB, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{
+				NamingStrategy: schema.NamingStrategy{
+					TablePrefix: prefix,
+				},
+				Logger:                                   newLogger,
+				PrepareStmt:                              true,
+				DisableForeignKeyConstraintWhenMigrating: true,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to connect database:%s", err.Error())
+			}
+
+			// 配置连接池
+			sqlDB, err := dB.DB()
+			if err == nil {
+				sqlDB.SetMaxIdleConns(25)
+				sqlDB.SetMaxOpenConns(100)
+				sqlDB.SetConnMaxLifetime(time.Hour * 2)
+				sqlDB.SetConnMaxIdleTime(time.Minute * 10)
+
+				// 测试连接
+				if err := sqlDB.Ping(); err != nil {
+					log.Fatalf("failed to ping database:%s", err.Error())
+				}
 			}
 
 		}
