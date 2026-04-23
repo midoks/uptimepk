@@ -116,9 +116,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 	if duration > 0 {
 		speedMs = duration.Seconds() * 1000 // 转换为毫秒
 	}
-	fmt.Println("http:", err)
 	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, redirectCount); err != nil {
-		fmt.Printf("failed to insert monitor log: %v\n", err)
 		return err
 	}
 
@@ -194,6 +192,10 @@ func (t *MonitorTask) runUdpMonitor() error {
 		return err
 	}
 	return nil
+}
+
+func xx() {
+
 }
 
 // InitMonitorask 初始化监控任务

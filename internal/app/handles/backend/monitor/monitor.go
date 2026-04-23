@@ -124,7 +124,22 @@ func MonitorTriggerStatus(c *gin.Context) {
 		return
 	}
 
-	err := db.MonitorTriggerStatus(nil, field.ID)
+	err := db.MonitorTriggerStatus(field.ID)
+	if err == nil {
+		common.SuccessResp(c)
+		return
+	}
+	common.ErrorResp(c, err, -1)
+}
+
+func SoftDelete(c *gin.Context) {
+	var field form.ID
+	if err := c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	err := db.MonitorDeleteByID(nil, field.ID)
 	if err == nil {
 		common.SuccessResp(c)
 		return

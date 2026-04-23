@@ -68,12 +68,9 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 	return &u, nil
 }
 
-func MonitorTriggerStatus(tx *gorm.DB, id int64) error {
-	if tx == nil {
-		tx = db
-	}
+func MonitorTriggerStatus(id int64) error {
 	var data model.Monitor
-	if err := tx.First(&data, id).Error; err != nil {
+	if err := db.First(&data, id).Error; err != nil {
 		return errors.Wrapf(err, "failed get monitor group")
 	}
 
@@ -84,7 +81,7 @@ func MonitorTriggerStatus(tx *gorm.DB, id int64) error {
 		status = true
 	}
 
-	if err := tx.Model(&model.Monitor{}).
+	if err := db.Model(&model.Monitor{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status":      status,
