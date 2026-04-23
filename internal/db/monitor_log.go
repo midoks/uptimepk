@@ -71,38 +71,54 @@ func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
 		totalCount += count
 	}
 
-	// 遍历所有分表，获取数据
-	var allList []model.MonitorLog
-	for i := 0; i < 128; i++ {
-		tableName := prefix + "monitor_logs_" + strconv.Itoa(i)
-		var list []model.MonitorLog
-		if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Find(&list).Error; err != nil {
-			// 忽略表不存在的错误
-			continue
-		}
-		allList = append(allList, list...)
-	}
+	// 直接在数据库层面进行分页查询，不加载所有数据到内存
+	var resultList []model.MonitorLog
+	offset := (page - 1) * size
+	remaining := size
+	tableIndex := 0
 
-	// 按 ID 降序排序
-	for i := 0; i < len(allList); i++ {
-		for j := i + 1; j < len(allList); j++ {
-			if allList[i].ID < allList[j].ID {
-				allList[i], allList[j] = allList[j], allList[i]
+	// 遍历分表收集数据直到填满一页
+	for tableIndex < 128 && remaining > 0 {
+		tableName := prefix + "monitor_logs_" + strconv.Itoa(tableIndex)
+		var tableData []model.MonitorLog
+
+		// 尝试从当前表获取数据
+		query := GetDb().Table(tableName).Order(columnName("id") + " desc")
+
+		if offset > 0 {
+			// 跳过前面表的数据
+			var count int64
+			if err := GetDb().Table(tableName).Count(&count).Error; err != nil {
+				tableIndex++
+				continue
+			}
+
+			if int64(offset) >= count {
+				offset -= int(count)
+				tableIndex++
+				continue
+			}
+
+			// 从当前表获取部分数据
+			if err := query.Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+				tableIndex++
+				continue
+			}
+			offset = 0
+		} else {
+			// 直接从当前表获取剩余所需数据
+			if err := query.Limit(remaining).Find(&tableData).Error; err != nil {
+				tableIndex++
+				continue
 			}
 		}
+
+		resultList = append(resultList, tableData...)
+		remaining -= len(tableData)
+		tableIndex++
 	}
 
-	// 计算分页
-	offset := (page - 1) * size
-	end := offset + size
-	if offset > len(allList) {
-		return []model.MonitorLog{}, totalCount, nil
-	}
-	if end > len(allList) {
-		end = len(allList)
-	}
-
-	return allList[offset:end], totalCount, nil
+	return resultList, totalCount, nil
 }
 
 func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.MonitorLog, int64, error) {
@@ -132,6 +148,34 @@ func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.Mon
 		return nil, 0, errors.Wrapf(err, "failed get monitor log list")
 	}
 	return list, count, nil
+}
+
+func GetMonitorLogListByDate(monitor_id int64, day int64) ([]model.MonitorLog, error) {
+	// 转换 monitorID 为字符串
+	monitorIDStr := strconv.FormatInt(monitor_id, 10)
+
+	// 获取分表名
+	tableName := getMonitorLogTableName(monitorIDStr)
+
+	var list []model.MonitorLog
+	if err := GetDb().Table(tableName).Where("monitor_id = ? AND day = ?", monitor_id, day).Order(columnName("id") + " asc").Find(&list).Error; err != nil {
+		return nil, errors.Wrapf(err, "failed get monitor log list by date")
+	}
+	return list, nil
+}
+
+func GetMonitorLatestLog(monitor_id int64) (*model.MonitorLog, error) {
+	// 转换 monitorID 为字符串
+	monitorIDStr := strconv.FormatInt(monitor_id, 10)
+
+	// 获取分表名
+	tableName := getMonitorLogTableName(monitorIDStr)
+
+	var log model.MonitorLog
+	if err := GetDb().Table(tableName).Where("monitor_id = ? ", monitor_id).Order(columnName("id") + " desc").First(&log).Error; err != nil {
+		return nil, err
+	}
+	return &log, nil
 }
 
 // CreateMonitorLog 创建并插入监控日志

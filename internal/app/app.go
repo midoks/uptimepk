@@ -200,6 +200,7 @@ func initRuoteFrontend(r *gin.Engine) {
 		c.String(200, "pong")
 	})
 	r.Use(middleware.CheckInstalled()).GET("/", home.Index)
+	r.GET("/ws/status", home.WSHandler)
 }
 
 func initRuote(r *gin.Engine) {

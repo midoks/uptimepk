@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uptime Status</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #3498db;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #2980b9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background-color: #fff;
+            border: 1px solid #eaeaea;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background-color: #f8f9fa;
+        }
+
+        .tab.active {
+            background-color: #3498db;
+            color: #fff;
+            border-color: #3498db;
+        }
+
+        .status-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .service-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-indicator.up {
+            color: #27ae60;
+        }
+
+        .status-indicator.down {
+            color: #e74c3c;
+        }
+
+        .time-bar {
+            display: flex;
+            height: 12px;
+            background-color: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .time-segment {
+            flex: 1;
+            height: 100%;
+            margin-right: 1px;
+        }
+
+        .time-segment.up {
+            background-color: #27ae60;
+        }
+
+        .time-segment.down {
+            background-color: #e74c3c;
+        }
+
+        .status-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .status-stats {
+            text-align: center;
+            flex: 1;
+        }
+
+        .date {
+            text-align: right;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 768px) {
+            .status-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .date {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Uptime Status</h1>
+            <div class="nav-links">
+                <a href="/">首页</a>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="all">All</div>
+            <div class="tab" data-tab="blog">Blog</div>
+            <div class="tab" data-tab="api">API</div>
+            <div class="tab" data-tab="service">Service</div>
+        </div>
+
+        <div class="status-container">
+            <!-- Blog category -->
+            <div class="status-card" data-category="blog">
+                <div class="status-header">
+                    <div class="service-name">blog</div>
+                    <div class="status-indicator down">
+                        <i class="fas fa-times"></i>
+                        <span>无法访问</span>
+                    </div>
+                </div>
+                <div class="time-bar">
+                    <!-- 60 segments for 60 days -->
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                </div>
+                <div class="status-footer">
+                    <div class="status-stats">今天</div>
+                    <div class="status-stats">最近 60 天故障 13 次，累计 337 小时 10 分 34 秒，平均可用率 0%</div>
+                    <div class="date">2026-02-21</div>
+                </div>
+            </div>
+
+            <!-- API category -->
+            <div class="status-card" data-category="api">
+                <div class="status-header">
+                    <div class="service-name">cachecha</div>
+                    <div class="status-indicator up">
+                        <i class="fas fa-check"></i>
+                        <span>正常</span>
+                    </div>
+                </div>
+                <div class="time-bar">
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                </div>
+                <div class="status-footer">
+                    <div class="status-stats">今天</div>
+                    <div class="status-stats">最近 60 天可用率 100%</div>
+                    <div class="date">2026-02-21</div>
+                </div>
+            </div>
+
+            <div class="status-card" data-category="api">
+                <div class="status-header">
+                    <div class="service-name">m3u8</div>
+                    <div class="status-indicator up">
+                        <i class="fas fa-check"></i>
+                        <span>正常</span>
+                    </div>
+                </div>
+                <div class="time-bar">
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                </div>
+                <div class="status-footer">
+                    <div class="status-stats">今天</div>
+                    <div class="status-stats">最近 60 天可用率 100%</div>
+                    <div class="date">2026-02-21</div>
+                </div>
+            </div>
+
+            <!-- Service category -->
+            <div class="status-card" data-category="service">
+                <div class="status-header">
+                    <div class="service-name">zzzkan</div>
+                    <div class="status-indicator up">
+                        <i class="fas fa-check"></i>
+                        <span>正常</span>
+                    </div>
+                </div>
+                <div class="time-bar">
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment down"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                    <div class="time-segment up"></div>
+                </div>
+                <div class="status-footer">
+                    <div class="status-stats">今天</div>
+                    <div class="status-stats">最近 60 天故障 16 次，累计 22 小时 30 分 51 秒，平均可用率 98.43%</div>
+                    <div class="date">2026-02-21</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2026 - ∞ UptimePK</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const statusCards = document.querySelectorAll('.status-card');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+
+                    const tabName = this.dataset.tab;
+
+                    // Show/hide status cards based on tab
+                    statusCards.forEach(card => {
+                        if (tabName === 'all' || card.dataset.category === tabName) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

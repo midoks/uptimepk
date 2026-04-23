@@ -3,18 +3,50 @@
         </footer>
     </div>
 
+    <style>
+        .time-grid {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e6e6e6;
+            border-radius: 4px;
+            padding: 10px;
+            width: 100%;
+        }
+        .time-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .time-cell.up {
+            background-color: #27ae60;
+        }
+        .time-cell.down {
+            background-color: #e74c3c;
+        }
+        .time-cell.unknown {
+            background-color: #f0f0f0;
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab');
             const statusCards = document.querySelectorAll('.status-card');
-            
+
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
-                    
+
                     const tabName = this.dataset.tab;
-                    
+
                     statusCards.forEach(card => {
                         if (tabName === 'all' || card.dataset.category === tabName) {
                             card.style.display = 'block';
@@ -26,61 +58,475 @@
             });
 
             // 为时间格子添加鼠标悬停事件
-            const timeCells = document.querySelectorAll('.time-cell');
-            timeCells.forEach(cell => {
-                cell.addEventListener('mouseenter', function(e) {
-                    const status = this.dataset.status;
-                    const time = this.dataset.time;
-                    const error = this.dataset.error || '';
-                    
+            document.addEventListener('mouseenter', function(e) {
+                if (!e.target || !e.target.classList) return;
+                if (e.target.classList.contains('time-cell')) {
+                    const cell = e.target;
+                    const status = cell.dataset.status;
+                    const time = cell.dataset.time;
+                    const error = cell.dataset.error || '';
+
                     // 创建提示元素
                     const tip = document.createElement('div');
                     tip.className = 'time-cell-tip';
-                    tip.style.position = 'absolute';
+                    tip.style.position = 'fixed';
                     tip.style.backgroundColor = '#333';
                     tip.style.color = '#fff';
                     tip.style.padding = '5px 10px';
                     tip.style.borderRadius = '4px';
                     tip.style.fontSize = '12px';
-                    tip.style.zIndex = '1000';
+                    tip.style.zIndex = '10000';
                     tip.style.pointerEvents = 'none';
                     tip.style.whiteSpace = 'nowrap';
-                    
+
                     // 根据状态设置不同的内容和样式
                     if (status === 'up') {
-                        tip.innerHTML = `状态: <span style="color: #4CAF50;">正常</span> | 时间: ${time}`;
+                        tip.innerHTML = '状态: <span style="color: #4CAF50;">正常</span> | 时间: ' + time;
                     } else if (status === 'down') {
-                        tip.innerHTML = `状态: <span style="color: #f44336;">故障</span> | 时间: ${time} | 错误: <span style="color: #f44336;">${error}</span>`;
+                        tip.innerHTML = '状态: <span style="color: #f44336;">故障</span> | 时间: ' + time + ' | 错误: <span style="color: #f44336;">' + error + '</span>';
                     } else {
-                        tip.innerHTML = `状态: <span style="color: #ff9800;">未知</span> | 时间: ${time}`;
+                        tip.innerHTML = '状态: <span style="color: #ff9800;">未知</span> | 时间: ' + time;
                     }
-                    
+
                     document.body.appendChild(tip);
-                    
+
                     // 定位提示元素
-                    tip.style.top = `${e.pageY + 10}px`;
-                    tip.style.left = `${e.pageX + 10}px`;
-                    
+                    tip.style.top = (e.clientY + 10) + 'px';
+                    tip.style.left = (e.clientX + 10) + 'px';
+
                     // 存储提示元素引用
-                    this._tip = tip;
+                    cell._tip = tip;
+                }
+            }, true);
+
+            document.addEventListener('mouseleave', function(e) {
+                if (!e.target || !e.target.classList) return;
+                if (e.target.classList.contains('time-cell')) {
+                    const cell = e.target;
+                    if (cell._tip) {
+                        document.body.removeChild(cell._tip);
+                        delete cell._tip;
+                    }
+                }
+            }, true);
+
+            document.addEventListener('mousemove', function(e) {
+                if (!e.target || !e.target.classList) return;
+                if (e.target.classList.contains('time-cell') && e.target._tip) {
+                    e.target._tip.style.top = (e.clientY + 10) + 'px';
+                    e.target._tip.style.left = (e.clientX + 10) + 'px';
+                }
+            }, true);
+
+            // 为状态指示器添加鼠标悬停事件
+            document.addEventListener('mouseenter', function(e) {
+                if (!e.target || !e.target.closest) return;
+                const indicator = e.target.closest('.status-indicator');
+                if (indicator) {
+                    const card = indicator.closest('.status-card');
+                    const errorTooltip = card ? card.querySelector('.error-tooltip') : null;
+                    const error = errorTooltip ? errorTooltip.dataset.error : '';
+
+                    if (error) {
+                        // 创建提示元素
+                        const tip = document.createElement('div');
+                        tip.className = 'status-indicator-tip';
+                        tip.style.position = 'fixed';
+                        tip.style.backgroundColor = '#333';
+                        tip.style.color = '#fff';
+                        tip.style.padding = '5px 10px';
+                        tip.style.borderRadius = '4px';
+                        tip.style.fontSize = '12px';
+                        tip.style.zIndex = '10000';
+                        tip.style.pointerEvents = 'none';
+                        tip.style.whiteSpace = 'pre-wrap';
+                        tip.style.maxWidth = '300px';
+
+                        tip.innerHTML = '<span style="color: #f44336;">错误信息:</span><br>' + error;
+
+                        document.body.appendChild(tip);
+
+                        // 定位提示元素
+                        tip.style.top = (e.clientY + 10) + 'px';
+                        tip.style.left = (e.clientX + 10) + 'px';
+
+                        // 存储提示元素引用
+                        indicator._tip = tip;
+                    }
+                }
+            }, true);
+
+            document.addEventListener('mouseleave', function(e) {
+                if (!e.target || !e.target.closest) return;
+                const indicator = e.target.closest('.status-indicator');
+                if (indicator) {
+                    if (indicator._tip) {
+                        document.body.removeChild(indicator._tip);
+                        delete indicator._tip;
+                    }
+                }
+            }, true);
+
+            document.addEventListener('mousemove', function(e) {
+                if (!e.target || !e.target.closest) return;
+                const indicator = e.target.closest('.status-indicator');
+                if (indicator && indicator._tip) {
+                    indicator._tip.style.top = (e.clientY + 10) + 'px';
+                    indicator._tip.style.left = (e.clientX + 10) + 'px';
+                }
+            }, true);
+
+            // WebSocket 连接
+            let ws = null;
+            let reconnectTimer = null;
+            let monitorData = [];
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                var map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            function getTypeIcon(type) {
+                switch(type) {
+                    case 'http':
+                    case 'https':
+                        return '<i class="fas fa-globe"></i>';
+                    case 'tcp':
+                        return '<i class="fas fa-network-wired"></i>';
+                    case 'udp':
+                        return '<i class="fas fa-broadcast-tower"></i>';
+                    case 'dns':
+                        return '<i class="fas fa-server"></i>';
+                    case 'ping':
+                        return '<i class="fas fa-wifi"></i>';
+                    default:
+                        return '<i class="fas fa-question"></i>';
+                }
+            }
+
+            function padZero(num) {
+                return String(num).padStart(2, '0');
+            }
+
+            function renderStatusCards(data) {
+                const container = document.getElementById('status-container');
+                if (!container) return;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="loading">暂无监控数据</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(function(monitor) {
+                    const statusClass = monitor.is_valid ? 'up' : 'down';
+                    const statusText = monitor.is_valid ? '正常' : '无法访问';
+                    const statusIcon = monitor.is_valid ? 'fa-check' : 'fa-times';
+
+                    html += '<div class="status-card" data-category="tab-' + monitor.gid + '" data-id="' + monitor.id + '">';
+                    html += '<div class="status-header">';
+                    html += '<div class="service-name">' + getTypeIcon(monitor.type) + ' ' + monitor.name + '</div>';
+                    html += '<div class="status-indicator ' + statusClass + '">';
+                    html += '<i class="fas ' + statusIcon + '"></i>';
+                    html += '<span>' + statusText + '</span>';
+                    if (monitor.latency) {
+                        html += '<span class="latency">' + monitor.latency + '</span>';
+                    }
+                    html += '</div>';
+                    html += '</div>';
+
+                    // 渲染时间格子 - 每行100个
+                    // 后端已经按时间升序返回（从早到晚）
+                    const hourLogs = monitor.hour_logs || [];
+                    const cellsPerRow = 78;
+
+                    html += '<div class="time-grid">';
+
+                    for (let i = 0; i < hourLogs.length; i++) {
+                        const log = hourLogs[i];
+                        const status = log.is_valid ? 'up' : 'down';
+                        const error = log.error_msg || '无法访问';
+                        const timeStr = padZero(log.hour) + ':' + padZero(log.minute);
+                        html += '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + escapeHtml(error) + '"></div>';
+                    }
+
+                    if (hourLogs.length === 0) {
+                        html += '<span style="color:#999;font-size:12px;">暂无日志数据</span>';
+                    }
+
+                    html += '</div>';
+
+                    // 图例
+                    html += '<div class="legend">';
+                    html += '<div class="legend-item"><div class="legend-color" style="background-color: #27ae60;"></div><span>正常</span></div>';
+                    html += '<div class="legend-item"><div class="legend-color" style="background-color: #e74c3c;"></div><span>故障</span></div>';
+                    html += '<div class="legend-item"><div class="legend-color" style="background-color: #f0f0f0;"></div><span>未知</span></div>';
+                    html += '</div>';
+
+                    // 页脚统计
+                    html += '<div class="status-footer">';
+                    html += '<div class="status-stats">类型: ' + monitor.type + '</div>';
+                    html += '<div class="status-stats">日志: ' + hourLogs.length + ' 条</div>';
+                    if (monitor.is_valid) {
+                        html += '<div class="status-stats">延迟: ' + monitor.latency + '</div>';
+                    } else {
+                        html += '<div class="status-stats" style="color: #f44336;">无法访问</div>';
+                    }
+                    html += '</div>';
+
+                    // 为状态指示器添加错误信息属性，用于 tooltip
+                    html += '<div class="error-tooltip" style="display: none;" data-error="' + escapeHtml(monitor.error_msg || '') + '"></div>';
+
+                    html += '</div>';
                 });
-                
-                cell.addEventListener('mouseleave', function() {
-                    // 移除提示元素
-                    if (this._tip) {
-                        document.body.removeChild(this._tip);
-                        delete this._tip;
+
+                container.innerHTML = html;
+
+                // 重新绑定 tab 点击事件
+                bindTabEvents();
+            }
+
+            function renderTabs(groups) {
+                const tabsContainer = document.getElementById('status-tabs');
+                if (!tabsContainer) return;
+
+                let html = '<div class="tab active" data-tab="all">All</div>';
+
+                if (groups && groups.length > 0) {
+                    groups.forEach(function(group) {
+                        html += '<div class="tab" data-tab="tab-' + group.id + '">' + group.name + '</div>';
+                    });
+                }
+
+                tabsContainer.innerHTML = html;
+                bindTabEvents();
+            }
+
+            function bindTabEvents() {
+                const tabs = document.querySelectorAll('.tab');
+                const statusCards = document.querySelectorAll('.status-card');
+
+                tabs.forEach(tab => {
+                    tab.onclick = function() {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+
+                        const tabName = this.dataset.tab;
+
+                        statusCards.forEach(card => {
+                            if (tabName === 'all' || card.dataset.category === tabName) {
+                                card.style.display = 'block';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    };
+                });
+            }
+
+            function updateMonitorStatus(monitorList) {
+                monitorList.forEach(function(monitor) {
+                    const card = document.querySelector('.status-card[data-id="' + monitor.id + '"]');
+                    if (card) {
+                        const indicator = card.querySelector('.status-indicator');
+                        if (monitor.is_valid) {
+                            indicator.className = 'status-indicator up';
+                            indicator.innerHTML = '<i class="fas fa-check"></i><span>正常</span>';
+                            if (monitor.latency) {
+                                indicator.innerHTML += '<span class="latency">' + monitor.latency + '</span>';
+                            }
+                        } else {
+                            indicator.className = 'status-indicator down';
+                            indicator.innerHTML = '<i class="fas fa-times"></i><span>无法访问</span>';
+                        }
+
+                        // 更新错误信息
+                        const footer = card.querySelector('.status-footer');
+                        if (footer) {
+                            const statsDivs = footer.querySelectorAll('.status-stats');
+                            if (monitor.is_valid) {
+                                if (statsDivs.length >= 3) {
+                                    statsDivs[1].innerHTML = '日志: ' + (monitor.hour_logs ? monitor.hour_logs.length : 0) + ' 条';
+                                    statsDivs[2].innerHTML = '延迟: ' + (monitor.latency || 'N/A');
+                                    statsDivs[2].style.color = '';
+                                }
+                            } else {
+                                if (statsDivs.length >= 3) {
+                                    statsDivs[1].innerHTML = '日志: ' + (monitor.hour_logs ? monitor.hour_logs.length : 0) + ' 条';
+                                    statsDivs[2].innerHTML = '无法访问';
+                                    statsDivs[2].style.color = '#f44336';
+                                }
+                            }
+                        }
+
+                        // 更新错误提示信息
+                        const errorTooltip = card.querySelector('.error-tooltip');
+                        if (errorTooltip) {
+                            errorTooltip.dataset.error = monitor.error_msg || '';
+                        }
                     }
                 });
-                
-                cell.addEventListener('mousemove', function(e) {
-                    // 跟随鼠标移动
-                    if (this._tip) {
-                        this._tip.style.top = `${e.pageY + 10}px`;
-                        this._tip.style.left = `${e.pageX + 10}px`;
+            }
+
+            function applyMonitorUpdates(updateList) {
+                updateList.forEach(function(update) {
+                    const card = document.querySelector('.status-card[data-id="' + update.id + '"]');
+                    if (card) {
+                        const indicator = card.querySelector('.status-indicator');
+                        if (update.is_valid) {
+                            indicator.className = 'status-indicator up';
+                            indicator.innerHTML = '<i class="fas fa-check"></i><span>正常</span>';
+                            if (update.latency) {
+                                indicator.innerHTML += '<span class="latency">' + update.latency + '</span>';
+                            }
+                        } else {
+                            indicator.className = 'status-indicator down';
+                            indicator.innerHTML = '<i class="fas fa-times"></i><span>无法访问</span>';
+                        }
+
+                        // 更新错误提示信息
+                        const errorTooltip = card.querySelector('.error-tooltip');
+                        if (errorTooltip) {
+                            errorTooltip.dataset.error = update.error_msg || '';
+                        }
+
+                        // 更新错误信息
+                        const footer = card.querySelector('.status-footer');
+                        if (footer) {
+                            if (update.is_valid) {
+                                const statsDivs = footer.querySelectorAll('.status-stats');
+                                if (statsDivs.length >= 3) {
+                                    statsDivs[2].innerHTML = '延迟: ' + (update.latency || 'N/A');
+                                    statsDivs[2].style.color = '';
+                                }
+                            } else {
+                                const statsDivs = footer.querySelectorAll('.status-stats');
+                                if (statsDivs.length >= 3) {
+                                    statsDivs[2].innerHTML = '无法访问';
+                                    statsDivs[2].style.color = '#f44336';
+                                }
+                            }
+                        }
+
+                        // 添加新的日志
+                        if (update.new_log) {
+                            addNewLogToCard(card, update.new_log);
+                        }
+
+                        // 更新本地数据
+                        const monitorIndex = monitorData.findIndex(m => m.id === update.id);
+                        if (monitorIndex !== -1) {
+                            monitorData[monitorIndex].is_valid = update.is_valid;
+                            monitorData[monitorIndex].latency = update.latency;
+                            monitorData[monitorIndex].error_msg = update.error_msg;
+                            if (update.new_log) {
+                                const hourLogs = monitorData[monitorIndex].hour_logs || [];
+                                // 检查是否已存在相同的日志
+                                const isDuplicate = hourLogs.some(log => 
+                                    log.hour === update.new_log.hour && log.minute === update.new_log.minute
+                                );
+                                if (!isDuplicate) {
+                                    if (!monitorData[monitorIndex].hour_logs) {
+                                        monitorData[monitorIndex].hour_logs = [];
+                                    }
+                                    monitorData[monitorIndex].hour_logs.push(update.new_log);
+                                }
+                            }
+                        }
                     }
                 });
-            });
+            }
+
+            function addNewLogToCard(card, newLog) {
+                const timeGrid = card.querySelector('.time-grid');
+                if (!timeGrid) return;
+
+                // 移除"暂无日志数据"的提示行
+                const emptySpan = timeGrid.querySelector('span');
+                if (emptySpan) {
+                    emptySpan.remove();
+                }
+
+                const status = newLog.is_valid ? 'up' : 'down';
+                const error = newLog.error_msg || '无法访问';
+                const timeStr = padZero(newLog.hour) + ':' + padZero(newLog.minute);
+
+                const newCell = document.createElement('div');
+                newCell.className = 'time-cell ' + status;
+                newCell.dataset.status = status;
+                newCell.dataset.time = timeStr;
+                newCell.dataset.error = escapeHtml(error);
+
+                // 添加到 time-grid 的末尾
+                timeGrid.appendChild(newCell);
+
+                // 更新日志数量统计
+                const footer = card.querySelector('.status-footer');
+                if (footer) {
+                    const statsDivs = footer.querySelectorAll('.status-stats');
+                    if (statsDivs.length >= 2) {
+                        const currentCount = timeGrid.querySelectorAll('.time-cell').length;
+                        statsDivs[1].innerHTML = '日志: ' + currentCount + ' 条';
+                    }
+                }
+            }
+
+            function connectWS() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = protocol + '//' + window.location.host + '/ws/status';
+
+                try {
+                    ws = new WebSocket(wsUrl);
+
+                    ws.onopen = function() {
+                        console.log('WebSocket connected');
+                    };
+
+                    ws.onmessage = function(event) {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log(data);
+                            if (data.type === 'monitor_status') {
+                                monitorData = data.data || [];
+                                renderStatusCards(monitorData);
+                                if (data.groups) {
+                                    renderTabs(data.groups);
+                                }
+                            } else if (data.type === 'monitor_updates') {
+                                // 增量更新
+                                applyMonitorUpdates(data.data);
+                            } else if (data.type === 'monitor_status_by_gid') {
+                                // 按gid更新的数据
+                                updateMonitorStatus(data.data);
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse message:', e);
+                        }
+                    };
+
+                    ws.onclose = function() {
+                        console.log('WebSocket disconnected, reconnecting...');
+                        reconnectTimer = setTimeout(connectWS, 5000);
+                    };
+
+                    ws.onerror = function(error) {
+                        console.error('WebSocket error:', error);
+                    };
+                } catch (e) {
+                    console.error('Failed to connect WebSocket:', e);
+                    reconnectTimer = setTimeout(connectWS, 5000);
+                }
+            }
+
+            // 启动 WebSocket 连接
+            connectWS();
         });
     </script>
 </body>

@@ -52,6 +52,14 @@ func GetMonitorListSimple(page, size int) ([]model.Monitor, int64, error) {
 	return list, count, nil
 }
 
+func GetMonitorListByGid(gid int64) ([]model.Monitor, error) {
+	var list []model.Monitor
+	if err := db.Where("gid = ?", gid).Order(columnName("id")).Find(&list).Error; err != nil {
+		return nil, errors.Wrap(err, "failed get monitor list by gid")
+	}
+	return list, nil
+}
+
 func GetMonitorByID(id int64) (*model.Monitor, error) {
 	var u model.Monitor
 	if err := db.First(&u, id).Error; err != nil {

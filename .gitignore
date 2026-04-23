@@ -40,3 +40,4 @@ uptimepk
 *.log
 uptimepk_test
 cookies.txt
+/dist
