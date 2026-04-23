@@ -37,6 +37,29 @@ func Step2Page(c *gin.Context) {
 	c.HTML(http.StatusOK, "install/step2.tmpl", data)
 }
 
+func MyDbtest(c *gin.Context) {
+	install_data := make(map[string]string, 0)
+	install_data["type"] = c.PostForm("type")
+	install_data["hostname"] = c.PostForm("hostname")
+	install_data["hostport"] = c.PostForm("hostport")
+	install_data["dbname"] = c.PostForm("dbname")
+	install_data["username"] = c.PostForm("username")
+	install_data["password"] = c.PostForm("password")
+	install_data["table_prefix"] = c.PostForm("table_prefix")
+	install_data["dbpath"] = c.PostForm("dbpath")
+
+	err := db.CheckDbConnnect(install_data)
+	if err != nil {
+		common.ErrorStrResp(c, "数据库连接失败: "+err.Error(), -1)
+		return
+	}
+
+	c.JSON(200, common.Resp[interface{}]{
+		Code: 200,
+		Msg:  "数据库连接成功!",
+	})
+}
+
 func PostInstallStep1(c *gin.Context) {
 	install_data := make(map[string]string, 0)
 	install_data["type"] = c.PostForm("type")
@@ -63,5 +86,9 @@ func PostInstallStep1(c *gin.Context) {
 		op.InitSetting()
 	}
 
-	common.SuccessResp(c, gin.H{"token": "安装成功!"})
+	c.JSON(200, common.Resp[interface{}]{
+		Code: 200,
+		Msg:  "安装成功!",
+	})
+
 }

@@ -131,6 +131,13 @@
                     <td>UserAgent</td>
                     <td>
                         <div class="layui-input-line">
+                            <select lay-verify="required" lay-search lay-filter="select_useragent">
+                                <option value="Mozilla/5.0 (Linux; U; Android 12; zh-cn; PECM30 Build/SP1A.210812.016) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/115.0.5790.168 Mobile Safari/537.36 HeyTapBrowser/40.10.5.1">Android手机模拟</option>
+                                <option value="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1">iPhone (iOS 17)</option>
+                                <option value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36">Chrome (Windows)</option>
+                                <option value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15">Safari (macOS)</option>
+                            </select>
+                            <br>
                             <input type="text" name="user_agent" autocomplete="off" class="layui-input" placeholder="" value="{[if $.Data]}{[$.Data.GetHttpTypeParams.UserAgent]}{[end]}">
                         </div>
                         <p class="layui-font-12">用户代理</p>
@@ -274,6 +281,10 @@ initType(data);
 
 form.on('select(type)', function(data){
     initType(data.value);
+});
+
+form.on('select(select_useragent)', function(data){
+    $('input[name="user_agent"]').val(data.value);
 });
 
 // 处理更多选项的显示/隐藏

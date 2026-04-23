@@ -85,7 +85,8 @@ func InitSettingWebData() error {
 	}
 
 	common_data.SetWebUIValue(model.SysSettingWebUIValue{
-		Name: "uptimepk",
+		Name:     "UPPK",
+		Subtitle: "网站运行状态监控工具",
 	})
 	common_data.UpdateTime = time.Now().Unix()
 	_, err := db.GetSysSettingByCode(db.SettingWebUI)

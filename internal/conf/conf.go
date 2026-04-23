@@ -1,10 +1,11 @@
 package conf
 
 import (
-	"fmt"
+
 	// "net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	// "strconv"
 	"strings"
@@ -62,14 +63,12 @@ func InstallConf(data map[string]string) error {
 	admin_path := "uptimepk"
 	yamlConfig.Web.AdminPath = admin_path
 
-	fmt.Println(data["dbname"])
-
 	// Update database settings
 	if strings.EqualFold(data["type"], "mysql") {
 		yamlConfig.Database.Type = "mysql"
 		yamlConfig.Database.Hostname = data["hostname"]
 		// Convert string port to int64
-		hostport := int64(3306)
+		hostport, _ := strconv.ParseInt(data["hostport"], 10, 64)
 		yamlConfig.Database.Hostport = hostport
 		yamlConfig.Database.Name = data["dbname"]
 		yamlConfig.Database.User = data["username"]
@@ -82,7 +81,7 @@ func InstallConf(data map[string]string) error {
 
 	// Update security settings
 	yamlConfig.Security.InstallLock = true
-	yamlConfig.Security.SecretKey = randString(10)
+	yamlConfig.Security.SecretKey = randString(32)
 
 	// Create save config (excludes general and admin)
 	saveConfig := YAMLConfigCustom{

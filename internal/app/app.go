@@ -85,6 +85,7 @@ func initTmplFunc(r *gin.Engine) {
 func initRuoteAdmin(r *gin.Engine) {
 	// fmt.Println("conf.Web.AdminPath:", conf.Web.AdminPath)
 	backstage := r.Group(conf.Web.AdminPath)
+	backstage.Use(middleware.CheckInstalled())
 	backstage.GET("/login", backend.LoginPage)
 	backstage.POST("/login", backend.PostLogin)
 	backstage.GET("/logout", backend.LoginOut)
@@ -193,6 +194,7 @@ func initRuoteInstall(r *gin.Engine) {
 	installGroup.Use(middleware.CheckInstalledAfter())
 	installGroup.GET("/index", install.HomePage)
 	installGroup.POST("/step1", install.PostInstallStep1)
+	installGroup.POST("/dbtest", install.MyDbtest)
 }
 
 func initRuoteFrontend(r *gin.Engine) {

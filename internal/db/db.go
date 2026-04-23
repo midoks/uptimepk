@@ -205,12 +205,40 @@ func AutoMigrate(dst ...interface{}) error {
 }
 
 func CheckDbConnnect(data map[string]string) error {
-	if strings.EqualFold(data["type"], "mysql") {
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", data["username"], data["password"], data["hostname"], data["hostport"], data["dbname"])
+	switch strings.ToLower(data["type"]) {
+	case "mysql":
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=false", data["username"], data["password"], data["hostname"], data["hostport"], data["dbname"])
 		_, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		if err != nil {
 			return err
 		}
+	case "sqlite3":
+		dbPath := data["dbpath"]
+		if dbPath == "" {
+			dbPath = "data/uptimepk.db"
+		}
+
+		// 确保目录存在
+		dbDir := filepath.Dir(dbPath)
+		if !utils.IsExist(dbDir) {
+			if err := os.MkdirAll(dbDir, os.ModePerm); err != nil {
+				return err
+			}
+		}
+
+		dsn := dbPath
+		_, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+		if err != nil {
+			return err
+		}
+	case "postgres":
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", data["hostname"], data["username"], data["password"], data["dbname"], data["hostport"])
+		_, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("不支持的数据库类型: %s", data["type"])
 	}
 	return nil
 }
