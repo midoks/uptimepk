@@ -63,7 +63,7 @@ func GetMonitorListByGid(gid int64) ([]model.Monitor, error) {
 func GetMonitorByID(id int64) (*model.Monitor, error) {
 	var u model.Monitor
 	if err := db.First(&u, id).Error; err != nil {
-		return nil, errors.Wrapf(err, "failed get admin")
+		return nil, errors.Wrapf(err, "failed get monitor data")
 	}
 	return &u, nil
 }
@@ -71,7 +71,7 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 func MonitorTriggerStatus(id int64) error {
 	var data model.Monitor
 	if err := db.First(&data, id).Error; err != nil {
-		return errors.Wrapf(err, "failed get monitor group")
+		return errors.Wrapf(err, "failed get monitor data")
 	}
 
 	var status bool
