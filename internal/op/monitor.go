@@ -217,7 +217,6 @@ func MonitorAddTask(mm model.Monitor) error {
 func MonitorDeleteTask(mm model.Monitor) error {
 	mt_manager := monitortask.GetManager()
 	task := &MonitorTask{monitor: &mm}
-	// 删除任务
 	if err := mt_manager.RemoveTask(task.ID()); err != nil {
 		return fmt.Errorf("failed to remove monitor task %s: %v\n", mm.Name, err)
 	}
@@ -227,7 +226,6 @@ func MonitorDeleteTask(mm model.Monitor) error {
 func MonitorEnableTask(mm model.Monitor) error {
 	mt_manager := monitortask.GetManager()
 	task := &MonitorTask{monitor: &mm}
-	// 删除任务
 	if err := mt_manager.RemoveTask(task.ID()); err != nil {
 		return fmt.Errorf("failed to enable monitor task %s: %v\n", mm.Name, err)
 	}
@@ -237,10 +235,16 @@ func MonitorEnableTask(mm model.Monitor) error {
 func MonitorDisableTask(mm model.Monitor) error {
 	mt_manager := monitortask.GetManager()
 	task := &MonitorTask{monitor: &mm}
-	// 删除任务
 	if err := mt_manager.DisableTask(task.ID()); err != nil {
 		return fmt.Errorf("failed to disable monitor task %s: %v\n", mm.Name, err)
 	}
+	return nil
+}
+
+func MonitorReloadTask(mm model.Monitor) error {
+	mt_manager := monitortask.GetManager()
+	mt_manager.RemoveAllTasks()
+	InitMonitorask()
 	return nil
 }
 
