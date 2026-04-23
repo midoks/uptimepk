@@ -77,7 +77,8 @@
                     tip.style.fontSize = '12px';
                     tip.style.zIndex = '10000';
                     tip.style.pointerEvents = 'none';
-                    tip.style.whiteSpace = 'nowrap';
+                    tip.style.maxWidth = '300px';
+                    tip.style.wordBreak = 'break-word';
 
                     // 根据状态设置不同的内容和样式
                     if (status === 'up') {
@@ -90,9 +91,30 @@
 
                     document.body.appendChild(tip);
 
+                    // 计算位置，确保tooltip在视口内
+                    let top = e.clientY + 10;
+                    let left = e.clientX + 10;
+                    
+                    const tipWidth = tip.offsetWidth;
+                    const tipHeight = tip.offsetHeight;
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // 调整位置
+                    if (left + tipWidth > viewportWidth) {
+                        left = e.clientX - tipWidth - 10;
+                    }
+                    if (top + tipHeight > viewportHeight) {
+                        top = e.clientY - tipHeight - 10;
+                    }
+                    
+                    // 确保不超出视口
+                    left = Math.max(10, left);
+                    top = Math.max(10, top);
+
                     // 定位提示元素
-                    tip.style.top = (e.clientY + 10) + 'px';
-                    tip.style.left = (e.clientX + 10) + 'px';
+                    tip.style.top = top + 'px';
+                    tip.style.left = left + 'px';
 
                     // 存储提示元素引用
                     cell._tip = tip;
@@ -113,8 +135,29 @@
             document.addEventListener('mousemove', function(e) {
                 if (!e.target || !e.target.classList) return;
                 if (e.target.classList.contains('time-cell') && e.target._tip) {
-                    e.target._tip.style.top = (e.clientY + 10) + 'px';
-                    e.target._tip.style.left = (e.clientX + 10) + 'px';
+                    let top = e.clientY + 10;
+                    let left = e.clientX + 10;
+                    
+                    const tip = e.target._tip;
+                    const tipWidth = tip.offsetWidth;
+                    const tipHeight = tip.offsetHeight;
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // 调整位置
+                    if (left + tipWidth > viewportWidth) {
+                        left = e.clientX - tipWidth - 10;
+                    }
+                    if (top + tipHeight > viewportHeight) {
+                        top = e.clientY - tipHeight - 10;
+                    }
+                    
+                    // 确保不超出视口
+                    left = Math.max(10, left);
+                    top = Math.max(10, top);
+                    
+                    tip.style.top = top + 'px';
+                    tip.style.left = left + 'px';
                 }
             }, true);
 
