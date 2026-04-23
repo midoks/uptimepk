@@ -60,7 +60,6 @@ func (t *MonitorTask) runHttpMonitor() error {
 		Timeout: time.Duration(t.monitor.Timeout) * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			redirectCount = len(via)
-			// 允许重定向，最多重定向 10 次
 			if len(via) >= t.monitor.MaxRetries {
 				return http.ErrUseLastResponse
 			}
@@ -105,7 +104,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 					bodyStr := string(body)
 					if !strings.Contains(bodyStr, params.CheckContent) {
 						isValid = false
-						errorMsg = fmt.Sprintf("response does not contain expected content: %s", params.CheckContent)
+						errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
 					}
 				}
 			}
@@ -117,7 +116,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 	if duration > 0 {
 		speedMs = duration.Seconds() * 1000 // 转换为毫秒
 	}
-
+	fmt.Println("http:", err)
 	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, redirectCount); err != nil {
 		fmt.Printf("failed to insert monitor log: %v\n", err)
 		return err
@@ -199,7 +198,7 @@ func (t *MonitorTask) runUdpMonitor() error {
 
 // InitMonitorask 初始化监控任务
 func InitMonitorask() {
-	fmt.Println("Starting to initialize monitor tasks...")
+	fmt.Println("starting to initialize monitor tasks...")
 	mt_manager := monitortask.GetManager()
 
 	// 使用分页查询，支持大量数据
