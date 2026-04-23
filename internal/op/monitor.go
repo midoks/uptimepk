@@ -226,7 +226,7 @@ func MonitorDeleteTask(mm model.Monitor) error {
 func MonitorEnableTask(mm model.Monitor) error {
 	mt_manager := monitortask.GetManager()
 	task := &MonitorTask{monitor: &mm}
-	if err := mt_manager.RemoveTask(task.ID()); err != nil {
+	if err := mt_manager.EnableTask(task.ID()); err != nil {
 		return fmt.Errorf("failed to enable monitor task %s: %v\n", mm.Name, err)
 	}
 	return nil
@@ -264,7 +264,8 @@ func InitMonitorask() {
 		offset := (page - 1) * pageSize
 
 		// 只查询启用的监控，减少数据量
-		if err := db.GetDb().Where("status = ?", true).Where("is_deleted = ?", 0).Offset(offset).Limit(pageSize).Find(&monitors).Error; err != nil {
+		// .Where("status = ?", true)
+		if err := db.GetDb().Where("is_deleted = ?", 0).Offset(offset).Limit(pageSize).Find(&monitors).Error; err != nil {
 			fmt.Printf("failed to get monitor list (page %d): %v\n", page, err)
 			break
 		}
@@ -280,6 +281,18 @@ func InitMonitorask() {
 			if err := MonitorAddTask(monitor); err != nil {
 				fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
 				continue
+			}
+
+			if monitor.Status {
+				if err := MonitorEnableTask(monitor); err != nil {
+					fmt.Errorf("failed to enable monitor task %s: %v\n", monitor.Name, err)
+					continue
+				}
+			} else {
+				if err := MonitorDisableTask(monitor); err != nil {
+					fmt.Errorf("failed to disable monitor task %s: %v\n", monitor.Name, err)
+					continue
+				}
 			}
 			fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
 			addedCount++
