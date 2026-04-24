@@ -22,23 +22,24 @@ func TelegramMessageHandlerStrategyNone(update tgbotapi.Update, bot *tgbotapi.Bo
 }
 
 // 默认策略
-func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
-	fmt.Printf("处理消息[default]: %s\n", update.Message.Text)
+func TelegramMessageHandlertrategyDefault(relateMonitorGroupID int64) tgtask.MessageHandler {
+	return func(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
+		fmt.Printf("处理消息[default] (groupID: %d): %s\n", relateMonitorGroupID, update.Message.Text)
 
-	// 示例：根据消息内容做不同处理
-	switch update.Message.Text {
-	case "/start":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "OK")
-		_, err := bot.Send(msg)
-		return err
-	case "/status":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "正常运行!")
-		_, err := bot.Send(msg)
-		return err
-	case "/?":
-		fallthrough
-	case "/help":
-		helpText := `可用命令:
+		// 示例：根据消息内容做不同处理
+		switch update.Message.Text {
+		case "/start":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "OK")
+			_, err := bot.Send(msg)
+			return err
+		case "/status":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "正常运行!")
+			_, err := bot.Send(msg)
+			return err
+		case "/?":
+			fallthrough
+		case "/help":
+			helpText := `可用命令:
 /start - 开始使用
 /status - 检查运行状态
 /help - 显示此帮助信息
@@ -53,36 +54,37 @@ func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.
 - 每行格式: 备注: URL
 - 使用 ========================= 作为分组分隔符
 - URL 必须以 http:// 或 https:// 开头`
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)
-		_, err := bot.Send(msg)
-		return err
-	default:
-		// 尝试解析域名数据
-		successCount, failCount, err := CreateMonitorsFromText(update.Message.Text)
-		if err != nil || successCount == 0 {
-			if failCount == 0 {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
-				_, err := bot.Send(msg)
-				return err
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)
+			_, err := bot.Send(msg)
+			return err
+		default:
+			// 尝试解析域名数据
+			successCount, failCount, err := CreateMonitorsFromText(update.Message.Text, relateMonitorGroupID)
+			if err != nil || successCount == 0 {
+				if failCount == 0 {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
+					_, err := bot.Send(msg)
+					return err
+				}
 			}
-		}
 
-		// 返回创建结果
-		var resultMsg string
-		if successCount > 0 {
-			resultMsg = fmt.Sprintf("✓ 成功创建 %d 个监控任务", successCount)
-		}
-		if failCount > 0 {
-			if resultMsg != "" {
-				resultMsg += fmt.Sprintf("\n✗ 失败 %d 个", failCount)
-			} else {
-				resultMsg = fmt.Sprintf("✗ 失败 %d 个", failCount)
+			// 返回创建结果
+			var resultMsg string
+			if successCount > 0 {
+				resultMsg = fmt.Sprintf("✓ 成功创建 %d 个监控任务", successCount)
 			}
-		}
+			if failCount > 0 {
+				if resultMsg != "" {
+					resultMsg += fmt.Sprintf("\n✗ 失败 %d 个", failCount)
+				} else {
+					resultMsg = fmt.Sprintf("✗ 失败 %d 个", failCount)
+				}
+			}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, resultMsg)
-		_, err = bot.Send(msg)
-		return err
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, resultMsg)
+			_, err = bot.Send(msg)
+			return err
+		}
 	}
 }
 
@@ -125,7 +127,7 @@ func ReloadTelegramTask() {
 				var handler tgtask.MessageHandler
 				switch tp.TelegramListenStrategy {
 				case "default":
-					handler = TelegramMessageHandlertrategyDefault
+					handler = TelegramMessageHandlertrategyDefault(tp.RelateMonitorGroupID)
 				default:
 					handler = TelegramMessageHandlerStrategyNone
 				}
@@ -171,7 +173,7 @@ func InitTelegramTask() {
 			var handler tgtask.MessageHandler
 			switch tp.TelegramListenStrategy {
 			case "default":
-				handler = TelegramMessageHandlertrategyDefault
+				handler = TelegramMessageHandlertrategyDefault(tp.RelateMonitorGroupID)
 			default:
 				handler = TelegramMessageHandlerStrategyNone
 			}
@@ -197,7 +199,8 @@ type DomainEntry struct {
 	URL    string
 }
 
-func parseDomainEntries(text string) ([]DomainEntry, error) {
+// ParseDomainEntries 解析域名数据
+func ParseDomainEntries(text string) ([]DomainEntry, error) {
 	var entries []DomainEntry
 	var currentRemark string
 
@@ -216,34 +219,42 @@ func parseDomainEntries(text string) ([]DomainEntry, error) {
 			continue
 		}
 
-		if strings.Contains(line, ":") {
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) == 2 {
-				remark := strings.TrimSpace(parts[0])
-				url := strings.TrimSpace(parts[1])
+		// 检查这一行是否是 URL（以 http:// 或 https:// 开头）
+		// 先移除反引号
+		cleanLine := strings.Trim(line, "`")
+		if urlPattern.MatchString(cleanLine) {
+			if currentRemark != "" {
+				entries = append(entries, DomainEntry{
+					Remark: currentRemark,
+					URL:    cleanLine,
+				})
+				currentRemark = ""
+			}
+		} else if strings.Contains(line, ":") || strings.Contains(line, "：") {
+			// 这一行可能是备注行（支持英文和中文冒号）
+			// 找到第一个冒号（英文或中文）
+			colonIndex := strings.Index(line, ":")
+			if colonIndex == -1 {
+				colonIndex = strings.Index(line, "：")
+			}
+			if colonIndex != -1 {
+				remark := strings.TrimSpace(line[:colonIndex])
+				rest := strings.TrimSpace(line[colonIndex+1:])
 
 				// 移除反引号
-				url = strings.Trim(url, "`")
+				rest = strings.Trim(rest, "`")
 
-				if urlPattern.MatchString(url) {
+				if urlPattern.MatchString(rest) {
+					// 备注和 URL 在同一行
 					entries = append(entries, DomainEntry{
 						Remark: remark,
-						URL:    url,
+						URL:    rest,
 					})
 					currentRemark = ""
 				} else {
+					// 这是备注行，URL 在下一行
 					currentRemark = remark
 				}
-			}
-		} else if currentRemark != "" {
-			// 移除反引号
-			line = strings.Trim(line, "`")
-			if urlPattern.MatchString(line) {
-				entries = append(entries, DomainEntry{
-					Remark: currentRemark,
-					URL:    strings.TrimSpace(line),
-				})
-				currentRemark = ""
 			}
 		}
 	}
@@ -251,10 +262,9 @@ func parseDomainEntries(text string) ([]DomainEntry, error) {
 	return entries, nil
 }
 
-func CreateMonitorsFromText(text string) (successCount, failCount int, err error) {
-	entries, err := parseDomainEntries(text)
+func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int, err error) {
+	entries, err := ParseDomainEntries(text)
 
-	fmt.Println("entries:", entries)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -272,6 +282,7 @@ func CreateMonitorsFromText(text string) (successCount, failCount int, err error
 			IntervalType: "second",
 			MaxRetries:   3,
 			Timeout:      10,
+			Gid:          gid, // 添加关联 ID
 			CreateTime:   time.Now().Unix(),
 			UpdateTime:   time.Now().Unix(),
 		}
