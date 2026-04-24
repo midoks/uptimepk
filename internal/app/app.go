@@ -60,6 +60,12 @@ func initTmplFunc(r *gin.Engine) {
 			}
 			return string(b)
 		},
+		"formatBytes": func(bytes int64) string {
+			if bytes < 1024 {
+				return fmt.Sprintf("%d B", bytes)
+			}
+			return fmt.Sprintf("%.2f KB", float64(bytes)/1024)
+		},
 	}
 
 	// Build template set with directory-aware names (e.g., "install/index.tmpl")
