@@ -85,11 +85,12 @@ table.render({
     url: '/{[.admin_path]}/monitor/list',
     title: '数据表',
     cols: [[
-        {field:'name', title:'名称',},
+        {field:'name', title:'名称'},
         {field:'log_list', title:'检查状态', toolbar:"#runTpl"},
-        {field:'gid', title:'分组',width:120, toolbar:"#gidTpl"},
-        {field:'type', title:'类型',width:120},
-        {field:'status', title:'状态', toolbar:"#statusTpl",width:100},
+        {field:'gid', title:'分组',width:100, toolbar:"#gidTpl"},
+        {field:'type', title:'类型',width:80},
+        {field:'mark', title:'备注', toolbar:"#markTpl"},
+        {field:'status', title:'状态', toolbar:"#statusTpl",width:80},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
     page: true,
@@ -180,6 +181,13 @@ function opStatus(obj){
 </script>
 
 
+<script type="text/html" id="markTpl">
+{{# if (d.mark){ }}
+{{d.mark}}
+{{# } else { }}
+<span style="color:#e2e2e2;">-</span>
+{{# } }}
+</script>
 
 
 <script type="text/html" id="cmdTpl">

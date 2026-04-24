@@ -147,7 +147,7 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 		}
 		// 等待足够的时间确保状态完全传播
 		time.Sleep(2 * time.Second)
-		fmt.Println("cleared old updates state")
+		// fmt.Println("cleared old updates state")
 	}
 
 	if err != nil || bot == nil {
