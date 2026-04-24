@@ -62,7 +62,7 @@ func InstallConf(data map[string]string) error {
 
 	// Update web settings
 	yamlConfig.Web.HTTPPort = 9191
-	// admin_path := fmt.Sprintf("/mgo_%s", randString(6))
+	// admin_path := fmt.Sprintf("/uptimepk_%s", randString(6))
 	admin_path := "uptimepk"
 	yamlConfig.Web.AdminPath = admin_path
 
