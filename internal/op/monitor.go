@@ -210,9 +210,13 @@ func MonitorAddTask(mm model.Monitor) error {
 	// 例如：每60秒执行一次 -> "*/60 * * * * *"
 	// 使用6字段cron表达式（秒、分、时、日、月、周）
 	cronExpr := fmt.Sprintf("*/%d * * * * *", mm.Interval)
-	task := &MonitorTask{monitor: &mm}
+	if mm.IntervalType == "minute" {
+		cronExpr = fmt.Sprintf("* */%d * * * *", mm.Interval)
+	} else if mm.IntervalType == "hour" {
+		cronExpr = fmt.Sprintf("* * */%d * * *", mm.Interval)
+	}
 
-	// 添加任务到管理器
+	task := &MonitorTask{monitor: &mm}
 	if err := mt_manager.AddTask(task, cronExpr); err != nil {
 		return fmt.Errorf("failed to add monitor task %s: %v\n", mm.Name, err)
 	}
