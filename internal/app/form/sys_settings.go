@@ -19,3 +19,7 @@ type SettingWebUI struct {
 	Name     string `form:"name"`
 	Subtitle string `form:"subtitle"`
 }
+
+type SettingDbConf struct {
+	MonitorLogDays string `form:"monitor_log_days"`
+}

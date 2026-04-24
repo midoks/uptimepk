@@ -64,7 +64,6 @@ var admin = layui.admin
 form.on("submit(setting_admin_ui)", function(data){
     var field = data.field;
     $.post("/{[$.admin_path]}/system/settings/home", field, function(res) {
-        console.log(res);
         showMsg(res.msg, function(){
             if(res.code > -1){
                 parent.location.reload();

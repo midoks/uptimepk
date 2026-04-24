@@ -32,6 +32,10 @@ type SysSettingWebUIValue struct {
 	Subtitle string `json:"subtitle"` // subtitle
 }
 
+type SysSettingDbConfValue struct {
+	MonitorLogDays string `json:"monitor_log_days"` // monitor_log_days
+}
+
 func (a *SysSetting) SetLogValue(p SysSettingLogValue) error {
 	b, err := json.Marshal(p)
 	if err != nil {
@@ -81,6 +85,25 @@ func (a *SysSetting) GetWebUIValue() (SysSettingWebUIValue, error) {
 }
 
 func (a *SysSetting) SetWebUIValue(p SysSettingWebUIValue) error {
+	b, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+	a.Value = string(b)
+	return nil
+}
+
+func (a *SysSetting) GetDbConfValue() (SysSettingDbConfValue, error) {
+	var p SysSettingDbConfValue
+	if a.Value == "" {
+		return p, nil
+	}
+
+	err := json.Unmarshal([]byte(a.Value), &p)
+	return p, err
+}
+
+func (a *SysSetting) SetDbConfValue(p SysSettingDbConfValue) error {
 	b, err := json.Marshal(p)
 	if err != nil {
 		return err

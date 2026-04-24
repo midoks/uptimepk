@@ -31,7 +31,7 @@
                                 <td>监控日志保留天数</td>
                                 <td>
                                     <div class="layui-inline">
-                                        <input type="number" name="save_day" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetLogValue.SaveDay]}{[else]}180{[end]}" placeholder="">
+                                        <input type="number" name="monitor_log_days" autocomplete="off" class="layui-input" value="{[.MonitorLogDays]}" placeholder="">
                                     </div>
                                     <p class="layui-font-12">超过此天数的日志将会被自动清理，至少1天。</p>
                                 </td>
@@ -60,31 +60,17 @@ var admin = layui.admin
 ,form = layui.form
 ,table = layui.table;
 
-
-table.render({
-    elem: '#list',
-    url: '/{[.admin_path]}/log/list',
-    title: '数据表',
-    cols: [[
-        {field:'content', title:'内容'},
-        {field:'uid', title:'用户ID'},
-        {field:'ip', title:'IP'},
-        {title:'操作', toolbar: '#cmdTpl', width:70, fixed: 'right'}
-     ]],
-    page: true
+form.on("submit(submit_monitor_log)", function(data){
+    var field = data.field;
+    $.post("/{[$.admin_path]}/system/database/clean_setting", field, function(res) {
+        showMsg(res.msg, function(){
+            if(res.code > -1){
+                parent.location.reload();
+            }
+        },{icon: res.code > -1 ? 1 : 2,shift:res.code>-1 ? 0 : 6});
+    },'json');
+    return false;
 });
-
-
-table.on('tool(list)', function(obj){
-    switch(obj.event){
-    };
-});
-
-table.on('toolbar', function(obj){
-    switch(obj.event){
-    };
-});
-
 
 ///
 });

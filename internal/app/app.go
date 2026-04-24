@@ -185,6 +185,7 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.GET("/system/database/update", backend_system.DatabaseUpdate)
 	backstage_admin.GET("/system/database/cleans", backend_system.DatabaseClean)
 	backstage_admin.GET("/system/database/clean_setting", backend_system.DatabaseCleanSetting)
+	backstage_admin.POST("/system/database/clean_setting", backend_system.PostDatabaseCleanSetting)
 	backstage_admin.GET("/system/db", backend_system.Db)
 
 }

@@ -10,6 +10,7 @@ import (
 const (
 	SettingAdminUI = "admin_ui"
 	SettingWebUI   = "web_ui"
+	SettingDbConf  = "db_conf"
 )
 
 func GetSysSettingByCode(code string) (*model.SysSetting, error) {
