@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -68,15 +69,33 @@ func PostAdd(c *gin.Context) {
 	is_create := true
 
 	common_data := &model.Monitor{
-		Name:       field.Name,
-		Type:       field.Type,
-		Status:     field.Status,
-		Interval:   field.Interval,
-		MaxRetries: field.MaxRetries,
-		Timeout:    field.Timeout,
-		Gid:        field.Gid,
-		CreateTime: time.Now().Unix(),
-		UpdateTime: time.Now().Unix(),
+		Name:         field.Name,
+		Type:         field.Type,
+		Status:       field.Status,
+		Interval:     field.Interval,
+		IntervalType: field.IntervalType,
+		MaxRetries:   field.MaxRetries,
+		Timeout:      field.Timeout,
+		Gid:          field.Gid,
+		CreateTime:   time.Now().Unix(),
+		UpdateTime:   time.Now().Unix(),
+	}
+
+	if field.IntervalType == "second" {
+		if !(field.Interval >= 5 && field.Interval <= 60) {
+			common.ErrorResp(c, errors.New("选择秒时,范围之在[5-60]"), -1)
+			return
+		}
+	} else if field.IntervalType == "minute" {
+		if !(field.Interval >= 1 && field.Interval <= 60) {
+			common.ErrorResp(c, errors.New("选择分钟时,范围之在[1-60]"), -1)
+			return
+		}
+	} else if field.IntervalType == "hour" {
+		if !(field.Interval >= 1 && field.Interval <= 23) {
+			common.ErrorResp(c, errors.New("选择小时时,范围之在[1-23]"), -1)
+			return
+		}
 	}
 
 	if field.Type == "http" {

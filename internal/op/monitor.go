@@ -287,7 +287,7 @@ func InitMonitorask() {
 					fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
 					continue
 				}
-				fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
+				// fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
 				addedCount++
 			}
 		}
@@ -305,9 +305,9 @@ func InitMonitorask() {
 	// fmt.Printf("Monitor tasks initialized: %d total, %d added\n", totalCount, addedCount)
 
 	// 列出所有任务，确认所有任务都已添加
-	tasks := mt_manager.ListTasks()
-	fmt.Printf("Total tasks added: %d\n", len(tasks))
-	for _, task := range tasks {
-		fmt.Printf("Task: %s (ID: %s, Cron: %s)\n", task.Name, task.ID, task.CronExpr)
-	}
+	// tasks := mt_manager.ListTasks()
+	// fmt.Printf("Total tasks added: %d\n", len(tasks))
+	// for _, task := range tasks {
+	// 	fmt.Printf("Task: %s (ID: %s, Cron: %s)\n", task.Name, task.ID, task.CronExpr)
+	// }
 }

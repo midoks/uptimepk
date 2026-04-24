@@ -17,11 +17,12 @@ type MonitorAdd struct {
 	UdpHost string `form:"udp_host"`
 	UdpPort int    `form:"udp_port"`
 
-	Interval   int    `form:"interval"`    // interval
-	MaxRetries int    `form:"max_retries"` // max_retries
-	Timeout    int    `form:"timeout"`     // timeout
-	Status     bool   `form:"status"`      // status
-	Mark       string `form:"mark"`        // mark
+	Interval     int    `form:"interval"`      // interval
+	IntervalType string `form:"interval_type"` // interval_type
+	MaxRetries   int    `form:"max_retries"`   // max_retries
+	Timeout      int    `form:"timeout"`       // timeout
+	Status       bool   `form:"status"`        // status
+	Mark         string `form:"mark"`          // mark
 }
 
 type MonitorGroupAdd struct {

@@ -188,13 +188,18 @@
                                 <div class="layui-input-inline">
                                     <input style="width: 60px;" type="number" name="interval" autocomplete="off" class="layui-input" value="{[if $.Data]}{[if $.Data.Interval]}{[$.Data.Interval]}{[else]}60{[end]}{[else]}60{[end]}">
                                 </div>
-                                <label class="layui-form-label" style="width: 100px;float: right;">s(秒)</label>
+                                <div class="layui-input-inline">
+                                    <select name="interval_type" lay-verify="required">
+                                        <option value="second" {[if $.Data]}{[if eq $.Data.IntervalType "second" ]}selected{[end]}{[end]}>秒</option>
+                                        <option value="minute" {[if $.Data]}{[if eq $.Data.IntervalType "minute" ]}selected{[end]}{[end]}>分钟</option>
+                                        <option value="hour" {[if $.Data]}{[if eq $.Data.IntervalType "hour" ]}selected{[end]}{[end]}>小时</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <p class="layui-font-12">心跳间隔 (检测频率 {[if $.Data]}{[if $.Data.Interval]}{[$.Data.Interval]}{[else]}60{[end]}{[else]}60{[end]} 秒)</p>
+                        <p class="layui-font-12">心跳间隔/检测频率</p>
                     </td>
                 </tr>
-
 
                 <tr>
                     <td>重试次数</td>
