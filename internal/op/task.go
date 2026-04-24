@@ -15,7 +15,7 @@ import (
 
 // 未选择策略
 func TelegramMessageHandlerStrategyNone(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
-	fmt.Printf("处理消息[none]: %s\n", update.Message.Text)
+	// fmt.Printf("处理消息[none]: %s\n", update.Message.Text)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "监控面板未选择策略。")
 	_, err := bot.Send(msg)
 	return err
@@ -283,6 +283,7 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 			MaxRetries:   3,
 			Timeout:      10,
 			Gid:          gid, // 添加关联 ID
+			Mark:         entry.Remark,
 			CreateTime:   time.Now().Unix(),
 			UpdateTime:   time.Now().Unix(),
 		}
