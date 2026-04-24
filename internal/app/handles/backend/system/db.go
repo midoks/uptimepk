@@ -14,3 +14,9 @@ func Db(c *gin.Context) {
 	data["submenu"] = GetSysAdvancedSubMenu()
 	c.HTML(http.StatusOK, "backend/system/db.tmpl", data)
 }
+
+func DbAdd(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysAdvancedSubMenu()
+	c.HTML(http.StatusOK, "backend/system/db_add.tmpl", data)
+}

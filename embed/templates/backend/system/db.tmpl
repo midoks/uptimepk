@@ -17,11 +17,11 @@
                 <div class="layui-tab layui-tab-brief">
                     <ul class="layui-tab-title" id="status">
                         <li data-status="1" class="layui-this">数据库节点列表</li>
-                        <li data-status="2"><a href="/{[$.admin_path]}/system/settings/login/logs">添加数据库节点</a></li>
+                        <li data-status="2"><a onclick="Admin.open('添加节点','/{[$.admin_path]}/system/db/add',700,630)">添加数据库节点</a></li>
                     </ul>
                 </div>
 
-                <div id="list"></div>
+                <div id="list" style="padding-top: 5px;"></div>
             </div>
         </div>
     </div>
