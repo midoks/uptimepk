@@ -9,6 +9,10 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 # sudo tar -C /usr/local -xzf go1.19.1.linux-amd64.tar.gz
 # sudo ln -s /usr/local/go/bin/* /usr/bin/
 
+# Debug Now
+export PATH=/usr/local/go:$PATH:/root/go/bin
+export GOPATH=/root/go
+
 
 TAGRT_DIR=/usr/local/uptimepk_dev
 mkdir -p $TAGRT_DIR
@@ -50,9 +54,7 @@ if [ ! -d /usr/local/go ];then
 	tar -xvf go1.26.2.linux-amd64.tar.gz
 	mv go /usr/local/
 fi
-# Debug Now
-export PATH=/usr/local/go:$PATH:/root/go/bin
-export GOPATH=/root/go
+
 
 if [ ! -f /root/go/bin/zzz ];then
 	go install github.com/midoks/zzz@latest
