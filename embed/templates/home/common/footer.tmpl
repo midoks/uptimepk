@@ -66,58 +66,60 @@
                     const time = cell.dataset.time;
                     const error = cell.dataset.error || '';
 
-                    // 创建提示元素
-                    const tip = document.createElement('div');
-                    tip.className = 'time-cell-tip';
-                    tip.style.position = 'fixed';
-                    tip.style.backgroundColor = '#333';
-                    tip.style.color = '#fff';
-                    tip.style.padding = '5px 10px';
-                    tip.style.borderRadius = '4px';
-                    tip.style.fontSize = '12px';
-                    tip.style.zIndex = '10000';
-                    tip.style.pointerEvents = 'none';
-                    tip.style.maxWidth = '300px';
-                    tip.style.wordBreak = 'break-word';
+                    if (!cell._tip) {
+                        // 创建提示元素
+                        const tip = document.createElement('div');
+                        tip.className = 'time-cell-tip';
+                        tip.style.position = 'fixed';
+                        tip.style.backgroundColor = '#333';
+                        tip.style.color = '#fff';
+                        tip.style.padding = '5px 10px';
+                        tip.style.borderRadius = '4px';
+                        tip.style.fontSize = '12px';
+                        tip.style.zIndex = '10000';
+                        tip.style.pointerEvents = 'none';
+                        tip.style.maxWidth = '300px';
+                        tip.style.wordBreak = 'break-word';
 
-                    // 根据状态设置不同的内容和样式
-                    if (status === 'up') {
-                        tip.innerHTML = '状态: <span style="color: #4CAF50;">正常</span> | 时间: ' + time;
-                    } else if (status === 'down') {
-                        tip.innerHTML = '状态: <span style="color: #f44336;">故障</span> | 时间: ' + time + ' | 错误: <span style="color: #f44336;">' + error + '</span>';
-                    } else {
-                        tip.innerHTML = '状态: <span style="color: #ff9800;">未知</span> | 时间: ' + time;
+                        // 根据状态设置不同的内容和样式
+                        if (status === 'up') {
+                            tip.innerHTML = '状态: <span style="color: #4CAF50;">正常</span> | 时间: ' + time;
+                        } else if (status === 'down') {
+                            tip.innerHTML = '状态: <span style="color: #f44336;">故障</span> | 时间: ' + time + ' | 错误: <span style="color: #f44336;">' + error + '</span>';
+                        } else {
+                            tip.innerHTML = '状态: <span style="color: #ff9800;">未知</span> | 时间: ' + time;
+                        }
+
+                        document.body.appendChild(tip);
+
+                        // 计算位置，确保tooltip在视口内
+                        let top = e.clientY + 10;
+                        let left = e.clientX + 10;
+                        
+                        const tipWidth = tip.offsetWidth;
+                        const tipHeight = tip.offsetHeight;
+                        const viewportWidth = window.innerWidth;
+                        const viewportHeight = window.innerHeight;
+                        
+                        // 调整位置
+                        if (left + tipWidth > viewportWidth) {
+                            left = e.clientX - tipWidth - 10;
+                        }
+                        if (top + tipHeight > viewportHeight) {
+                            top = e.clientY - tipHeight - 10;
+                        }
+                        
+                        // 确保不超出视口
+                        left = Math.max(10, left);
+                        top = Math.max(10, top);
+
+                        // 定位提示元素
+                        tip.style.top = top + 'px';
+                        tip.style.left = left + 'px';
+
+                        // 存储提示元素引用
+                        cell._tip = tip;
                     }
-
-                    document.body.appendChild(tip);
-
-                    // 计算位置，确保tooltip在视口内
-                    let top = e.clientY + 10;
-                    let left = e.clientX + 10;
-                    
-                    const tipWidth = tip.offsetWidth;
-                    const tipHeight = tip.offsetHeight;
-                    const viewportWidth = window.innerWidth;
-                    const viewportHeight = window.innerHeight;
-                    
-                    // 调整位置
-                    if (left + tipWidth > viewportWidth) {
-                        left = e.clientX - tipWidth - 10;
-                    }
-                    if (top + tipHeight > viewportHeight) {
-                        top = e.clientY - tipHeight - 10;
-                    }
-                    
-                    // 确保不超出视口
-                    left = Math.max(10, left);
-                    top = Math.max(10, top);
-
-                    // 定位提示元素
-                    tip.style.top = top + 'px';
-                    tip.style.left = left + 'px';
-
-                    // 存储提示元素引用
-                    cell._tip = tip;
                 }
             }, true);
 
@@ -170,7 +172,7 @@
                     const errorTooltip = card ? card.querySelector('.error-tooltip') : null;
                     const error = errorTooltip ? errorTooltip.dataset.error : '';
 
-                    if (error) {
+                    if (error && !indicator._tip) {
                         // 创建提示元素
                         const tip = document.createElement('div');
                         tip.className = 'status-indicator-tip';
@@ -223,6 +225,10 @@
             let ws = null;
             let reconnectTimer = null;
             let monitorData = [];
+            let chunkBuffer = [];
+            let chunkTotal = 0;
+            let chunkCount = 0;
+            let chunkGroups = null;
 
             function escapeHtml(text) {
                 if (!text) return '';
@@ -537,16 +543,40 @@
                             const data = JSON.parse(event.data);
                             console.log(data);
                             if (data.type === 'monitor_status') {
-                                monitorData = data.data || [];
-                                renderStatusCards(monitorData);
-                                if (data.groups) {
-                                    renderTabs(data.groups);
+                                if (data.chunks && data.chunks > 1) {
+                                    if (data.chunk === 1) {
+                                        chunkBuffer = [];
+                                        chunkTotal = data.total;
+                                        chunkCount = 0;
+                                        chunkGroups = data.groups || null;
+                                    }
+                                    chunkBuffer = chunkBuffer.concat(data.data);
+                                    chunkCount++;
+                                    if (chunkCount >= data.chunks) {
+                                        monitorData = chunkBuffer;
+                                        renderStatusCards(monitorData);
+                                        if (chunkGroups) {
+                                            renderTabs(chunkGroups);
+                                        }
+                                        chunkBuffer = [];
+                                        chunkTotal = 0;
+                                        chunkCount = 0;
+                                        chunkGroups = null;
+                                    }
+                                } else {
+                                    monitorData = data.data || [];
+                                    renderStatusCards(monitorData);
+                                    if (data.groups) {
+                                        renderTabs(data.groups);
+                                    }
                                 }
                             } else if (data.type === 'monitor_updates') {
-                                // 增量更新
+                                chunkBuffer = [];
+                                chunkTotal = 0;
+                                chunkCount = 0;
+                                chunkGroups = null;
                                 applyMonitorUpdates(data.data);
                             } else if (data.type === 'monitor_status_by_gid') {
-                                // 按gid更新的数据
                                 updateMonitorStatus(data.data);
                             }
                         } catch (e) {

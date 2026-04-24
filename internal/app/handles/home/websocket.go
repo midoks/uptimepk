@@ -22,6 +22,11 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+const (
+	MonitorBatchSize   = 20
+	MonitorUpdateBatch = 10
+)
+
 type MonitorStatus struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
@@ -306,25 +311,64 @@ func SendMonitorStatusToClient(client *WSClient) {
 		return
 	}
 
-	data := map[string]interface{}{
-		"type":    "monitor_status",
-		"data":    statusList,
-		"groups":  nil,
-		"updated": time.Now().Unix(),
+	total := len(statusList)
+	if total == 0 {
+		data := map[string]interface{}{
+			"type":    "monitor_status",
+			"data":    []MonitorStatus{},
+			"groups":  nil,
+			"updated": time.Now().Unix(),
+			"total":   0,
+			"chunk":   0,
+			"chunks":  0,
+		}
+
+		if groups, err := db.GetMonitorGroupAll(); err == nil {
+			data["groups"] = groups
+		}
+
+		message, err := json.Marshal(data)
+		if err != nil {
+			return
+		}
+		client.send <- message
+		return
 	}
+
+	chunks := (total + MonitorBatchSize - 1) / MonitorBatchSize
 
 	if groups, err := db.GetMonitorGroupAll(); err == nil {
-		data["groups"] = groups
-	}
+		for i := 0; i < total; i += MonitorBatchSize {
+			end := i + MonitorBatchSize
+			if end > total {
+				end = total
+			}
+			chunkNum := i/MonitorBatchSize + 1
 
-	message, err := json.Marshal(data)
-	if err != nil {
-		return
+			data := map[string]interface{}{
+				"type":    "monitor_status",
+				"data":    statusList[i:end],
+				"groups":  groups,
+				"updated": time.Now().Unix(),
+				"total":   total,
+				"chunk":   chunkNum,
+				"chunks":  chunks,
+			}
+
+			message, err := json.Marshal(data)
+			if err != nil {
+				continue
+			}
+			client.send <- message
+
+			if chunkNum < chunks {
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
 	}
 
 	client.lastUpdate = time.Now().Unix()
 	client.isFirstUpdate = false
-	client.send <- message
 }
 
 func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
@@ -428,30 +472,81 @@ func BroadcastMonitorStatus() {
 		return
 	}
 
-	data := map[string]interface{}{
-		"type":    "monitor_status",
-		"data":    statusList,
-		"groups":  nil,
-		"updated": time.Now().Unix(),
-	}
+	total := len(statusList)
+	if total == 0 {
+		data := map[string]interface{}{
+			"type":    "monitor_status",
+			"data":    []MonitorStatus{},
+			"groups":  nil,
+			"updated": time.Now().Unix(),
+			"total":   0,
+			"chunk":   0,
+			"chunks":  0,
+		}
 
-	if groups, err := db.GetMonitorGroupAll(); err == nil {
-		data["groups"] = groups
-	}
+		if groups, err := db.GetMonitorGroupAll(); err == nil {
+			data["groups"] = groups
+		}
 
-	message, err := json.Marshal(data)
-	if err != nil {
+		message, err := json.Marshal(data)
+		if err != nil {
+			return
+		}
+
+		for client := range hub.clients {
+			client.lastUpdate = time.Now().Unix()
+			client.isFirstUpdate = false
+			select {
+			case client.send <- message:
+			default:
+				close(client.send)
+				delete(hub.clients, client)
+			}
+		}
 		return
 	}
+
+	chunks := (total + MonitorBatchSize - 1) / MonitorBatchSize
 
 	for client := range hub.clients {
 		client.lastUpdate = time.Now().Unix()
 		client.isFirstUpdate = false
-		select {
-		case client.send <- message:
-		default:
-			close(client.send)
-			delete(hub.clients, client)
+
+		if groups, err := db.GetMonitorGroupAll(); err == nil {
+			for i := 0; i < total; i += MonitorBatchSize {
+				end := i + MonitorBatchSize
+				if end > total {
+					end = total
+				}
+				chunkNum := i/MonitorBatchSize + 1
+
+				data := map[string]interface{}{
+					"type":    "monitor_status",
+					"data":    statusList[i:end],
+					"groups":  groups,
+					"updated": time.Now().Unix(),
+					"total":   total,
+					"chunk":   chunkNum,
+					"chunks":  chunks,
+				}
+
+				message, err := json.Marshal(data)
+				if err != nil {
+					continue
+				}
+
+				select {
+				case client.send <- message:
+				default:
+					close(client.send)
+					delete(hub.clients, client)
+					break
+				}
+
+				if chunkNum < chunks {
+					time.Sleep(10 * time.Millisecond)
+				}
+			}
 		}
 	}
 }
