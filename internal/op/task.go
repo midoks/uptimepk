@@ -2,6 +2,8 @@ package op
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -26,17 +28,60 @@ func TelegramMessageHandlertrategyDefault(update tgbotapi.Update, bot *tgbotapi.
 	// 示例：根据消息内容做不同处理
 	switch update.Message.Text {
 	case "/start":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "YES.")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "OK")
 		_, err := bot.Send(msg)
 		return err
 	case "/status":
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "正常运行!")
 		_, err := bot.Send(msg)
 		return err
-	default:
-		// 默认回复
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
+	case "/?":
+		fallthrough
+	case "/help":
+		helpText := `可用命令:
+/start - 开始使用
+/status - 检查运行状态
+/help - 显示此帮助信息
+
+批量导入格式:
+备注: https://example.com
+备注: https://test.com
+=========================
+备注: https://domain.com
+
+说明:
+- 每行格式: 备注: URL
+- 使用 ========================= 作为分组分隔符
+- URL 必须以 http:// 或 https:// 开头`
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)
 		_, err := bot.Send(msg)
+		return err
+	default:
+		// 尝试解析域名数据
+		successCount, failCount, err := CreateMonitorsFromText(update.Message.Text)
+		if err != nil || successCount == 0 {
+			if failCount == 0 {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
+				_, err := bot.Send(msg)
+				return err
+			}
+		}
+
+		// 返回创建结果
+		var resultMsg string
+		if successCount > 0 {
+			resultMsg = fmt.Sprintf("✓ 成功创建 %d 个监控任务", successCount)
+		}
+		if failCount > 0 {
+			if resultMsg != "" {
+				resultMsg += fmt.Sprintf("\n✗ 失败 %d 个", failCount)
+			} else {
+				resultMsg = fmt.Sprintf("✗ 失败 %d 个", failCount)
+			}
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, resultMsg)
+		_, err = bot.Send(msg)
 		return err
 	}
 }
@@ -145,4 +190,110 @@ func InitTelegramTask() {
 		}
 
 	}
+}
+
+type DomainEntry struct {
+	Remark string
+	URL    string
+}
+
+func parseDomainEntries(text string) ([]DomainEntry, error) {
+	var entries []DomainEntry
+	var currentRemark string
+
+	lines := strings.Split(text, "\n")
+	urlPattern := regexp.MustCompile(`^https?://`)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if line == "" {
+			continue
+		}
+
+		if strings.Contains(line, "=========================") {
+			currentRemark = ""
+			continue
+		}
+
+		if strings.Contains(line, ":") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				remark := strings.TrimSpace(parts[0])
+				url := strings.TrimSpace(parts[1])
+
+				// 移除反引号
+				url = strings.Trim(url, "`")
+
+				if urlPattern.MatchString(url) {
+					entries = append(entries, DomainEntry{
+						Remark: remark,
+						URL:    url,
+					})
+					currentRemark = ""
+				} else {
+					currentRemark = remark
+				}
+			}
+		} else if currentRemark != "" {
+			// 移除反引号
+			line = strings.Trim(line, "`")
+			if urlPattern.MatchString(line) {
+				entries = append(entries, DomainEntry{
+					Remark: currentRemark,
+					URL:    strings.TrimSpace(line),
+				})
+				currentRemark = ""
+			}
+		}
+	}
+
+	return entries, nil
+}
+
+func CreateMonitorsFromText(text string) (successCount, failCount int, err error) {
+	entries, err := parseDomainEntries(text)
+
+	fmt.Println("entries:", entries)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if len(entries) == 0 {
+		return 0, 0, nil
+	}
+
+	for _, entry := range entries {
+		monitor := &model.Monitor{
+			Name:         entry.Remark,
+			Type:         "http",
+			Status:       true,
+			Interval:     60,
+			IntervalType: "second",
+			MaxRetries:   3,
+			Timeout:      10,
+			CreateTime:   time.Now().Unix(),
+			UpdateTime:   time.Now().Unix(),
+		}
+
+		monitor.SetHttpTypeParams(model.MonitorHttpTypeParams{
+			Addr: entry.URL,
+		})
+
+		if err := db.GetDb().Create(monitor).Error; err != nil {
+			fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
+			failCount++
+			continue
+		}
+
+		if err := MonitorAddTask(*monitor); err != nil {
+			fmt.Printf("添加任务失败: %s - %v\n", entry.Remark, err)
+			failCount++
+			continue
+		}
+
+		successCount++
+	}
+
+	return successCount, failCount, nil
 }
