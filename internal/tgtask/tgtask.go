@@ -43,8 +43,6 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 	if proxyURL != "" {
 		u, parseErr := url.Parse(proxyURL)
 		if parseErr == nil {
-			// fmt.Printf("Using proxy: %s\n", u.String())
-
 			// 支持 HTTP/HTTPS/SOCKS5 代理
 			if u.Scheme == "http" || u.Scheme == "https" {
 				transport := &http.Transport{
@@ -67,7 +65,6 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 					bot, err = tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, client)
 				}
 			} else {
-				// fmt.Printf("Unsupported proxy scheme: %s\n", u.Scheme)
 				bot, err = tgbotapi.NewBotAPI(token)
 			}
 
@@ -78,7 +75,6 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 				}
 			}
 		} else {
-			// fmt.Printf("Failed to parse proxy URL: %v\n", parseErr)
 			bot, err = tgbotapi.NewBotAPI(token)
 			if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
 				fmt.Printf("Failed to create bot without proxy: %v\n", err)
