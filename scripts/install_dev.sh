@@ -9,6 +9,8 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 # sudo tar -C /usr/local -xzf go1.19.1.linux-amd64.tar.gz
 # sudo ln -s /usr/local/go/bin/* /usr/bin/
 
+# systemctl status uptimepk
+
 # Debug Now
 export PATH=/usr/local/go:$PATH:/root/go/bin
 export GOPATH=/root/go
