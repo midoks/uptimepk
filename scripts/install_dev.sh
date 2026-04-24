@@ -40,6 +40,7 @@ go mod tidy
 go mod vendor
 
 # cd /usr/local/uptimepk_dev/uptimepk && go build -o uptimepk main.go 
+# cd /usr/local/uptimepk_dev/uptimepk && go build -o uptimepk main.go && ./uptimepk web
 cd $TAGRT_DIR/uptimepk && go build -o uptimepk main.go 
 
 
