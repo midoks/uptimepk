@@ -11,6 +11,9 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 
 # systemctl status uptimepk
 
+# 手动编译
+# go build main.go -o uptimepk && uptimepk web 
+
 # Debug Now
 export PATH=/usr/local/go:$PATH:/root/go/bin
 export GOPATH=/root/go
@@ -37,9 +40,13 @@ go mod tidy
 go mod vendor
 
 
+go build main.go -o uptimepk
+
+
 cd $TAGRT_DIR/uptimepk/scripts
 
 sh make.sh
+
 
 systemctl daemon-reload
 
