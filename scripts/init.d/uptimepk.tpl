@@ -45,7 +45,7 @@ im_start(){
         if [ "$isStart" == '' ];then
                 echo -e "\033[31mfailed\033[0m"
                 echo '------------------------------------------------------'
-                tail -n 20 ${app_path}/logs/uptimepk.log
+                tail -n 20 ${app_path}/logs/uppk.log
                 echo '------------------------------------------------------'
                 echo -e "\033[31mError: ${SERVICENAME} service startup failed.\033[0m"
                 return;
