@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,21 +11,6 @@ import (
 	"uptimepk/internal/model"
 	"uptimepk/internal/monitortask"
 )
-
-// MonitorTask 监控任务
-type MonitorTask struct {
-	monitor *model.Monitor
-}
-
-// ID 获取任务ID
-func (t *MonitorTask) ID() string {
-	return "monitor_" + strconv.FormatInt(t.monitor.ID, 10)
-}
-
-// Name 获取任务名称
-func (t *MonitorTask) Name() string {
-	return t.monitor.Name
-}
 
 func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
 	cluster := db.Model(&model.Monitor{})
@@ -110,13 +94,13 @@ func MonitorTriggerStatus(id int64) error {
 		return err
 	}
 
-	task := &MonitorTask{monitor: &data}
+	taskID := fmt.Sprintf("monitor_%d", data.ID)
 	if status {
-		if err := mt_manager.EnableTask(task.ID()); err != nil {
+		if err := mt_manager.EnableTask(taskID); err != nil {
 			return fmt.Errorf("failed to enable monitor task %s: %v\n", data.Name, err)
 		}
 	} else {
-		if err := mt_manager.DisableTask(task.ID()); err != nil {
+		if err := mt_manager.DisableTask(taskID); err != nil {
 			return fmt.Errorf("failed to disable monitor task %s: %v\n", data.Name, err)
 		}
 	}
