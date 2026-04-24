@@ -183,6 +183,10 @@
                     {
                         "code":"system_database",
                         "path": "/system/database/clean_setting"
+                    },
+                    {
+                        "code":"system_database",
+                        "path": "/system/db"
                     }
                 ]
             }
