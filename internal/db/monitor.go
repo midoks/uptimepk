@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"uptimepk/internal/app/entity"
 	"uptimepk/internal/model"
@@ -90,10 +89,10 @@ func MonitorTriggerStatus(id int64) error {
 			"status":      status,
 			"update_time": time.Now().Unix(),
 		}).Error; err != nil {
-
 		return err
 	}
 
+	// 计划任务
 	taskID := fmt.Sprintf("monitor_%d", data.ID)
 	if status {
 		if err := mt_manager.EnableTask(taskID); err != nil {
@@ -107,10 +106,19 @@ func MonitorTriggerStatus(id int64) error {
 	return nil
 }
 
-func MonitorDeleteByID(tx *gorm.DB, id int64) error {
-	if tx == nil {
-		tx = db
+func MonitorSoftDeleteByID(id int64) error {
+	if err := db.Model(&model.Monitor{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"is_deleted":  1,
+			"update_time": time.Now().Unix(),
+		}).Error; err != nil {
+		return err
 	}
+	return nil
+}
+
+func MonitorDeleteByID(id int64) error {
 	var d model.Monitor
-	return tx.Where("id = ?", id).Delete(&d).Error
+	return db.Where("id = ?", id).Delete(&d).Error
 }

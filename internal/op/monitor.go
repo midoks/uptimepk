@@ -107,6 +107,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 			//检查内容
 			if params.CheckContent != "" {
 				bodyStr := string(body)
+				fmt.Println("bodyStr:", bodyStr)
 				if !strings.Contains(bodyStr, params.CheckContent) {
 					isValid = false
 					errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
@@ -250,7 +251,7 @@ func MonitorReloadTask(mm model.Monitor) error {
 
 // InitMonitorask 初始化监控任务
 func InitMonitorask() {
-	fmt.Println("starting to initialize monitor tasks...")
+	// fmt.Println("starting to initialize monitor tasks...")
 	mt_manager := monitortask.GetManager()
 
 	// 使用分页查询，支持大量数据
@@ -278,24 +279,14 @@ func InitMonitorask() {
 		totalCount += len(monitors)
 		// 为每个监控创建任务
 		for _, monitor := range monitors {
-			if err := MonitorAddTask(monitor); err != nil {
-				fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
-				continue
-			}
-
 			if monitor.Status {
-				if err := MonitorEnableTask(monitor); err != nil {
-					fmt.Errorf("failed to enable monitor task %s: %v\n", monitor.Name, err)
+				if err := MonitorAddTask(monitor); err != nil {
+					fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
 					continue
 				}
-			} else {
-				if err := MonitorDisableTask(monitor); err != nil {
-					fmt.Errorf("failed to disable monitor task %s: %v\n", monitor.Name, err)
-					continue
-				}
+				fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
+				addedCount++
 			}
-			fmt.Printf("added monitor task %s with interval %d seconds\n", monitor.Name, monitor.Interval)
-			addedCount++
 		}
 
 		// 如果返回的数据少于页面大小，说明已经到了最后一页
@@ -308,7 +299,7 @@ func InitMonitorask() {
 
 	// 启动任务管理器
 	mt_manager.Start()
-	fmt.Printf("Monitor tasks initialized: %d total, %d added\n", totalCount, addedCount)
+	// fmt.Printf("Monitor tasks initialized: %d total, %d added\n", totalCount, addedCount)
 
 	// 列出所有任务，确认所有任务都已添加
 	tasks := mt_manager.ListTasks()

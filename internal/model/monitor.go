@@ -1,6 +1,9 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Monitor struct {
 	ID         int64  `json:"id" gorm:"primaryKey"`        // unique key
@@ -86,4 +89,9 @@ func (a *Monitor) GetUdpTypeParams() (MonitorUdpTypeParams, error) {
 	}
 	err := json.Unmarshal([]byte(a.Params), &p)
 	return p, err
+}
+
+// 计划任务使用
+func (a *Monitor) GetTaskID() string {
+	return fmt.Sprintf("monitor_%d", a.ID)
 }

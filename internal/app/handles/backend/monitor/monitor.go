@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	// "fmt"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +12,8 @@ import (
 	"uptimepk/internal/app/form"
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
+	"uptimepk/internal/monitortask"
+	"uptimepk/internal/op"
 )
 
 func Home(c *gin.Context) {
@@ -63,6 +65,8 @@ func PostAdd(c *gin.Context) {
 		return
 	}
 
+	is_create := true
+
 	common_data := &model.Monitor{
 		Name:       field.Name,
 		Type:       field.Type,
@@ -104,6 +108,7 @@ func PostAdd(c *gin.Context) {
 				common.ErrorResp(c, err, -1)
 				return
 			}
+			is_create = false
 			common.SuccessResp(c)
 			return
 		}
@@ -114,6 +119,14 @@ func PostAdd(c *gin.Context) {
 		return
 	}
 
+	// 添加/更新任务
+	mt_manager := monitortask.GetManager()
+	if is_create && field.Status { // 新创建的并开启，加入计划任务
+		op.MonitorAddTask(*common_data)
+	} else if !is_create && field.Status { // 更新并开启，加入计划任务
+		mt_manager.RemoveTask(common_data.GetTaskID())
+		op.MonitorAddTask(*common_data)
+	}
 	common.SuccessResp(c)
 }
 
@@ -139,12 +152,18 @@ func SoftDelete(c *gin.Context) {
 		return
 	}
 
-	err := db.MonitorDeleteByID(nil, field.ID)
-	if err == nil {
-		common.SuccessResp(c)
+	err := db.MonitorSoftDeleteByID(field.ID)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
 		return
 	}
-	common.ErrorResp(c, err, -1)
+
+	// 删除任务
+	mt_manager := monitortask.GetManager()
+	taskID := fmt.Sprintf("monitor_%d", field.ID)
+	mt_manager.RemoveTask(taskID)
+	common.SuccessResp(c)
+
 }
 
 func Delete(c *gin.Context) {
@@ -154,10 +173,16 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err := db.MonitorDeleteByID(nil, field.ID)
-	if err == nil {
-		common.SuccessResp(c)
+	err := db.MonitorDeleteByID(field.ID)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
 		return
 	}
-	common.ErrorResp(c, err, -1)
+
+	// 删除任务
+	mt_manager := monitortask.GetManager()
+	taskID := fmt.Sprintf("monitor_%d", field.ID)
+	mt_manager.RemoveTask(taskID)
+
+	common.SuccessResp(c)
 }

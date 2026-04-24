@@ -141,7 +141,7 @@ func initRuoteAdmin(r *gin.Engine) {
 	backstage_admin.GET("/monitor/add", backend_monitor.Add)
 	backstage_admin.POST("/monitor/add", backend_monitor.PostAdd)
 	backstage_admin.GET("/monitor/list", backend_monitor.List)
-	backstage_admin.POST("/monitor/delete", backend_monitor.Delete)
+	backstage_admin.POST("/monitor/delete", backend_monitor.SoftDelete)
 	backstage_admin.POST("/monitor/trigger_status", backend_monitor.MonitorTriggerStatus)
 
 	backstage_admin.GET("/monitor/group", backend_monitor.MonitorGroups)

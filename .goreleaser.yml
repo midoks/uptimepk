@@ -31,6 +31,7 @@ archives:
   - files:
       - src: LICENSE
       - src: readme.md
+      - src: scripts
 
 upx:
   - enabled: true
