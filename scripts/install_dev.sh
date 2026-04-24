@@ -39,8 +39,8 @@ fi
 go mod tidy
 go mod vendor
 
-
-cd $TAGRT_DIR/uptimepk && go build main.go -o uptimepk
+# cd /usr/local/uptimepk_dev/uptimepk && go build -o uptimepk main.go 
+cd $TAGRT_DIR/uptimepk && go build -o uptimepk main.go 
 
 
 cd $TAGRT_DIR/uptimepk/scripts
