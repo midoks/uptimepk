@@ -67,7 +67,7 @@ tableIns = table.render({
         {field:'hour', title:'小时', templet: function(d){return String(d.hour).padStart(2,'0');}},
         {field:'minute', title:'分钟', templet: function(d){return String(d.minute).padStart(2,'0');}},
         {field:'is_valid', title:'状态', toolbar: "#isVaildTpl"},
-        {field:'size', title:'大小(Byte)',width:100,templet: function(d){if(d.size < 1024){return d.size + ' B';}else{return (d.size / 1024).toFixed(2) + ' KB';}}},
+        {field:'size', title:'大小',width:100,templet: function(d){if(d.size < 1024){return d.size + ' B';}else{return (d.size / 1024).toFixed(2) + ' KB';}}},
         {field:'speed', title:'耗时(ms)'},
         {field:'create_time', title:'创建时间', width:185, templet: function(d){return layui.util.toDateString(d.create_time * 1000, 'yyyy-MM-dd HH:mm:ss');}},
         {title:'操作', toolbar: '#cmdTpl', width:70, fixed: 'right'}
