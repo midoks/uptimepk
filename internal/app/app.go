@@ -234,6 +234,14 @@ func Run() {
 
 	// 初始化 session 存储
 	store := cookie.NewStore([]byte(conf.Security.SecretKey))
+	// 设置 cookie 选项
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   int(conf.Session.MaxLifeTime),
+		HttpOnly: true,
+		Secure:   conf.Session.CookieSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
 	r.Use(sessions.Sessions(conf.Session.CookieName, store))
 
 	// 启用压缩
