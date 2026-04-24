@@ -6,19 +6,20 @@ import (
 )
 
 type Monitor struct {
-	ID         int64  `json:"id" gorm:"primaryKey"`        // unique key
-	Gid        int64  `json:"gid"`                         // gid
-	Name       string `json:"name"`                        // name
-	Type       string `json:"type"`                        // type
-	Params     string `json:"params"`                      // params
-	Status     bool   `json:"status"`                      // status
-	Interval   int    `json:"interval"`                    // interval
-	MaxRetries int    `json:"max_retries"`                 // max_retries
-	Timeout    int    `json:"timeout"`                     // timeout
-	Mark       string `json:"mark"`                        // mark
-	IsDeleted  bool   `json:"is_deleted" gorm:"default:0"` // is_deleted
-	CreateTime int64  `json:"create_time"`                 // create_time
-	UpdateTime int64  `json:"update_time"`                 // update_time
+	ID           int64  `json:"id" gorm:"primaryKey"`        // unique key
+	Gid          int64  `json:"gid"`                         // gid
+	Name         string `json:"name"`                        // name
+	Type         string `json:"type"`                        // type
+	Params       string `json:"params"`                      // params
+	Status       bool   `json:"status"`                      // status
+	Interval     int    `json:"interval"`                    // interval
+	IntervalType string `json:"interval_type"`               // interval_type
+	MaxRetries   int    `json:"max_retries"`                 // max_retries
+	Timeout      int    `json:"timeout"`                     // timeout
+	Mark         string `json:"mark"`                        // mark
+	IsDeleted    bool   `json:"is_deleted" gorm:"default:0"` // is_deleted
+	CreateTime   int64  `json:"create_time"`                 // create_time
+	UpdateTime   int64  `json:"update_time"`                 // update_time
 }
 
 type MonitorHttpTypeParams struct {

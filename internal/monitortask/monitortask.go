@@ -108,14 +108,14 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 	}
 
 	m.tasks[taskID] = taskInfo
-	fmt.Printf("Task %s added with cron expression: %s\n", task.Name(), cronExpr)
+	// fmt.Printf("Task %s added with cron expression: %s\n", task.Name(), cronExpr)
 
 	// 如果管理器未运行，启动它
 	if !m.running {
 		// 直接启动，避免死锁
 		m.cron.Start()
 		m.running = true
-		fmt.Println("Task manager started")
+		// fmt.Println("Task manager started")
 	}
 
 	return nil
