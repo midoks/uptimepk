@@ -81,8 +81,8 @@ func DatabaseCleanSetting(c *gin.Context) {
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
 
 	// 获取数据库配置设置
-	setting_db_conf, _ := db.GetSysSettingByCode(db.SettingDbConf)
-	if setting_db_conf == nil {
+	setting_db_conf, err := db.GetSysSettingByCode(db.SettingDbConf)
+	if err == nil {
 		data["setting_db_conf"] = setting_db_conf
 	}
 
