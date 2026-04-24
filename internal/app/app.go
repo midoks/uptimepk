@@ -225,12 +225,11 @@ func initRuote(r *gin.Engine) {
 }
 
 func Run() {
-	r := gin.New()
-
 	if conf.App.RunMode == "prod" {
-		// gin.SetMode(gin.DebugMode)
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	r := gin.New()
 
 	// 初始化 session 存储
 	store := cookie.NewStore([]byte(conf.Security.SecretKey))
