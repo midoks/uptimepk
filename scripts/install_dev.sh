@@ -40,7 +40,7 @@ go mod tidy
 go mod vendor
 
 
-go build main.go -o uptimepk
+cd $TAGRT_DIR/uptimepk && go build main.go -o uptimepk
 
 
 cd $TAGRT_DIR/uptimepk/scripts
