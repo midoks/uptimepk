@@ -120,11 +120,10 @@ func PostAdd(c *gin.Context) {
 	}
 
 	// 添加/更新任务
-	mt_manager := monitortask.GetManager()
 	if is_create && field.Status { // 新创建的并开启，加入计划任务
 		op.MonitorAddTask(*common_data)
 	} else if !is_create && field.Status { // 更新并开启，加入计划任务
-		mt_manager.RemoveTask(common_data.GetTaskID())
+		op.MonitorDeleteTask(*common_data)
 		op.MonitorAddTask(*common_data)
 	}
 	common.SuccessResp(c)
@@ -138,13 +137,41 @@ func MonitorTriggerStatus(c *gin.Context) {
 	}
 
 	err := db.MonitorTriggerStatus(field.ID)
-	if err == nil {
-		common.SuccessResp(c)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
 		return
 	}
-	common.ErrorResp(c, err, -1)
+
+	var data model.Monitor
+	if err := db.GetDb().First(&data, field.ID).Error; err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	// 计划任务
+	if data.Status {
+		if err := op.MonitorAddTask(data); err != nil {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+
+	} else {
+		if err := op.MonitorDeleteTask(data); err != nil {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+	}
+	common.SuccessResp(c)
 }
 
+func MonitorReloadTask(c *gin.Context) {
+	// 重新加载所有监控任务
+	if err := op.MonitorReloadTask(); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	common.SuccessResp(c)
+}
 func SoftDelete(c *gin.Context) {
 	var field form.ID
 	if err := c.ShouldBind(&field); err != nil {
@@ -158,12 +185,18 @@ func SoftDelete(c *gin.Context) {
 		return
 	}
 
-	// 删除任务
-	mt_manager := monitortask.GetManager()
-	taskID := fmt.Sprintf("monitor_%d", field.ID)
-	mt_manager.RemoveTask(taskID)
-	common.SuccessResp(c)
+	var data model.Monitor
+	if err := db.GetDb().First(&data, field.ID).Error; err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
 
+	// 删除任务
+	if err := op.MonitorDeleteTask(data); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	common.SuccessResp(c)
 }
 
 func Delete(c *gin.Context) {

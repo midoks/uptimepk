@@ -107,7 +107,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 			//检查内容
 			if params.CheckContent != "" {
 				bodyStr := string(body)
-				fmt.Println("bodyStr:", bodyStr)
+				// fmt.Println("bodyStr:", bodyStr)
 				if !strings.Contains(bodyStr, params.CheckContent) {
 					isValid = false
 					errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
@@ -242,7 +242,7 @@ func MonitorDisableTask(mm model.Monitor) error {
 	return nil
 }
 
-func MonitorReloadTask(mm model.Monitor) error {
+func MonitorReloadTask() error {
 	mt_manager := monitortask.GetManager()
 	mt_manager.RemoveAllTasks()
 	InitMonitorask()
@@ -275,7 +275,6 @@ func InitMonitorask() {
 			break
 		}
 
-		// fmt.Printf("Found %d monitors on page %d\n", len(monitors), page)
 		totalCount += len(monitors)
 		// 为每个监控创建任务
 		for _, monitor := range monitors {

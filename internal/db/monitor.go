@@ -1,14 +1,12 @@
 package db
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"uptimepk/internal/app/entity"
 	"uptimepk/internal/model"
-	"uptimepk/internal/monitortask"
 )
 
 func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
@@ -70,7 +68,7 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 }
 
 func MonitorTriggerStatus(id int64) error {
-	mt_manager := monitortask.GetManager()
+
 	var data model.Monitor
 	if err := db.First(&data, id).Error; err != nil {
 		return errors.Wrapf(err, "failed get monitor data")
@@ -90,18 +88,6 @@ func MonitorTriggerStatus(id int64) error {
 			"update_time": time.Now().Unix(),
 		}).Error; err != nil {
 		return err
-	}
-
-	// 计划任务
-	taskID := fmt.Sprintf("monitor_%d", data.ID)
-	if status {
-		if err := mt_manager.EnableTask(taskID); err != nil {
-			return fmt.Errorf("failed to enable monitor task %s: %v\n", data.Name, err)
-		}
-	} else {
-		if err := mt_manager.DisableTask(taskID); err != nil {
-			return fmt.Errorf("failed to disable monitor task %s: %v\n", data.Name, err)
-		}
 	}
 	return nil
 }
