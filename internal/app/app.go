@@ -215,7 +215,7 @@ func initRuote(r *gin.Engine) {
 	staticHandler := http.StripPrefix("/static", http.FileServer(http.FS(staticFS)))
 	r.GET("/static/*filepath", func(c *gin.Context) {
 		c.Header("Cache-Control", "public, max-age=604800") // 604800 秒 = 7 天
-		c.Header("Permissions-Policy", "unload=*")
+		// c.Header("Permissions-Policy", "unload=*")
 		staticHandler.ServeHTTP(c.Writer, c.Request)
 	})
 
@@ -228,7 +228,8 @@ func Run() {
 	r := gin.New()
 
 	if conf.App.RunMode == "prod" {
-		gin.SetMode(gin.DebugMode)
+		// gin.SetMode(gin.DebugMode)
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// 初始化 session 存储
@@ -244,10 +245,10 @@ func Run() {
 	}
 
 	// 设置 Permissions-Policy 头，允许 unload 事件
-	r.Use(func(c *gin.Context) {
-		c.Header("Permissions-Policy", "unload=*")
-		c.Next()
-	})
+	// r.Use(func(c *gin.Context) {
+	// 	c.Header("Permissions-Policy", "unload=*")
+	// 	c.Next()
+	// })
 
 	// if conf.App.Debug {
 	// 	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
