@@ -45,7 +45,10 @@ func InstallConf(data map[string]string) error {
 	customConf := filepath.Join(CustomDir(), "conf", "app.yaml")
 
 	if !isExist(filepath.Dir(customConf)) {
-		os.MkdirAll(filepath.Dir(customConf), os.ModePerm)
+		err = os.MkdirAll(filepath.Dir(customConf), os.ModePerm)
+		if err != nil {
+			return errors.Wrap(err, "MkdirAll")
+		}
 	}
 
 	// Update configuration values
@@ -99,7 +102,7 @@ func InstallConf(data map[string]string) error {
 	// Save the updated configuration
 	yamlData, err := yaml.Marshal(saveConfig)
 	if err != nil {
-		return errors.Wrap(err, "marshal YAML config")
+		return errors.Wrap(err, "marshal yaml config")
 	}
 
 	if err := os.WriteFile(customConf, yamlData, os.ModePerm); err != nil {
