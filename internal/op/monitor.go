@@ -84,6 +84,10 @@ func (t *MonitorTask) runHttpMonitor() error {
 		if params.UserAgent != "" {
 			req.Header.Set("User-Agent", params.UserAgent)
 		}
+		// 禁用缓存
+		req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		req.Header.Set("Pragma", "no-cache")
+		req.Header.Set("Expires", "0")
 		resp, err = client.Do(req)
 		if err != nil {
 			errorMsg = err.Error()
