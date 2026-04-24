@@ -21,7 +21,7 @@ var Install = cli.Command{
 		stringFlag("config, c", "", "custom configuration file path"),
 		stringFlag("name, n", "uptimepk", "service name"),
 		stringFlag("user, u", "root", "run as user"),
-		stringFlag("dir, d", "/opt/uptimepk", "installation directory"),
+		stringFlag("dir, d", ".", "installation directory"),
 	},
 }
 
@@ -33,7 +33,7 @@ After=network.target
 Type=simple
 User={{.User}}
 WorkingDirectory={{.Dir}}
-ExecStart={{.Dir}}/uptimepk web --config {{.Config}}
+ExecStart={{.Dir}}/uptimepk web
 Restart=always
 RestartSec=5
 
@@ -51,8 +51,17 @@ func runInstall(c *cli.Context) error {
 	installDir := c.String("dir")
 	configPath := c.String("config")
 
+	// 如果是默认目录，使用可执行文件所在的目录
+	if installDir == "." {
+		execPath, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("failed to get executable path: %v", err)
+		}
+		installDir = filepath.Dir(execPath)
+	}
+
 	if configPath == "" {
-		configPath = filepath.Join(installDir, "conf", "app.yaml")
+		configPath = filepath.Join(installDir, "custom/conf", "app.yaml")
 	}
 
 	fmt.Printf("Installing uptimepk as systemd service '%s'...\n", serviceName)
