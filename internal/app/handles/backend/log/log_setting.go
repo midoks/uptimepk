@@ -51,6 +51,7 @@ func PostSettting(c *gin.Context) {
 			common.ErrorResp(c, err, -1)
 			return
 		}
+		db.ClearSysSettingCache()
 		common.SuccessResp(c)
 		return
 	}

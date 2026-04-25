@@ -70,6 +70,7 @@ func PostHome(c *gin.Context) {
 			common.ErrorResp(c, err, -1)
 			return
 		}
+		db.ClearSysSettingCache()
 		common.SuccessResp(c)
 		return
 	}
@@ -95,7 +96,8 @@ func Web(c *gin.Context) {
 
 func PostWeb(c *gin.Context) {
 	var field form.SettingWebUI
-	if err := c.ShouldBind(&field); err != nil {
+	var err error
+	if err = c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
@@ -110,18 +112,19 @@ func PostWeb(c *gin.Context) {
 		Subtitle: field.Subtitle,
 	})
 	common_data.UpdateTime = time.Now().Unix()
-	_, err := db.GetSysSettingByCode(db.SettingWebUI)
+	_, err = db.GetSysSettingByCode(db.SettingWebUI)
 	if err == nil {
-		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingWebUI).Updates(common_data).Error; err != nil {
+		if err = db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingWebUI).Updates(common_data).Error; err != nil {
 			common.ErrorResp(c, err, -1)
 			return
 		}
+		db.ClearSysSettingCache()
 		common.SuccessResp(c)
 		return
 	}
 
 	common_data.CreateTime = time.Now().Unix()
-	if err := db.GetDb().Create(common_data).Error; err != nil {
+	if err = db.GetDb().Create(common_data).Error; err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
