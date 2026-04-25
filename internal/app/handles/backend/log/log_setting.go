@@ -15,10 +15,13 @@ import (
 )
 
 func Settings(c *gin.Context) {
-	log_data, _ := db.GetSysSettingByCode(db.SettingLog)
 	data := common.CommonVer(c)
 	data["submenu"] = GetLogSubMenu()
-	data["Data"] = log_data
+	log_setting_data, err := db.GetSysSettingByCode(db.SettingLog)
+	if err == nil {
+		setting_data, _ := log_setting_data.GetLogValue()
+		data["Data"] = setting_data
+	}
 	c.HTML(http.StatusOK, "backend/log/setting.tmpl", data)
 }
 
