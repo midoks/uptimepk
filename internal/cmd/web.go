@@ -38,6 +38,7 @@ func runWeb(c *cli.Context) error {
 		go op.InitMonitorask()
 	}
 
+	op.InitCleanTask()
 	app.Run()
 	return nil
 }

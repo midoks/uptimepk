@@ -18,6 +18,7 @@ import (
 	"uptimepk/embed"
 	"uptimepk/internal/app/middleware"
 	"uptimepk/internal/conf"
+	"uptimepk/internal/op"
 
 	backend "uptimepk/internal/app/handles/backend"
 	backend_admin "uptimepk/internal/app/handles/backend/admin"
@@ -236,6 +237,9 @@ func Run() {
 	if conf.App.RunMode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	// 初始化清理任务
+	op.InitCleanTask()
 
 	r := gin.New()
 

@@ -470,10 +470,10 @@ func DeleteMonitorLogBeforeDays(days int) error {
 			continue
 		}
 
-		// 删除表中的所有数据（因为整个表都是过期数据）
-		if err := GetDb().Table(tableName).Delete(&model.MonitorLog{}).Error; err != nil {
+		// 直接删除整个表（因为整个表都是过期数据）
+		if err := GetDb().Migrator().DropTable(tableName); err != nil {
 			// 记录错误但继续处理其他表
-			fmt.Printf("Error deleting monitor logs from table %s: %v\n", tableName, err)
+			fmt.Printf("Error dropping monitor log table %s: %v\n", tableName, err)
 		}
 
 		currentDate = currentDate.AddDate(0, 0, 1)
