@@ -11,6 +11,7 @@ const (
 	SettingAdminUI = "admin_ui"
 	SettingWebUI   = "web_ui"
 	SettingDbConf  = "db_conf"
+	SettingLog     = "log_sys"
 )
 
 func GetSysSettingByCode(code string) (*model.SysSetting, error) {

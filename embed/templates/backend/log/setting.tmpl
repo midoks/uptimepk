@@ -27,14 +27,14 @@
                             <tr>
                                 <td>允许手动删除日志</td>
                                 <td>
-                                    <input type="checkbox" name="allowed_manual_delete" {[if .Data]}{[if .Data.GetLogValue.AllowedManualDelete]}checked{[end]}{[end]}> 
+                                    <input type="checkbox" name="allowed_manual_delete" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if .AllowedManualDelete]}checked{[end]}{[end]}{[end]}> 
                                 </td>
                             </tr>
 
                             <tr>
                                 <td>允许手动清理</td>
                                 <td>
-                                    <input type="checkbox" name="allowed_manual" {[if .Data]}{[if .Data.GetLogValue.AllowedManual]}checked{[end]}{[end]}> 
+                                    <input type="checkbox" name="allowed_manual" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if .AllowedManual]}checked{[end]}{[end]}{[end]}> 
                                 </td>
                             </tr>
 
@@ -42,7 +42,7 @@
                                 <td>日志保留天数</td>
                                 <td>
                                     <div class="layui-inline">
-                                        <input type="number" name="save_day" autocomplete="off" class="layui-input" value="{[if .Data]}{[.Data.GetLogValue.SaveDay]}{[end]}" placeholder="">
+                                        <input type="number" name="save_day" autocomplete="off" class="layui-input" value="{[if .Data]}{[with (call .Data.GetLogValue)]}{[.SaveDay]}{[end]}{[else]}0{[end]}" placeholder="">
                                     </div>
                                     <p class="layui-font-12">超过此天数的日志将会被自动清理，0表示不自动清理。</p>
                                 </td>
@@ -54,18 +54,18 @@
                                     <div class="layui-inline">
 
                                         <div class="layui-input-inline" style="float: left;">
-                                            <input type="number" name="max_capacity_limit" autocomplete="off" class="layui-input" placeholder="" value="{[if .Data]}{[.Data.GetLogValue.MaxCapacityLimit]}{[end]}">
+                                            <input type="number" name="max_capacity_limit" autocomplete="off" class="layui-input" placeholder="" value="{[if .Data]}{[with (call .Data.GetLogValue)]}{[.MaxCapacityLimit]}{[end]}{[else]}0{[end]}">
                                         </div>
 
                                         <div class="layui-input-inline" style="float: left;">
                                             <select name="max_capacity_unit" lay-verify="required">
-                                                <option value="byte" {[if eq .Data.GetLogValue.MaxCapacityUnit "byte" ]}selected{[end]}>字节</option>
-                                                <option value="kib" {[if eq .Data.GetLogValue.MaxCapacityUnit "kib" ]}selected{[end]}>KiB</option>
-                                                <option value="mib" {[if eq .Data.GetLogValue.MaxCapacityUnit "mib" ]}selected{[end]}>MiB</option>
-                                                <option value="gib" {[if eq .Data.GetLogValue.MaxCapacityUnit "gib" ]}selected{[end]}>GiB</option>
-                                                <option value="tib" {[if eq .Data.GetLogValue.MaxCapacityUnit "tib" ]}selected{[end]}>TiB</option>
-                                                <option value="pib" {[if eq .Data.GetLogValue.MaxCapacityUnit "pib" ]}selected{[end]}>PiB</option>
-                                                <option value="eib" {[if eq .Data.GetLogValue.MaxCapacityUnit "eib" ]}selected{[end]}>EiB</option>
+                                                <option value="byte" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "byte" ]}selected{[end]}{[end]}{[end]}>字节</option>
+                                                <option value="kib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "kib" ]}selected{[end]}{[end]}{[end]}>KiB</option>
+                                                <option value="mib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "mib" ]}selected{[end]}{[end]}{[else]}selected{[end]}>MiB</option>
+                                                <option value="gib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "gib" ]}selected{[end]}{[end]}{[end]}>GiB</option>
+                                                <option value="tib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "tib" ]}selected{[end]}{[end]}{[end]}>TiB</option>
+                                                <option value="pib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "pib" ]}selected{[end]}{[end]}{[end]}>PiB</option>
+                                                <option value="eib" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if eq .MaxCapacityUnit "eib" ]}selected{[end]}{[end]}{[end]}>EiB</option>
                                             </select>
                                         </div>
                                         
@@ -77,7 +77,7 @@
                             <tr>
                                 <td>允许修改清除配置</td>
                                 <td>
-                                    <input type="checkbox" name="allowed_mod_clear_config" {[if .Data]}{[if.Data.GetLogValue.AllowedModClearConfig]}checked{[end]}{[end]}>
+                                    <input type="checkbox" name="allowed_mod_clear_config" {[if .Data]}{[with (call .Data.GetLogValue)]}{[if .AllowedModClearConfig]}checked{[end]}{[end]}{[end]}>
                                     <p class="layui-font-12">选中后，不能再次修改删除、清理等相关设置，防止攻击者用来擦除日志。</p>
                                 </td>
                             </tr>

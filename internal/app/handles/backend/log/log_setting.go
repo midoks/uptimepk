@@ -14,10 +14,8 @@ import (
 	"uptimepk/internal/model"
 )
 
-const LOGSYSNAME = "log_sys"
-
 func Settings(c *gin.Context) {
-	log_data, _ := db.GetSysSettingByCode(LOGSYSNAME)
+	log_data, _ := db.GetSysSettingByCode(db.SettingLog)
 	data := common.CommonVer(c)
 	data["submenu"] = GetLogSubMenu()
 	data["Data"] = log_data
@@ -35,7 +33,7 @@ func PostSettting(c *gin.Context) {
 	fmt.Println("field.AllowedManualDelete:", field.AllowedManualDelete, "field.AllowedManual:", field.AllowedManual, "field.SaveDay:", field.SaveDay)
 
 	common_data := &model.SysSetting{
-		Code:       LOGSYSNAME,
+		Code:       db.SettingLog,
 		UpdateTime: time.Now().Unix(),
 	}
 
@@ -49,9 +47,9 @@ func PostSettting(c *gin.Context) {
 		AllowedModClearConfig: field.AllowedModClearConfig,
 	})
 
-	_, err := db.GetSysSettingByCode(LOGSYSNAME)
+	_, err := db.GetSysSettingByCode(db.SettingLog)
 	if err == nil {
-		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", LOGSYSNAME).Updates(common_data).Error; err != nil {
+		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingLog).Updates(common_data).Error; err != nil {
 			common.ErrorResp(c, err, -1)
 			return
 		}

@@ -1,7 +1,7 @@
 package op
 
 import (
-	// "fmt"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -42,18 +42,28 @@ func InitAdmin(user string, pass string) error {
 func InitSetting() error {
 	err := InitSettingAdminData()
 	if err != nil {
+		fmt.Println("InitSettingAdminData:", err)
 		return err
 	}
 
 	err = InitSettingWebData()
 	if err != nil {
+		fmt.Println("InitSettingWebData:", err)
 		return err
 	}
 
 	err = InitSettingDbConfData()
 	if err != nil {
+		fmt.Println("InitSettingDbConfData:", err)
 		return err
 	}
+
+	err = InitSettingLogData()
+	if err != nil {
+		fmt.Println("InitSettingLogData:", err)
+		return err
+	}
+	fmt.Println("InitSetting completed successfully")
 	return nil
 }
 
@@ -68,7 +78,8 @@ func InitSettingAdminData() error {
 		SystemName:  "监控面板",
 	})
 	common_data.UpdateTime = time.Now().Unix()
-	_, err := db.GetSysSettingByCode(db.SettingAdminUI)
+	var err error
+	_, err = db.GetSysSettingByCode(db.SettingAdminUI)
 	if err == nil {
 		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingAdminUI).Updates(common_data).Error; err != nil {
 			return err
@@ -94,7 +105,8 @@ func InitSettingWebData() error {
 		Subtitle: "网站运行状态监控工具",
 	})
 	common_data.UpdateTime = time.Now().Unix()
-	_, err := db.GetSysSettingByCode(db.SettingWebUI)
+	var err error
+	_, err = db.GetSysSettingByCode(db.SettingWebUI)
 	if err == nil {
 		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingWebUI).Updates(common_data).Error; err != nil {
 			return err
@@ -119,9 +131,41 @@ func InitSettingDbConfData() error {
 		MonitorLogDays: 180,
 	})
 	common_data.UpdateTime = time.Now().Unix()
-	_, err := db.GetSysSettingByCode(db.SettingDbConf)
+	var err error
+	_, err = db.GetSysSettingByCode(db.SettingDbConf)
 	if err == nil {
 		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingDbConf).Updates(common_data).Error; err != nil {
+			return err
+		}
+		return nil
+	}
+
+	common_data.CreateTime = time.Now().Unix()
+	if err := db.GetDb().Create(common_data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func InitSettingLogData() error {
+	common_data := &model.SysSetting{
+		Code: db.SettingLog,
+		Uid:  0,
+	}
+
+	common_data.SetLogValue(model.SysSettingLogValue{
+		AllowedManualDelete:   true,
+		AllowedManual:         true,
+		SaveDay:               180,
+		MaxCapacityLimit:      100,
+		MaxCapacityUnit:       "mib",
+		AllowedModClearConfig: true,
+	})
+	common_data.UpdateTime = time.Now().Unix()
+	var err error
+	_, err = db.GetSysSettingByCode(db.SettingLog)
+	if err == nil {
+		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingLog).Updates(common_data).Error; err != nil {
 			return err
 		}
 		return nil

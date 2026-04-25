@@ -2,6 +2,7 @@ package install
 
 import (
 	// "fmt"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -82,8 +83,12 @@ func PostInstallStep1(c *gin.Context) {
 
 	if conf.Security.InstallLock {
 		db.InitDb()
-		op.InitAdmin(init_account, init_pass)
-		op.InitSetting()
+		if err := op.InitAdmin(init_account, init_pass); err != nil {
+			fmt.Println("InitAdmin error:", err)
+		}
+		if err := op.InitSetting(); err != nil {
+			fmt.Println("InitSetting error:", err)
+		}
 	}
 
 	c.JSON(200, common.Resp[interface{}]{
