@@ -315,10 +315,16 @@
                         if (log.speed) {
                             cellHtml += ' data-speed="' + log.speed + '"';
                         }
-                        if (log.size) {
-                            // 转换为kb
-                            const sizeKb = (log.size / 1024).toFixed(2);
-                            cellHtml += ' data-size="' + sizeKb + 'kb"';
+                        if (log.size !== undefined && log.size !== null) {
+                            // 根据大小转换单位
+                            let sizeStr;
+                            if (log.size >= 1024) {
+                                const sizeKb = (log.size / 1024).toFixed(2);
+                                sizeStr = sizeKb + 'kb';
+                            } else {
+                                sizeStr = log.size + 'b';
+                            }
+                            cellHtml += ' data-size="' + sizeStr + '"';
                         }
                         cellHtml += '></div>';
                         html += cellHtml;
@@ -345,10 +351,16 @@
                         if (monitor.speed) {
                             html += '<div class="status-stats">耗时: ' + monitor.speed + 'ms</div>';
                         }
-                        if (monitor.size) {
-                            // 转换为kb
-                            const sizeKb = (monitor.size / 1024).toFixed(2);
-                            html += '<div class="status-stats">大小: ' + sizeKb + 'kb</div>';
+                        if (monitor.size !== undefined && monitor.size !== null) {
+                            // 根据大小转换单位
+                            let sizeStr;
+                            if (monitor.size >= 1024) {
+                                const sizeKb = (monitor.size / 1024).toFixed(2);
+                                sizeStr = sizeKb + 'kb';
+                            } else {
+                                sizeStr = monitor.size + 'b';
+                            }
+                            html += '<div class="status-stats">大小: ' + sizeStr + '</div>';
                         }
                     } else {
                         html += '<div class="status-stats" style="color: #f44336;">无法访问</div>';
@@ -431,10 +443,16 @@
                                     if (monitor.speed && statsDivs.length >= 3) {
                                         statsDivs[2].innerHTML = '耗时: ' + monitor.speed + 'ms';
                                     }
-                                    if (monitor.size && statsDivs.length >= 4) {
-                                        // 转换为kb
-                                        const sizeKb = (monitor.size / 1024).toFixed(2);
-                                        statsDivs[3].innerHTML = '大小: ' + sizeKb + 'kb';
+                                    if (monitor.size !== undefined && monitor.size !== null && statsDivs.length >= 4) {
+                                        // 根据大小转换单位
+                                        let sizeStr;
+                                        if (monitor.size >= 1024) {
+                                            const sizeKb = (monitor.size / 1024).toFixed(2);
+                                            sizeStr = sizeKb + 'kb';
+                                        } else {
+                                            sizeStr = monitor.size + 'b';
+                                        }
+                                        statsDivs[3].innerHTML = '大小: ' + sizeStr;
                                     }
                                     statsDivs[2].style.color = '';
                                 }
@@ -487,10 +505,16 @@
                                     if (update.speed && statsDivs.length >= 3) {
                                         statsDivs[2].innerHTML = '耗时: ' + update.speed + 'ms';
                                     }
-                                    if (update.size && statsDivs.length >= 4) {
-                                        // 转换为kb
-                                        const sizeKb = (update.size / 1024).toFixed(2);
-                                        statsDivs[3].innerHTML = '大小: ' + sizeKb + 'kb';
+                                    if (update.size !== undefined && update.size !== null && statsDivs.length >= 4) {
+                                        // 根据大小转换单位
+                                        let sizeStr;
+                                        if (update.size >= 1024) {
+                                            const sizeKb = (update.size / 1024).toFixed(2);
+                                            sizeStr = sizeKb + 'kb';
+                                        } else {
+                                            sizeStr = update.size + 'b';
+                                        }
+                                        statsDivs[3].innerHTML = '大小: ' + sizeStr;
                                     }
                                     statsDivs[2].style.color = '';
                                 }
@@ -555,10 +579,16 @@
                 if (newLog.speed) {
                     newCell.dataset.speed = newLog.speed;
                 }
-                if (newLog.size) {
-                    // 转换为kb
-                    const sizeKb = (newLog.size / 1024).toFixed(2);
-                    newCell.dataset.size = sizeKb + 'kb';
+                if (newLog.size !== undefined && newLog.size !== null) {
+                    // 根据大小转换单位
+                    let sizeStr;
+                    if (newLog.size >= 1024) {
+                        const sizeKb = (newLog.size / 1024).toFixed(2);
+                        sizeStr = sizeKb + 'kb';
+                    } else {
+                        sizeStr = newLog.size + 'b';
+                    }
+                    newCell.dataset.size = sizeStr;
                 }
 
                 // 添加到 time-grid 的末尾
