@@ -58,32 +58,36 @@ func TelegramMessageHandlertrategyDefault(relateMonitorGroupID int64) tgtask.Mes
 			_, err := bot.Send(msg)
 			return err
 		default:
-			// 尝试解析域名数据
-			successCount, failCount, err := CreateMonitorsFromText(update.Message.Text, relateMonitorGroupID)
-			if err != nil || successCount == 0 {
-				if failCount == 0 {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
-					_, err := bot.Send(msg)
-					return err
-				}
-			}
-
-			// 返回创建结果
 			var resultMsg string
-			if successCount > 0 {
-				resultMsg = fmt.Sprintf("✓ 成功创建 %d 个监控任务", successCount)
-			}
-			if failCount > 0 {
-				if resultMsg != "" {
-					resultMsg += fmt.Sprintf("\n✗ 失败 %d 个", failCount)
-				} else {
-					resultMsg = fmt.Sprintf("✗ 失败 %d 个", failCount)
+			if relateMonitorGroupID == 0 {
+				resultMsg = "未绑定监控分组,无法导入!"
+			} else {
+				// 尝试解析域名数据
+				successCount, failCount, err := CreateMonitorsFromText(update.Message.Text, relateMonitorGroupID)
+				if err != nil || successCount == 0 {
+					if failCount == 0 {
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
+						_, err := bot.Send(msg)
+						return err
+					}
+				}
+
+				if successCount > 0 {
+					resultMsg = fmt.Sprintf("✓ 成功创建 %d 个监控任务", successCount)
+				}
+				if failCount > 0 {
+					if resultMsg != "" {
+						resultMsg += fmt.Sprintf("\n✗ 失败 %d 个", failCount)
+					} else {
+						resultMsg = fmt.Sprintf("✗ 失败 %d 个", failCount)
+					}
 				}
 			}
 
+			var sendErr error
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, resultMsg)
-			_, err = bot.Send(msg)
-			return err
+			_, sendErr = bot.Send(msg)
+			return sendErr
 		}
 	}
 }
