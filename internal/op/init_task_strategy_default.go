@@ -11,7 +11,7 @@ import (
 // 默认策略
 func TelegramMessageHandlertrategyDefault(relateMonitorGroupID int64) tgtask.MessageHandler {
 	return func(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
-		fmt.Printf("处理消息[default] (groupID: %d): %s\n", relateMonitorGroupID, update.Message.Text)
+		// fmt.Printf("处理消息[default] (groupID: %d): %s\n", relateMonitorGroupID, update.Message.Text)
 
 		// 示例：根据消息内容做不同处理
 		switch update.Message.Text {

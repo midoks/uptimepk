@@ -13,7 +13,6 @@ import (
 
 func ReloadTelegramTask() {
 	manager := tgtask.GetManager()
-
 	// 获取当前的 Telegram 配置
 	telegram_list, err := db.GetAdminRecipientsInstancesByTelegram()
 	if err != nil {
