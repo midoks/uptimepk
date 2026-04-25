@@ -84,6 +84,14 @@
                         // 根据状态设置不同的内容和样式
                         if (status === 'up') {
                             tip.innerHTML = '状态: <span style="color: #4CAF50;">正常</span> | 时间: ' + time;
+                            // 检查是否有耗时和大小信息
+                            if (cell.dataset.speed) {
+                                tip.innerHTML += ' | 耗时: ' + cell.dataset.speed + 'ms';
+                            }
+                            // 检查大小信息，包括0
+                            if (cell.dataset.size !== undefined && cell.dataset.size !== null) {
+                                tip.innerHTML += ' | 大小: ' + cell.dataset.size;
+                            }
                         } else if (status === 'down') {
                             tip.innerHTML = '状态: <span style="color: #f44336;">故障</span> | 时间: ' + time + ' | 错误: <span style="color: #f44336;">' + error + '</span>';
                         } else {
@@ -303,7 +311,17 @@
                         const status = log.is_valid ? 'up' : 'down';
                         const error = log.error_msg || '无法访问';
                         const timeStr = padZero(log.hour) + ':' + padZero(log.minute);
-                        html += '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + escapeHtml(error) + '"></div>';
+                        let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + escapeHtml(error) + '"';
+                        if (log.speed) {
+                            cellHtml += ' data-speed="' + log.speed + '"';
+                        }
+                        if (log.size) {
+                            // 转换为kb
+                            const sizeKb = (log.size / 1024).toFixed(2);
+                            cellHtml += ' data-size="' + sizeKb + 'kb"';
+                        }
+                        cellHtml += '></div>';
+                        html += cellHtml;
                     }
 
                     if (hourLogs.length === 0) {
@@ -324,7 +342,14 @@
                     html += '<div class="status-stats">类型: ' + monitor.type + '</div>';
                     html += '<div class="status-stats">日志: ' + hourLogs.length + ' 条</div>';
                     if (monitor.is_valid) {
-                        html += '<div class="status-stats">延迟: ' + monitor.latency + '</div>';
+                        if (monitor.speed) {
+                            html += '<div class="status-stats">耗时: ' + monitor.speed + 'ms</div>';
+                        }
+                        if (monitor.size) {
+                            // 转换为kb
+                            const sizeKb = (monitor.size / 1024).toFixed(2);
+                            html += '<div class="status-stats">大小: ' + sizeKb + 'kb</div>';
+                        }
                     } else {
                         html += '<div class="status-stats" style="color: #f44336;">无法访问</div>';
                     }
@@ -403,7 +428,14 @@
                             if (monitor.is_valid) {
                                 if (statsDivs.length >= 3) {
                                     statsDivs[1].innerHTML = '日志: ' + (monitor.hour_logs ? monitor.hour_logs.length : 0) + ' 条';
-                                    statsDivs[2].innerHTML = '延迟: ' + (monitor.latency || 'N/A');
+                                    if (monitor.speed && statsDivs.length >= 3) {
+                                        statsDivs[2].innerHTML = '耗时: ' + monitor.speed + 'ms';
+                                    }
+                                    if (monitor.size && statsDivs.length >= 4) {
+                                        // 转换为kb
+                                        const sizeKb = (monitor.size / 1024).toFixed(2);
+                                        statsDivs[3].innerHTML = '大小: ' + sizeKb + 'kb';
+                                    }
                                     statsDivs[2].style.color = '';
                                 }
                             } else {
@@ -452,7 +484,14 @@
                             if (update.is_valid) {
                                 const statsDivs = footer.querySelectorAll('.status-stats');
                                 if (statsDivs.length >= 3) {
-                                    statsDivs[2].innerHTML = '延迟: ' + (update.latency || 'N/A');
+                                    if (update.speed && statsDivs.length >= 3) {
+                                        statsDivs[2].innerHTML = '耗时: ' + update.speed + 'ms';
+                                    }
+                                    if (update.size && statsDivs.length >= 4) {
+                                        // 转换为kb
+                                        const sizeKb = (update.size / 1024).toFixed(2);
+                                        statsDivs[3].innerHTML = '大小: ' + sizeKb + 'kb';
+                                    }
                                     statsDivs[2].style.color = '';
                                 }
                             } else {
@@ -473,7 +512,8 @@
                         const monitorIndex = monitorData.findIndex(m => m.id === update.id);
                         if (monitorIndex !== -1) {
                             monitorData[monitorIndex].is_valid = update.is_valid;
-                            monitorData[monitorIndex].latency = update.latency;
+                            monitorData[monitorIndex].speed = update.speed;
+                            monitorData[monitorIndex].size = update.size;
                             monitorData[monitorIndex].error_msg = update.error_msg;
                             if (update.new_log) {
                                 const hourLogs = monitorData[monitorIndex].hour_logs || [];
@@ -512,6 +552,14 @@
                 newCell.dataset.status = status;
                 newCell.dataset.time = timeStr;
                 newCell.dataset.error = escapeHtml(error);
+                if (newLog.speed) {
+                    newCell.dataset.speed = newLog.speed;
+                }
+                if (newLog.size) {
+                    // 转换为kb
+                    const sizeKb = (newLog.size / 1024).toFixed(2);
+                    newCell.dataset.size = sizeKb + 'kb';
+                }
 
                 // 添加到 time-grid 的末尾
                 timeGrid.appendChild(newCell);

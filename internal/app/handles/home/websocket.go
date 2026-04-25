@@ -35,6 +35,8 @@ type MonitorStatus struct {
 	Status    bool      `json:"status"`
 	IsValid   bool      `json:"is_valid"`
 	Latency   string    `json:"latency"`
+	Speed     float64   `json:"speed"`
+	Size      int64     `json:"size"`
 	ErrorMsg  string    `json:"error_msg"`
 	HourLogs  []HourLog `json:"hour_logs"`
 	UpdatedAt int64     `json:"updated_at"`
@@ -46,12 +48,15 @@ type HourLog struct {
 	IsValid  bool    `json:"is_valid"`
 	ErrorMsg string  `json:"error_msg"`
 	Speed    float64 `json:"speed"`
+	Size     int64   `json:"size"`
 }
 
 type MonitorUpdate struct {
 	ID        int64    `json:"id"`
 	IsValid   bool     `json:"is_valid"`
 	Latency   string   `json:"latency"`
+	Speed     float64  `json:"speed"`
+	Size      int64    `json:"size"`
 	ErrorMsg  string   `json:"error_msg"`
 	NewLog    *HourLog `json:"new_log,omitempty"`
 	UpdatedAt int64    `json:"updated_at"`
@@ -272,6 +277,8 @@ func GetMonitorStatusFromMonitor(m model.Monitor) MonitorStatus {
 	if err == nil && latestLog != nil {
 		status.IsValid = latestLog.IsValid
 		status.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
+		status.Speed = latestLog.Speed
+		status.Size = latestLog.Size
 		status.ErrorMsg = latestLog.ErrorMsg
 	}
 
@@ -299,6 +306,7 @@ func GetMonitorHourLogs(monitorID int64) []HourLog {
 			IsValid:  log.IsValid,
 			ErrorMsg: log.ErrorMsg,
 			Speed:    log.Speed,
+			Size:     log.Size,
 		})
 	}
 
@@ -388,6 +396,8 @@ func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
 		if err == nil && latestLog != nil {
 			update.IsValid = latestLog.IsValid
 			update.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
+			update.Speed = latestLog.Speed
+			update.Size = latestLog.Size
 			update.ErrorMsg = latestLog.ErrorMsg
 
 			if latestLog.CreateTime > since {
@@ -397,6 +407,7 @@ func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
 					IsValid:  latestLog.IsValid,
 					ErrorMsg: latestLog.ErrorMsg,
 					Speed:    latestLog.Speed,
+					Size:     latestLog.Size,
 				}
 			}
 		}
