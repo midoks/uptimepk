@@ -231,6 +231,7 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 		})
 
 		delete_id, err := db.GetMonitorDeletedID()
+
 		if err == nil {
 			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", delete_id).Update("is_deleted", 0).Error; err != nil {
 				continue
@@ -248,6 +249,13 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 				failCount++
 				continue
 			}
+		}
+
+		common_data.ID = delete_id
+
+		// 删除之前的监控日志（必须在添加任务之前）
+		if err := db.DeleteMonitorLogByMonitorID(common_data.ID); err != nil {
+			fmt.Printf("删除过期监控日志失败: %s - %v\n", entry.Remark, err)
 		}
 
 		if err := MonitorAddTask(*common_data); err != nil {
