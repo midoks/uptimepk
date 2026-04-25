@@ -142,7 +142,7 @@ func (a *AdminMediaInstance) GetTelegramProxy() string {
 	if a.MediaType == "telegram" {
 		var p AdminMediaTelegramParams
 		err := json.Unmarshal([]byte(a.Params), &p)
-		if err == nil {
+		if err == nil && p.TelegramProxyValue != "" {
 			if p.TelegramProxyScheme == "socks5" {
 				return fmt.Sprintf("socks5://%s", p.TelegramProxyValue)
 			} else if p.TelegramProxyScheme == "https" {

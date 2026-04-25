@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"uptimepk/internal/log"
 
 	"golang.org/x/net/proxy"
 
@@ -54,7 +55,7 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 			} else if u.Scheme == "socks5" {
 				dialer, dialErr := proxy.FromURL(u, proxy.Direct)
 				if dialErr != nil {
-					fmt.Printf("Failed to create SOCKS5 proxy dialer: %v\n", dialErr)
+					log.Errorf("Failed to create SOCKS5 proxy dialer: %v", dialErr)
 					bot, err = tgbotapi.NewBotAPI(token)
 				} else {
 					transport := &http.Transport{
@@ -71,22 +72,22 @@ func GetBotByProxy(token, proxyURL string) (bot *tgbotapi.BotAPI, err error) {
 			if err != nil {
 				// 只在首次错误时输出日志，避免日志刷屏
 				if !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
-					fmt.Printf("Failed to create bot with proxy: %v\n", err)
+					log.Errorf("failed to create bot with proxy: %v", err)
 				}
 			}
 		} else {
 			bot, err = tgbotapi.NewBotAPI(token)
 			if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
-				fmt.Printf("Failed to create bot without proxy: %v\n", err)
+				log.Errorf("failed to create bot without proxy: %v", err)
 			}
 		}
 	} else {
 		bot, err = tgbotapi.NewBotAPI(token)
 		if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "Client.Timeout") {
-			fmt.Printf("Failed to create bot: %v\n", err)
+			log.Errorf("failed to create bot: %v", err)
 		}
 	}
-	return
+	return bot, err
 }
 
 func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler MessageHandler) error {
@@ -118,10 +119,14 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 	// 等待足够的时间确保所有 bot 实例完全停止
 	time.Sleep(3 * time.Second)
 
-	// fmt.Printf("creating bot with token: %s, proxy: %s\n", token, proxyURL)
 	var err error
 	var bot *tgbotapi.BotAPI
 	bot, err = GetBotByProxy(token, proxyURL)
+	if err != nil {
+		log.Infof("creating bot with token: %s, proxy: %s", token, proxyURL)
+		log.Errorf("creating bot error: %v", err)
+		return err
+	}
 
 	// webhook deleted to avoid conflicts
 	if err == nil && bot != nil {
@@ -137,9 +142,9 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 		skipConfig.Timeout = 1
 		updates, err := bot.GetUpdates(skipConfig)
 		if err != nil {
-			fmt.Printf("failed to clear old updates: %v\n", err)
+			log.Errorf("failed to clear old updates: %v", err)
 		} else {
-			fmt.Printf("cleared %d old updates\n", len(updates))
+			log.Infof("cleared %d old updates", len(updates))
 		}
 		// 等待足够的时间确保状态完全传播
 		time.Sleep(2 * time.Second)
@@ -163,7 +168,6 @@ func (m *Manager) AddBot(id int64, token, proxyURL string, chatID int64, handler
 	//debug
 	bot.Debug = false
 	// fmt.Printf("Bot %d added: %s\n", id, bot.Self.UserName)
-
 	return nil
 }
 
@@ -229,7 +233,7 @@ func (m *Manager) runBot(bot *Bot) {
 			// fmt.Printf("收到来自 [%s] 的消息: %s\n", update.Message.From.UserName, update.Message.Text)
 			if bot.MessageHandler != nil {
 				if err := bot.MessageHandler(update, bot.BotAPI); err != nil {
-					fmt.Printf("处理消息失败: %v\n", err)
+					log.Errorf("处理消息失败: %v", err)
 				}
 			} else {
 				// 默认处理逻辑
@@ -237,7 +241,7 @@ func (m *Manager) runBot(bot *Bot) {
 				msg.ReplyToMessageID = update.Message.MessageID
 
 				if _, err := bot.BotAPI.Send(msg); err != nil {
-					fmt.Printf("发送消息失败: %v\n", err)
+					log.Errorf("发送消息失败: %v", err)
 				}
 			}
 		}
