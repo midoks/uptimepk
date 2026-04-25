@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,70 @@ func DbNodeAdd(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
 	c.HTML(http.StatusOK, "backend/system/db/add.tmpl", data)
+}
+
+func DbNodeDetails(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysAdvancedSubMenu()
+
+	id := c.Query("id")
+	data["id"] = id
+
+	idInt, _ := strconv.ParseInt(id, 10, 64)
+	dbnode_data, err := db.GetDbNodeByID(idInt)
+	if err == nil {
+		data["Data"] = dbnode_data
+	}
+
+	c.HTML(http.StatusOK, "backend/system/db/details.tmpl", data)
+}
+
+func DbNodeClean(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysAdvancedSubMenu()
+
+	id := c.Query("id")
+	data["id"] = id
+
+	idInt, _ := strconv.ParseInt(id, 10, 64)
+	dbnode_data, err := db.GetDbNodeByID(idInt)
+	if err == nil {
+		data["Data"] = dbnode_data
+	}
+
+	c.HTML(http.StatusOK, "backend/system/db/clean.tmpl", data)
+}
+
+func DbNodeUpdate(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysAdvancedSubMenu()
+
+	id := c.Query("id")
+	data["id"] = id
+
+	idInt, _ := strconv.ParseInt(id, 10, 64)
+	dbnode_data, err := db.GetDbNodeByID(idInt)
+	if err == nil {
+		data["Data"] = dbnode_data
+	}
+
+	c.HTML(http.StatusOK, "backend/system/db/update.tmpl", data)
+}
+
+func DbNodeLogs(c *gin.Context) {
+	data := common.CommonVer(c)
+	data["submenu"] = GetSysAdvancedSubMenu()
+
+	id := c.Query("id")
+	data["id"] = id
+
+	idInt, _ := strconv.ParseInt(id, 10, 64)
+	dbnode_data, err := db.GetDbNodeByID(idInt)
+	if err == nil {
+		data["Data"] = dbnode_data
+	}
+
+	c.HTML(http.StatusOK, "backend/system/db/logs.tmpl", data)
 }
 
 func DbNodeList(c *gin.Context) {
@@ -51,8 +116,9 @@ func PostDbNodeAdd(c *gin.Context) {
 		Name:       field.Name,
 		Host:       field.Host, // 暂时设为0，需要根据实际情况转换
 		Port:       int64(field.Port),
-		Password:   field.Password,
 		Dbname:     field.Dbname,
+		Username:   field.Username,
+		Password:   field.Password,
 		Order:      0, // 默认值
 		Weigth:     0, // 默认值
 		Status:     field.Status,

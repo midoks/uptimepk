@@ -35,14 +35,20 @@ func RecipientsInstancesAdd(c *gin.Context) {
 func RecipientsInstancesDetails(c *gin.Context) {
 	id := c.Query("id")
 	idInt, _ := strconv.ParseInt(id, 10, 64)
-	recipient_data, _ := db.GetAdminRecipientsInstancesByID(idInt)
 
 	data := common.CommonVer(c)
 	data["id"] = id
-	data["Data"] = recipient_data
 
-	groups, _ := db.GetMonitorGroupAllByRelatedTg()
-	data["groups"] = groups
+	recipient_data, err := db.GetAdminRecipientsInstancesByID(idInt)
+	if err == nil {
+		data["Data"] = recipient_data
+	}
+
+	groups, err := db.GetMonitorGroupAllByRelatedTg()
+	if err == nil {
+		data["groups"] = groups
+	}
+
 	c.HTML(http.StatusOK, "backend/admin/recipients/instances_details.tmpl", data)
 }
 

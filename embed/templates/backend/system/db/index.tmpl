@@ -36,7 +36,6 @@ var admin = layui.admin
 ,form = layui.form
 ,table = layui.table;
 
-
 table.render({
     elem: '#list',
     url: '/{[.admin_path]}/system/db/list',
@@ -47,23 +46,11 @@ table.render({
         {field:'dbname', title:'数据库名'},
         {field:'dbname', title:'数据库版本'},
         {field:'dbname', title:'用量'},
-        {field:'dbname', title:'状态'},
+        {field:'status', title:'状态', toolbar:"#statusTpl"},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
     page: true
 });
-
-
-table.on('tool(list)', function(obj){
-    switch(obj.event){
-    };
-});
-
-table.on('toolbar', function(obj){
-    switch(obj.event){
-    };
-});
-
 
 ///
 });
@@ -80,7 +67,7 @@ table.on('toolbar', function(obj){
 <script type="text/html" id="hostTpl">{{d.host}}:{{d.port}}</script>
 
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.id}}')">详情</a>
+<a class="layui-btn layui-btn-xs" href="/{[.admin_path]}/system/db/details?id={{d.id}}">详情</a>
 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.id}}')">删除</a>
 </script>
 

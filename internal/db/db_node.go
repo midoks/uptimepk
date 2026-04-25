@@ -20,8 +20,8 @@ func GetDbNodeList(page, size int) ([]model.DbNode, int64, error) {
 	return list, count, nil
 }
 
-func GetDbNodeByID(id int64) (*model.Log, error) {
-	var u model.Log
+func GetDbNodeByID(id int64) (*model.DbNode, error) {
+	var u model.DbNode
 	if err := db.First(&u, id).Error; err != nil {
 		return nil, errors.Wrapf(err, "failed get log")
 	}
