@@ -33,7 +33,7 @@ type SysSettingWebUIValue struct {
 }
 
 type SysSettingDbConfValue struct {
-	MonitorLogDays string `json:"monitor_log_days"` // monitor_log_days
+	MonitorLogDays int64 `json:"monitor_log_days"` // monitor_log_days
 }
 
 func (a *SysSetting) SetLogValue(p SysSettingLogValue) error {

@@ -91,7 +91,8 @@ func DatabaseCleanSetting(c *gin.Context) {
 
 func PostDatabaseCleanSetting(c *gin.Context) {
 	var field form.SettingDbConf
-	if err := c.ShouldBind(&field); err != nil {
+	var err error
+	if err = c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
@@ -105,7 +106,7 @@ func PostDatabaseCleanSetting(c *gin.Context) {
 		MonitorLogDays: field.MonitorLogDays,
 	})
 	common_data.UpdateTime = time.Now().Unix()
-	_, err := db.GetSysSettingByCode(db.SettingDbConf)
+	_, err = db.GetSysSettingByCode(db.SettingDbConf)
 	if err == nil {
 		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingDbConf).Updates(common_data).Error; err != nil {
 			common.ErrorResp(c, err, -1)

@@ -2,7 +2,6 @@ package op
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"uptimepk/internal/db"
@@ -43,15 +42,15 @@ func CleanExpiredMonitorLogs() error {
 		return fmt.Errorf("解析数据库配置失败: %v", err)
 	}
 
-	// 转换天数
-	days, err := strconv.Atoi(dbConf.MonitorLogDays)
-	if err != nil || days <= 0 {
+	// 获取天数（默认 180 天）
+	days := dbConf.MonitorLogDays
+	if days <= 0 {
 		days = 180 // 默认 180 天
 	}
 
 	// 执行清理
 	fmt.Printf("[%s] 开始清理 %d 天之前的监控日志\n", time.Now().Format("2006-01-02 15:04:05"), days)
-	if err := db.DeleteMonitorLogBeforeDays(days); err != nil {
+	if err := db.DeleteMonitorLogBeforeDays(int(days)); err != nil {
 		return fmt.Errorf("删除过期监控日志失败: %v", err)
 	}
 

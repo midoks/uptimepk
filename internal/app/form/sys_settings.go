@@ -21,5 +21,5 @@ type SettingWebUI struct {
 }
 
 type SettingDbConf struct {
-	MonitorLogDays string `form:"monitor_log_days"`
+	MonitorLogDays int64 `form:"monitor_log_days"`
 }

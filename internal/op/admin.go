@@ -103,3 +103,28 @@ func InitSettingWebData() error {
 	}
 	return nil
 }
+
+func InitSettingDbConfData() error {
+	common_data := &model.SysSetting{
+		Code: db.SettingDbConf,
+		Uid:  0,
+	}
+
+	common_data.SetDbConfValue(model.SysSettingDbConfValue{
+		MonitorLogDays: 180,
+	})
+	common_data.UpdateTime = time.Now().Unix()
+	_, err := db.GetSysSettingByCode(db.SettingDbConf)
+	if err == nil {
+		if err := db.GetDb().Model(&model.SysSetting{}).Where("code = ?", db.SettingDbConf).Updates(common_data).Error; err != nil {
+			return err
+		}
+		return nil
+	}
+
+	common_data.CreateTime = time.Now().Unix()
+	if err := db.GetDb().Create(common_data).Error; err != nil {
+		return err
+	}
+	return nil
+}
