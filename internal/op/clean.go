@@ -13,15 +13,14 @@ func InitCleanTask() {
 	// 每天凌晨 0 点执行清理
 	go func() {
 		for {
-			// // 计算到下一次凌晨 0 点的时间
-			// now := time.Now()
-			// next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
-			// duration := next.Sub(now)
-			// // 等待到凌晨 0 点
-			// time.Sleep(duration)
+			// 计算到下一次凌晨 0 点的时间
+			now := time.Now()
+			next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+			duration := next.Sub(now)
+			// 等待到凌晨 0 点
+			time.Sleep(duration)
 
-			time.Sleep(10 * time.Second)
-
+			// time.Sleep(10 * time.Second)
 			// 执行清理
 			if err := CleanExpiredMonitorLogs(); err != nil {
 				fmt.Printf("[%s] 清理过期监控日志失败: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
