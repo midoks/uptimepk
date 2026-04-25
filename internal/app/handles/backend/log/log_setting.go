@@ -32,9 +32,6 @@ func PostSettting(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(field)
-	fmt.Println("field.AllowedManualDelete:", field.AllowedManualDelete, "field.AllowedManual:", field.AllowedManual, "field.SaveDay:", field.SaveDay)
-
 	common_data := &model.SysSetting{
 		Code:       db.SettingLog,
 		UpdateTime: time.Now().Unix(),
