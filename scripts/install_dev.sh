@@ -33,7 +33,7 @@ if [ ! -d $TAGRT_DIR/uptimepk ]; then
 	cd $TAGRT_DIR/uptimepk
 else
 	cd $TAGRT_DIR/uptimepk
-	git pull https://github.com/midoks/uptimepk
+	git pull
 fi
 
 go mod tidy
