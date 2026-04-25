@@ -37,11 +37,6 @@ func GetSysAdvancedDatabaseSubMenu() []form.SubMenu {
 		},
 		{
 			Number: 2,
-			Name:   "修改模板",
-			Link:   "system/database/update",
-		},
-		{
-			Number: 3,
 			Name:   "手动清理",
 			Link:   "system/database/cleans",
 		},
