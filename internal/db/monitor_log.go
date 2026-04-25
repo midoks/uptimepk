@@ -1,8 +1,6 @@
 package db
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"strconv"
@@ -15,32 +13,19 @@ import (
 	"uptimepk/internal/model"
 )
 
-// getMonitorLogTableName 根据 MonitorID 获取分表名
-func getMonitorLogTableName(monitorID string) string {
+// getMonitorLogTableName 根据日期获取分表名
+func getMonitorLogTableName(date time.Time) string {
 	// 获取表前缀
 	prefix := conf.Database.TablePrefix
 	if prefix == "" {
 		prefix = "uppk_"
 	}
 
-	// 使用 MD5 计算哈希值
-	hash := md5.Sum([]byte(monitorID))
-	hashStr := hex.EncodeToString(hash[:])
+	// 格式化为 yyyymmdd 格式
+	year, month, day := date.Date()
+	dayStr := fmt.Sprintf("%04d%02d%02d", year, month, day)
 
-	// 取哈希值的前两位作为索引，转换为整数
-	index := 0
-	for i := 0; i < 2; i++ {
-		if hashStr[i] >= '0' && hashStr[i] <= '9' {
-			index = index*16 + int(hashStr[i]-'0')
-		} else if hashStr[i] >= 'a' && hashStr[i] <= 'f' {
-			index = index*16 + int(hashStr[i]-'a'+10)
-		}
-	}
-
-	// 对 128 取模，得到 0-127 的索引
-	index = index % 128
-
-	return prefix + "monitor_logs_" + strconv.Itoa(index)
+	return prefix + "monitor_logs_" + dayStr
 }
 
 func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
@@ -53,69 +38,74 @@ func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
 		size = 10
 	}
 
-	// 获取表前缀
-	prefix := conf.Database.TablePrefix
-	if prefix == "" {
-		prefix = "uppk_"
-	}
+	// 计算日期范围（最近30天）
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -30)
 
-	// 遍历所有 128 个分表，计算总记录数
+	// 遍历日期范围，计算总记录数
 	var totalCount int64
-	for i := 0; i < 128; i++ {
-		tableName := prefix + "monitor_logs_" + strconv.Itoa(i)
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		tableName := getMonitorLogTableName(currentDate)
 		var count int64
 		if err := GetDb().Table(tableName).Model(&model.MonitorLog{}).Count(&count).Error; err != nil {
 			// 忽略表不存在的错误
+			currentDate = currentDate.AddDate(0, 0, 1)
 			continue
 		}
 		totalCount += count
+		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 
-	// 直接在数据库层面进行分页查询，不加载所有数据到内存
+	// 遍历日期范围，收集数据
 	var resultList []model.MonitorLog
-	offset := (page - 1) * size
 	remaining := size
-	tableIndex := 0
+	offset := (page - 1) * size
 
-	// 遍历分表收集数据直到填满一页
-	for tableIndex < 128 && remaining > 0 {
-		tableName := prefix + "monitor_logs_" + strconv.Itoa(tableIndex)
-		var tableData []model.MonitorLog
+	currentDate = endDate // 从最近的日期开始
+	for currentDate.After(startDate) || currentDate.Equal(startDate) && remaining > 0 {
+		tableName := getMonitorLogTableName(currentDate)
 
-		// 尝试从当前表获取数据
-		query := GetDb().Table(tableName).Order(columnName("id") + " desc")
-
-		if offset > 0 {
-			// 跳过前面表的数据
-			var count int64
-			if err := GetDb().Table(tableName).Count(&count).Error; err != nil {
-				tableIndex++
-				continue
-			}
-
-			if int64(offset) >= count {
-				offset -= int(count)
-				tableIndex++
-				continue
-			}
-
-			// 从当前表获取部分数据
-			if err := query.Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
-				tableIndex++
-				continue
-			}
-			offset = 0
-		} else {
-			// 直接从当前表获取剩余所需数据
-			if err := query.Limit(remaining).Find(&tableData).Error; err != nil {
-				tableIndex++
-				continue
-			}
+		// 检查表格是否存在
+		exists := GetDb().Migrator().HasTable(tableName)
+		if !exists {
+			currentDate = currentDate.AddDate(0, 0, -1)
+			continue
 		}
 
-		resultList = append(resultList, tableData...)
-		remaining -= len(tableData)
-		tableIndex++
+		// 计算当前表的数据量
+		var count int64
+		if err := GetDb().Table(tableName).Count(&count).Error; err != nil {
+			currentDate = currentDate.AddDate(0, 0, -1)
+			continue
+		}
+
+		if offset > 0 {
+			if int64(offset) >= count {
+				offset -= int(count)
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+
+			var tableData []model.MonitorLog
+			if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+			resultList = append(resultList, tableData...)
+			remaining -= len(tableData)
+			offset = 0
+		} else {
+			var tableData []model.MonitorLog
+			if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+			resultList = append(resultList, tableData...)
+			remaining -= len(tableData)
+		}
+
+		currentDate = currentDate.AddDate(0, 0, -1)
 	}
 
 	return resultList, totalCount, nil
@@ -131,51 +121,127 @@ func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.Mon
 		size = 10
 	}
 
-	// 转换 monitorID 为字符串
-	monitorIDStr := strconv.FormatInt(monitor_id, 10)
+	// 计算日期范围（最近30天）
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -30)
 
-	// 获取分表名
-	tableName := getMonitorLogTableName(monitorIDStr)
-
-	mmlog := GetDb().Table(tableName).Model(&model.MonitorLog{})
-	var count int64
-	if err := mmlog.Where("monitor_id = ? ", monitor_id).Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get monitor log count")
+	// 获取表前缀
+	prefix := conf.Database.TablePrefix
+	if prefix == "" {
+		prefix = "uppk_"
 	}
 
-	var list []model.MonitorLog
-	if err := GetDb().Table(tableName).Where("monitor_id = ? ", monitor_id).Order(columnName("id") + " desc").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get monitor log list")
+	// 遍历日期范围，计算总记录数
+	var totalCount int64
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		tableName := getMonitorLogTableName(currentDate)
+		var count int64
+		if err := GetDb().Table(tableName).Model(&model.MonitorLog{}).Where("monitor_id = ?", monitor_id).Count(&count).Error; err != nil {
+			// 忽略表不存在的错误
+			currentDate = currentDate.AddDate(0, 0, 1)
+			continue
+		}
+		totalCount += count
+		currentDate = currentDate.AddDate(0, 0, 1)
 	}
-	return list, count, nil
+
+	// 遍历日期范围，收集数据
+	var resultList []model.MonitorLog
+	remaining := size
+	offset := (page - 1) * size
+
+	currentDate = endDate // 从最近的日期开始
+	for currentDate.After(startDate) || currentDate.Equal(startDate) && remaining > 0 {
+		tableName := getMonitorLogTableName(currentDate)
+
+		// 检查表格是否存在
+		exists := GetDb().Migrator().HasTable(tableName)
+		if !exists {
+			currentDate = currentDate.AddDate(0, 0, -1)
+			continue
+		}
+
+		// 计算当前表的数据量
+		var count int64
+		if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Count(&count).Error; err != nil {
+			currentDate = currentDate.AddDate(0, 0, -1)
+			continue
+		}
+
+		if offset > 0 {
+			if int64(offset) >= count {
+				offset -= int(count)
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+
+			var tableData []model.MonitorLog
+			if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+			resultList = append(resultList, tableData...)
+			remaining -= len(tableData)
+			offset = 0
+		} else {
+			var tableData []model.MonitorLog
+			if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
+				currentDate = currentDate.AddDate(0, 0, -1)
+				continue
+			}
+			resultList = append(resultList, tableData...)
+			remaining -= len(tableData)
+		}
+
+		currentDate = currentDate.AddDate(0, 0, -1)
+	}
+
+	return resultList, totalCount, nil
 }
 
 func GetMonitorLogListByDate(monitor_id int64, day int64) ([]model.MonitorLog, error) {
-	// 转换 monitorID 为字符串
-	monitorIDStr := strconv.FormatInt(monitor_id, 10)
+	// 将 day 转换为 time.Time
+	dayStr := strconv.FormatInt(day, 10)
+	if len(dayStr) != 8 {
+		return nil, errors.Errorf("invalid day format: %d", day)
+	}
+
+	year, _ := strconv.Atoi(dayStr[0:4])
+	month, _ := strconv.Atoi(dayStr[4:6])
+	dayInt, _ := strconv.Atoi(dayStr[6:8])
+
+	targetDate := time.Date(year, time.Month(month), dayInt, 0, 0, 0, 0, time.Local)
 
 	// 获取分表名
-	tableName := getMonitorLogTableName(monitorIDStr)
+	tableName := getMonitorLogTableName(targetDate)
 
 	var list []model.MonitorLog
-	if err := GetDb().Table(tableName).Where("monitor_id = ? AND day = ?", monitor_id, day).Order(columnName("id") + " asc").Find(&list).Error; err != nil {
+	if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " asc").Find(&list).Error; err != nil {
 		return nil, errors.Wrapf(err, "failed get monitor log list by date")
 	}
 	return list, nil
 }
 
 func GetMonitorLatestLog(monitor_id int64) (*model.MonitorLog, error) {
-	// 转换 monitorID 为字符串
-	monitorIDStr := strconv.FormatInt(monitor_id, 10)
-
-	// 获取分表名
-	tableName := getMonitorLogTableName(monitorIDStr)
+	// 检查今天的表
+	today := time.Now()
+	tableName := getMonitorLogTableName(today)
 
 	var log model.MonitorLog
-	if err := GetDb().Table(tableName).Where("monitor_id = ? ", monitor_id).Order(columnName("id") + " desc").First(&log).Error; err != nil {
-		return nil, err
+	if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").First(&log).Error; err == nil {
+		return &log, nil
 	}
-	return &log, nil
+
+	// 如果今天没有数据，检查昨天的表
+	yesterday := today.AddDate(0, 0, -1)
+	tableName = getMonitorLogTableName(yesterday)
+	if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").First(&log).Error; err == nil {
+		return &log, nil
+	}
+
+	// 如果昨天也没有数据，返回错误
+	return nil, errors.New("no monitor logs found")
 }
 
 // CreateMonitorLog 创建并插入监控日志
@@ -192,12 +258,9 @@ func CreateMonitorLog(monitorID int64, isValid bool, size int, speed float64, er
 	// speed 保留2位小数
 	speed = math.Round(speed*100) / 100
 
-	// 转换 monitorID 为字符串
-	monitorIDStr := strconv.FormatInt(monitorID, 10)
-
 	// 创建监控日志
 	monitorLog := &model.MonitorLog{
-		MonitorID:  monitorIDStr,
+		MonitorID:  strconv.FormatInt(monitorID, 10),
 		Day:        int64(dayInt),
 		Hour:       int64(hour),
 		Minute:     minute,
@@ -210,7 +273,12 @@ func CreateMonitorLog(monitorID int64, isValid bool, size int, speed float64, er
 	}
 
 	// 获取分表名
-	tableName := getMonitorLogTableName(monitorIDStr)
+	tableName := getMonitorLogTableName(now)
+
+	// 确保表存在
+	if err := ensureMonitorLogTableExists(tableName); err != nil {
+		return err
+	}
 
 	// 插入监控日志到指定分表
 	return GetDb().Table(tableName).Create(monitorLog).Error
@@ -221,11 +289,34 @@ func MonitorLogDeleteByID(tx *gorm.DB, id int64, monitorID string) error {
 		tx = GetDb()
 	}
 
-	// 获取分表名
-	tableName := getMonitorLogTableName(monitorID)
+	// 首先需要找到该日志记录所在的表
+	// 检查今天的表
+	today := time.Now()
+	tableName := getMonitorLogTableName(today)
 
-	var d model.MonitorLog
-	return tx.Table(tableName).Where("id = ?", id).Delete(&d).Error
+	var count int64
+	if err := tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Count(&count).Error; err == nil && count > 0 {
+		var d model.MonitorLog
+		return tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Delete(&d).Error
+	}
+
+	// 检查昨天的表
+	yesterday := today.AddDate(0, 0, -1)
+	tableName = getMonitorLogTableName(yesterday)
+	if err := tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Count(&count).Error; err == nil && count > 0 {
+		var d model.MonitorLog
+		return tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Delete(&d).Error
+	}
+
+	// 检查前天的表
+	twoDaysAgo := today.AddDate(0, 0, -2)
+	tableName = getMonitorLogTableName(twoDaysAgo)
+	if err := tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Count(&count).Error; err == nil && count > 0 {
+		var d model.MonitorLog
+		return tx.Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Delete(&d).Error
+	}
+
+	return errors.New("monitor log not found")
 }
 
 // MonitorLogDeleteByIDWithMonitorID 通过 monitorID 和 id 删除监控日志
@@ -233,99 +324,160 @@ func MonitorLogDeleteByIDWithMonitorID(tx *gorm.DB, id int64, monitorID int64) e
 	return MonitorLogDeleteByID(tx, id, strconv.FormatInt(monitorID, 10))
 }
 
-// CreateMonitorLogTable 创建监控日志分表
-func CreateMonitorLogTable() error {
-	// 获取表前缀
-	prefix := conf.Database.TablePrefix
-	if prefix == "" {
-		prefix = "uppk_"
+// ensureMonitorLogTableExists 确保监控日志表存在
+func ensureMonitorLogTableExists(tableName string) error {
+	// 检查表是否存在
+	exists := GetDb().Migrator().HasTable(tableName)
+	if exists {
+		return nil
 	}
 
 	// 获取数据库类型
 	dbType := conf.Database.Type
 
-	// 为每个分表创建表结构
-	for i := 0; i < 128; i++ {
-		tableName := prefix + "monitor_logs_" + strconv.Itoa(i)
-		// 检查表是否存在
-		exists := GetDb().Migrator().HasTable(tableName)
-		if !exists {
-			var createTableSQL string
-			switch dbType {
-			case "sqlite3":
-				createTableSQL = fmt.Sprintf(`
-				CREATE TABLE IF NOT EXISTS %s (
-					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					monitor_id TEXT NOT NULL,
-					day INTEGER NOT NULL,
-					hour INTEGER NOT NULL,
-					minute INTEGER NOT NULL,
-					is_valid INTEGER NOT NULL,
-					size INTEGER NOT NULL,
-					speed REAL NOT NULL,
-					error_msg TEXT,
-					max_retries INTEGER NOT NULL,
-					create_time INTEGER NOT NULL
-				);
-				`, tableName)
-			case "mysql":
-				createTableSQL = fmt.Sprintf(`
-				CREATE TABLE IF NOT EXISTS %s (
-					id BIGINT PRIMARY KEY AUTO_INCREMENT,
-					monitor_id VARCHAR(255) NOT NULL,
-					day BIGINT NOT NULL,
-					hour BIGINT NOT NULL,
-					minute INT NOT NULL,
-					is_valid BOOLEAN NOT NULL,
-					size BIGINT NOT NULL,
-					speed DOUBLE NOT NULL,
-					error_msg TEXT,
-					max_retries INT NOT NULL,
-					create_time BIGINT NOT NULL,
-					INDEX idx_monitor_id (monitor_id),
-					INDEX idx_day (day),
-					INDEX idx_create_time (create_time)
-				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-				`, tableName)
-			case "postgres":
-				createTableSQL = fmt.Sprintf(`
-				CREATE TABLE IF NOT EXISTS %s (
-					id BIGSERIAL PRIMARY KEY,
-					monitor_id VARCHAR(255) NOT NULL,
-					day BIGINT NOT NULL,
-					hour BIGINT NOT NULL,
-					minute INT NOT NULL,
-					is_valid BOOLEAN NOT NULL,
-					size BIGINT NOT NULL,
-					speed DOUBLE PRECISION NOT NULL,
-					error_msg TEXT,
-					max_retries INT NOT NULL,
-					create_time BIGINT NOT NULL
-				);
-				CREATE INDEX IF NOT EXISTS idx_%s_monitor_id ON %s (monitor_id);
-				CREATE INDEX IF NOT EXISTS idx_%s_day ON %s (day);
-				CREATE INDEX IF NOT EXISTS idx_%s_create_time ON %s (create_time);
-				`, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
-			default:
-				return errors.Errorf("unsupported database type: %s", dbType)
-			}
-
-			// 创建表
-			if err := GetDb().Exec(createTableSQL).Error; err != nil {
-				return errors.Wrapf(err, "failed create monitor log table: %s", tableName)
-			}
-		}
+	var createTableSQL string
+	switch dbType {
+	case "sqlite3":
+		createTableSQL = fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			monitor_id TEXT NOT NULL,
+			day INTEGER NOT NULL,
+			hour INTEGER NOT NULL,
+			minute INTEGER NOT NULL,
+			is_valid INTEGER NOT NULL,
+			size INTEGER NOT NULL,
+			speed REAL NOT NULL,
+			error_msg TEXT,
+			max_retries INTEGER NOT NULL,
+			create_time INTEGER NOT NULL
+		);
+		`, tableName)
+	case "mysql":
+		createTableSQL = fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id BIGINT PRIMARY KEY AUTO_INCREMENT,
+			monitor_id VARCHAR(255) NOT NULL,
+			day BIGINT NOT NULL,
+			hour BIGINT NOT NULL,
+			minute INT NOT NULL,
+			is_valid BOOLEAN NOT NULL,
+			size BIGINT NOT NULL,
+			speed DOUBLE NOT NULL,
+			error_msg TEXT,
+			max_retries INT NOT NULL,
+			create_time BIGINT NOT NULL,
+			INDEX idx_monitor_id (monitor_id),
+			INDEX idx_day (day),
+			INDEX idx_create_time (create_time)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`, tableName)
+	case "postgres":
+		createTableSQL = fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id BIGSERIAL PRIMARY KEY,
+			monitor_id VARCHAR(255) NOT NULL,
+			day BIGINT NOT NULL,
+			hour BIGINT NOT NULL,
+			minute INT NOT NULL,
+			is_valid BOOLEAN NOT NULL,
+			size BIGINT NOT NULL,
+			speed DOUBLE PRECISION NOT NULL,
+			error_msg TEXT,
+			max_retries INT NOT NULL,
+			create_time BIGINT NOT NULL
+		);
+		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id ON %s (monitor_id);
+		CREATE INDEX IF NOT EXISTS idx_%s_day ON %s (day);
+		CREATE INDEX IF NOT EXISTS idx_%s_create_time ON %s (create_time);
+		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
+	default:
+		return errors.Errorf("unsupported database type: %s", dbType)
 	}
+
+	// 创建表
+	return GetDb().Exec(createTableSQL).Error
+}
+
+// CreateMonitorLogTable 创建监控日志分表
+func CreateMonitorLogTable() error {
+	// 提前创建今天和明天的表
+	today := time.Now()
+	tomorrow := today.AddDate(0, 0, 1)
+
+	// 创建今天的表
+	todayTable := getMonitorLogTableName(today)
+	if err := ensureMonitorLogTableExists(todayTable); err != nil {
+		return errors.Wrapf(err, "failed create today's monitor log table")
+	}
+
+	// 创建明天的表
+	tomorrowTable := getMonitorLogTableName(tomorrow)
+	if err := ensureMonitorLogTableExists(tomorrowTable); err != nil {
+		return errors.Wrapf(err, "failed create tomorrow's monitor log table")
+	}
+
 	return nil
 }
 
 // UpdateMonitorLog 更新监控日志
 func UpdateMonitorLog(monitorID int64, id int64, updates map[string]interface{}) error {
-	// 转换 monitorID 为字符串
-	monitorIDStr := strconv.FormatInt(monitorID, 10)
+	// 首先需要找到该日志记录所在的表
+	// 检查今天的表
+	today := time.Now()
+	tableName := getMonitorLogTableName(today)
 
-	// 获取分表名
-	tableName := getMonitorLogTableName(monitorIDStr)
+	var log model.MonitorLog
+	if err := GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).First(&log).Error; err == nil {
+		return GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Updates(updates).Error
+	}
 
-	return GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Updates(updates).Error
+	// 检查昨天的表
+	yesterday := today.AddDate(0, 0, -1)
+	tableName = getMonitorLogTableName(yesterday)
+	if err := GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).First(&log).Error; err == nil {
+		return GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Updates(updates).Error
+	}
+
+	// 检查前天的表
+	twoDaysAgo := today.AddDate(0, 0, -2)
+	tableName = getMonitorLogTableName(twoDaysAgo)
+	if err := GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).First(&log).Error; err == nil {
+		return GetDb().Table(tableName).Where("id = ? AND monitor_id = ?", id, monitorID).Updates(updates).Error
+	}
+
+	return errors.New("monitor log not found")
+}
+
+// DeleteMonitorLogBeforeDays 删除指定天数之前的监控日志
+func DeleteMonitorLogBeforeDays(days int) error {
+	// 计算目标日期
+	targetDate := time.Now().AddDate(0, 0, -days)
+
+	// 计算日期范围
+	endDate := targetDate.AddDate(0, 0, -1)  // 删除到 targetDate 的前一天
+	startDate := endDate.AddDate(0, 0, -365) // 最多检查一年的数据
+
+	// 遍历日期范围，删除指定日期之前的数据
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		tableName := getMonitorLogTableName(currentDate)
+
+		// 检查表格是否存在
+		exists := GetDb().Migrator().HasTable(tableName)
+		if !exists {
+			currentDate = currentDate.AddDate(0, 0, 1)
+			continue
+		}
+
+		// 删除表中的所有数据（因为整个表都是过期数据）
+		if err := GetDb().Table(tableName).Delete(&model.MonitorLog{}).Error; err != nil {
+			// 记录错误但继续处理其他表
+			fmt.Printf("Error deleting monitor logs from table %s: %v\n", tableName, err)
+		}
+
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
+
+	return nil
 }
