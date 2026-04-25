@@ -42,28 +42,14 @@ func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
-	// 遍历日期范围，计算总记录数
+	// 遍历日期范围，同时计算总记录数和收集数据
 	var totalCount int64
-	currentDate := startDate
-	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
-		tableName := getMonitorLogTableName(currentDate)
-		var count int64
-		if err := GetDb().Table(tableName).Model(&model.MonitorLog{}).Count(&count).Error; err != nil {
-			// 忽略表不存在的错误
-			currentDate = currentDate.AddDate(0, 0, 1)
-			continue
-		}
-		totalCount += count
-		currentDate = currentDate.AddDate(0, 0, 1)
-	}
-
-	// 遍历日期范围，收集数据
 	var resultList []model.MonitorLog
 	remaining := size
 	offset := (page - 1) * size
 
-	currentDate = endDate // 从最近的日期开始
-	for currentDate.After(startDate) || currentDate.Equal(startDate) && remaining > 0 {
+	currentDate := endDate // 从最近的日期开始
+	for currentDate.After(startDate) || currentDate.Equal(startDate) {
 		tableName := getMonitorLogTableName(currentDate)
 
 		// 检查表格是否存在
@@ -80,29 +66,35 @@ func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
 			continue
 		}
 
-		if offset > 0 {
-			if int64(offset) >= count {
-				offset -= int(count)
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
-			}
+		// 累加总记录数
+		totalCount += count
 
-			var tableData []model.MonitorLog
-			if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
+		// 如果还有数据需要获取
+		if remaining > 0 {
+			if offset > 0 {
+				if int64(offset) >= count {
+					offset -= int(count)
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+
+				var tableData []model.MonitorLog
+				if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+				resultList = append(resultList, tableData...)
+				remaining -= len(tableData)
+				offset = 0
+			} else {
+				var tableData []model.MonitorLog
+				if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+				resultList = append(resultList, tableData...)
+				remaining -= len(tableData)
 			}
-			resultList = append(resultList, tableData...)
-			remaining -= len(tableData)
-			offset = 0
-		} else {
-			var tableData []model.MonitorLog
-			if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
-			}
-			resultList = append(resultList, tableData...)
-			remaining -= len(tableData)
 		}
 
 		currentDate = currentDate.AddDate(0, 0, -1)
@@ -125,34 +117,14 @@ func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.Mon
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
-	// 获取表前缀
-	prefix := conf.Database.TablePrefix
-	if prefix == "" {
-		prefix = "uppk_"
-	}
-
-	// 遍历日期范围，计算总记录数
+	// 遍历日期范围，同时计算总记录数和收集数据
 	var totalCount int64
-	currentDate := startDate
-	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
-		tableName := getMonitorLogTableName(currentDate)
-		var count int64
-		if err := GetDb().Table(tableName).Model(&model.MonitorLog{}).Where("monitor_id = ?", monitor_id).Count(&count).Error; err != nil {
-			// 忽略表不存在的错误
-			currentDate = currentDate.AddDate(0, 0, 1)
-			continue
-		}
-		totalCount += count
-		currentDate = currentDate.AddDate(0, 0, 1)
-	}
-
-	// 遍历日期范围，收集数据
 	var resultList []model.MonitorLog
 	remaining := size
 	offset := (page - 1) * size
 
-	currentDate = endDate // 从最近的日期开始
-	for currentDate.After(startDate) || currentDate.Equal(startDate) && remaining > 0 {
+	currentDate := endDate // 从最近的日期开始
+	for currentDate.After(startDate) || currentDate.Equal(startDate) {
 		tableName := getMonitorLogTableName(currentDate)
 
 		// 检查表格是否存在
@@ -169,29 +141,35 @@ func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.Mon
 			continue
 		}
 
-		if offset > 0 {
-			if int64(offset) >= count {
-				offset -= int(count)
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
-			}
+		// 累加总记录数
+		totalCount += count
 
-			var tableData []model.MonitorLog
-			if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
+		// 如果还有数据需要获取
+		if remaining > 0 {
+			if offset > 0 {
+				if int64(offset) >= count {
+					offset -= int(count)
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+
+				var tableData []model.MonitorLog
+				if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+				resultList = append(resultList, tableData...)
+				remaining -= len(tableData)
+				offset = 0
+			} else {
+				var tableData []model.MonitorLog
+				if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
+					currentDate = currentDate.AddDate(0, 0, -1)
+					continue
+				}
+				resultList = append(resultList, tableData...)
+				remaining -= len(tableData)
 			}
-			resultList = append(resultList, tableData...)
-			remaining -= len(tableData)
-			offset = 0
-		} else {
-			var tableData []model.MonitorLog
-			if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
-				currentDate = currentDate.AddDate(0, 0, -1)
-				continue
-			}
-			resultList = append(resultList, tableData...)
-			remaining -= len(tableData)
 		}
 
 		currentDate = currentDate.AddDate(0, 0, -1)
