@@ -131,18 +131,15 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-
 	m.tasks[taskID] = taskInfo
-	// fmt.Printf("Task %s added with cron expression: %s\n", task.Name(), cronExpr)
 
 	// 如果管理器未运行，启动它
 	if !m.running {
 		// 直接启动，避免死锁
 		m.cron.Start()
 		m.running = true
-		// fmt.Println("Task manager started")
 	}
-
+	fmt.Printf("Task %s[%s] added with cron expression: %s\n", task.Name(), taskID, cronExpr)
 	return nil
 }
 
@@ -162,7 +159,6 @@ func (m *Manager) RemoveTask(taskID string) error {
 	// 从任务列表中移除
 	delete(m.tasks, taskID)
 	fmt.Printf("Task %s removed\n", taskInfo.Name)
-
 	return nil
 }
 
@@ -197,8 +193,7 @@ func (m *Manager) UpdateTaskCron(taskID string, cronExpr string) error {
 	taskInfo.EntryID = entryID
 	taskInfo.UpdatedAt = time.Now()
 
-	fmt.Printf("Task %s cron updated to: %s\n", taskInfo.Name, cronExpr)
-
+	fmt.Printf("Task %s[%d] cron updated to: %s\n", taskInfo.Name, entryID, cronExpr)
 	return nil
 }
 

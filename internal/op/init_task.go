@@ -200,7 +200,7 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 		monitor := &model.Monitor{
 			Name:         entry.Remark,
 			Type:         "http",
-			Status:       true,
+			Status:       1,
 			Interval:     60,
 			IntervalType: "second",
 			MaxRetries:   3,

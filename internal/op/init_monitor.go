@@ -298,7 +298,7 @@ func InitMonitorask() {
 		totalCount += len(monitors)
 		// 为每个监控创建任务
 		for _, monitor := range monitors {
-			if monitor.Status {
+			if monitor.Status != 0 {
 				if err := MonitorAddTask(monitor); err != nil {
 					fmt.Printf("failed to add monitor task %s: %v\n", monitor.Name, err)
 					continue

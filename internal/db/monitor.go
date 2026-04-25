@@ -66,17 +66,39 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 	return &u, nil
 }
 
+// GetMonitorDeletedID 根据创建时间排序，获取一条删除的监控ID
+func GetMonitorDeletedID() (int64, error) {
+	var monitor model.Monitor
+	if err := db.Order(columnName("create_time")).Where("is_deleted=?", 1).First(&monitor).Error; err != nil {
+		return 0, errors.Wrap(err, "failed get deleted monitor")
+	}
+	return monitor.ID, nil
+}
+
+func GetMonitorByDeletedIDs() ([]int64, error) {
+	var list []model.Monitor
+	if err := db.Where("is_deleted=?", 1).Find(&list).Error; err != nil {
+		return nil, errors.Wrap(err, "failed get deleted monitor list")
+	}
+
+	ids := make([]int64, len(list))
+	for i, item := range list {
+		ids[i] = item.ID
+	}
+	return ids, nil
+}
+
 func MonitorTriggerStatus(id int64) error {
 	var data model.Monitor
 	if err := db.First(&data, id).Error; err != nil {
 		return errors.Wrapf(err, "failed get monitor data")
 	}
 
-	var status bool
-	if data.Status {
-		status = false
+	var status int
+	if data.Status == 0 {
+		status = 1
 	} else {
-		status = true
+		status = 0
 	}
 
 	if err := db.Model(&model.Monitor{}).
@@ -105,4 +127,22 @@ func MonitorSoftDeleteByID(id int64) error {
 func MonitorDeleteByID(id int64) error {
 	var d model.Monitor
 	return db.Where("id = ?", id).Delete(&d).Error
+}
+
+// GetLatestMonitorID 根据创建时间排序，获取最新的一条监控数据的ID
+func GetLatestMonitorID() (int64, error) {
+	var monitor model.Monitor
+	if err := db.Order(columnName("create_time") + " desc").First(&monitor).Error; err != nil {
+		return 0, errors.Wrap(err, "failed get latest monitor")
+	}
+	return monitor.ID, nil
+}
+
+// GetOldestMonitorID 根据创建时间排序，获取最旧的一条监控数据的ID
+func GetOldestMonitorID() (int64, error) {
+	var monitor model.Monitor
+	if err := db.Order(columnName("create_time") + " asc").First(&monitor).Error; err != nil {
+		return 0, errors.Wrap(err, "failed get oldest monitor")
+	}
+	return monitor.ID, nil
 }

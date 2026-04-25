@@ -15,6 +15,7 @@ import (
 	"uptimepk/internal/model"
 	"uptimepk/internal/monitortask"
 	"uptimepk/internal/op"
+	"uptimepk/internal/utils"
 )
 
 func Home(c *gin.Context) {
@@ -66,19 +67,16 @@ func PostAdd(c *gin.Context) {
 		return
 	}
 
-	is_create := true
-
 	common_data := &model.Monitor{
 		Name:         field.Name,
 		Type:         field.Type,
-		Status:       field.Status,
+		Status:       utils.BoolToInt(field.Status),
 		Interval:     field.Interval,
 		IntervalType: field.IntervalType,
 		MaxRetries:   field.MaxRetries,
 		Timeout:      field.Timeout,
 		Gid:          field.Gid,
 		CreateTime:   time.Now().Unix(),
-		UpdateTime:   time.Now().Unix(),
 	}
 
 	if field.IntervalType == "second" {
@@ -122,28 +120,48 @@ func PostAdd(c *gin.Context) {
 
 	if field.ID != 0 {
 		_, err := db.GetMonitorByID(field.ID)
+		common_data.UpdateTime = time.Now().Unix()
 		if err == nil {
 			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
 				common.ErrorResp(c, err, -1)
 				return
 			}
-			is_create = false
-			common.SuccessResp(c)
-			return
+			op.MonitorDeleteTask(*common_data)
+			op.MonitorAddTask(*common_data)
 		}
-	}
 
-	if err := db.GetDb().Create(common_data).Error; err != nil {
-		common.ErrorResp(c, err, -1)
-		return
-	}
+	} else {
+		// 创建新数据时,先查找是否有已删除的数据
+		delete_id, err := db.GetMonitorDeletedID()
+		if err == nil {
+			field.ID = delete_id
+			// 先设置 IsDeleted 为 0，然后更新
+			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", field.ID).Update("is_deleted", 0).Error; err != nil {
+				common.ErrorResp(c, err, -1)
+				return
+			}
+			// 然后更新其他字段
+			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
+				common.ErrorResp(c, err, -1)
+				return
+			}
+			common_data.ID = field.ID
+			common_data.IsDeleted = 0
 
-	// 添加/更新任务
-	if is_create && field.Status { // 新创建的并开启，加入计划任务
-		op.MonitorAddTask(*common_data)
-	} else if !is_create && field.Status { // 更新并开启，加入计划任务
-		op.MonitorDeleteTask(*common_data)
-		op.MonitorAddTask(*common_data)
+			// 删除之前的监控日志（必须在添加任务之前）
+			if err := db.DeleteMonitorLogByMonitorID(field.ID); err != nil {
+				common.ErrorResp(c, err, -1)
+				return
+			}
+
+			op.MonitorAddTask(*common_data)
+		} else {
+			if err := db.GetDb().Create(common_data).Error; err != nil {
+				common.ErrorResp(c, err, -1)
+				return
+			}
+			op.MonitorAddTask(*common_data)
+		}
 	}
 	common.SuccessResp(c)
 }
@@ -168,7 +186,7 @@ func MonitorTriggerStatus(c *gin.Context) {
 	}
 
 	// 计划任务
-	if data.Status {
+	if data.Status != 0 {
 		if err := op.MonitorAddTask(data); err != nil {
 			common.ErrorResp(c, err, -1)
 			return

@@ -263,7 +263,7 @@ func GetMonitorStatusFromMonitor(m model.Monitor) MonitorStatus {
 		Name:      m.Name,
 		Gid:       m.Gid,
 		Type:      m.Type,
-		Status:    m.Status,
+		Status:    m.Status != 0,
 		UpdatedAt: m.UpdateTime,
 		HourLogs:  []HourLog{},
 	}

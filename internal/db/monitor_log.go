@@ -486,3 +486,32 @@ func DeleteMonitorLogBeforeDays(days int) error {
 
 	return nil
 }
+
+// DeleteMonitorLogByMonitorID 删除指定监控ID的所有监控日志（遍历所有分表）
+func DeleteMonitorLogByMonitorID(monitorID int64) error {
+	// 遍历最近365天的分表，删除匹配的监控日志
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -365)
+
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		tableName := getMonitorLogTableName(currentDate)
+
+		// 检查表格是否存在
+		exists := GetDb().Migrator().HasTable(tableName)
+		if !exists {
+			currentDate = currentDate.AddDate(0, 0, 1)
+			continue
+		}
+
+		// 删除该表中匹配 monitor_id 的日志
+		if err := GetDb().Table(tableName).Where("monitor_id = ?", strconv.FormatInt(monitorID, 10)).Delete(&model.MonitorLog{}).Error; err != nil {
+			// 记录错误但继续处理其他表
+			fmt.Printf("Error deleting monitor logs from table %s for monitor_id %d: %v\n", tableName, monitorID, err)
+		}
+
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
+
+	return nil
+}
