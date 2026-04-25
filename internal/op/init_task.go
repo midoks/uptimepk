@@ -198,12 +198,15 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 
 	// 清空之前监控任务
 	gmonitor_list, err := db.GetMonitorListByGid(gid)
-	if err != nil {
+	if err == nil {
 		for _, gm := range gmonitor_list {
-			if err := db.MonitorSoftDeleteByID(gm.ID); err == nil { // 删除任务
-				if err := MonitorDeleteTask(gm); err != nil {
-					continue
-				}
+			// fmt.Printf("软删除ID:%v\n", gm.ID)
+			if err := db.MonitorSoftDeleteByID(gm.ID); err != nil { // 删除任务
+				fmt.Printf("[Telegram]软删除失败:%v\n", err)
+			}
+
+			if err := MonitorDeleteTask(gm); err != nil {
+				fmt.Printf("[Telegram]软删除任务失败:%v\n", err)
 			}
 		}
 	}
@@ -246,7 +249,6 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 				failCount++
 				continue
 			}
-
 		}
 
 		if err := MonitorAddTask(*common_data); err != nil {
