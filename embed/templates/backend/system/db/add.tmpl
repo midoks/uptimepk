@@ -168,18 +168,6 @@ form.on("submit(submit_db)", function(data){
         field['status'] = false;
     }
 
-    if (field['allow_login'] == "on"){
-        field['allow_login'] = true;
-    } else {
-        field['allow_login'] = false;
-    }
-
-    if (field['super_admin'] == "on"){
-        field['super_admin'] = true;
-    } else {
-        field['super_admin'] = false;
-    }
-
     $.post("/{[$.admin_path]}/system/db/add", field, function(res) {
         showMsg(res.msg, function(){
             layer.close(index);

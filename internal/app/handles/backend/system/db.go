@@ -2,21 +2,74 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"uptimepk/internal/app/common"
-	// "uptimepk/internal/app/form"
+	"uptimepk/internal/app/form"
+	"uptimepk/internal/db"
+	"uptimepk/internal/model"
 )
 
 func Db(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
-	c.HTML(http.StatusOK, "backend/system/db.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/db/index.tmpl", data)
 }
 
-func DbAdd(c *gin.Context) {
+func DbNodeAdd(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
-	c.HTML(http.StatusOK, "backend/system/db_add.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/db/add.tmpl", data)
+}
+
+func DbNodeList(c *gin.Context) {
+	var field form.Page
+	if err := c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	result, count, err := db.GetDbNodeList(field.Page, field.Limit)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	common.SuccessLayuiResp(c, count, "ok", result)
+}
+
+func PostDbNodeAdd(c *gin.Context) {
+	var field form.DbNodeAdd
+	var err error
+	if err = c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	common_data := &model.DbNode{
+		Name:       field.Name,
+		Host:       field.Host, // 暂时设为0，需要根据实际情况转换
+		Port:       int64(field.Port),
+		Password:   field.Password,
+		Dbname:     field.Dbname,
+		Order:      0, // 默认值
+		Weigth:     0, // 默认值
+		Status:     field.Status,
+		UpdateTime: time.Now().Unix(),
+	}
+
+	if field.ID > 0 {
+		if err := db.GetDb().Model(&model.DbNode{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+	} else {
+		common_data.CreateTime = time.Now().Unix()
+		if err := db.GetDb().Create(common_data).Error; err != nil {
+			common.ErrorResp(c, err, -1)
+			return
+		}
+	}
+	common.SuccessResp(c)
 }

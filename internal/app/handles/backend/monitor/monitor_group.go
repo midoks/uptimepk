@@ -36,7 +36,6 @@ func MonitorGroupsAdd(c *gin.Context) {
 }
 
 func MonitorGroupsList(c *gin.Context) {
-
 	var field form.Page
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)

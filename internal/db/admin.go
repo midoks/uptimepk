@@ -11,10 +11,10 @@ import (
 )
 
 func GetAdminList(page, size int) ([]model.Admin, int64, error) {
-	adminM := db.Model(&model.Admin{})
+	mm := db.Model(&model.Admin{})
 	var count int64
-	if err := adminM.Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get server count")
+	if err := mm.Count(&count).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get admin count")
 	}
 
 	var list []model.Admin

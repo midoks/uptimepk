@@ -44,7 +44,7 @@ func GetSysBaseSubMenu() []form.SubMenu {
 func Home(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/settings.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/settings/index.tmpl", data)
 }
 
 func PostHome(c *gin.Context) {
@@ -91,7 +91,7 @@ func Web(c *gin.Context) {
 	if err == nil {
 		data["setting_web_ui"] = setting_web_ui_data
 	}
-	c.HTML(http.StatusOK, "backend/system/settings_web.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/settings/web.tmpl", data)
 }
 
 func PostWeb(c *gin.Context) {
@@ -134,7 +134,7 @@ func PostWeb(c *gin.Context) {
 func Profile(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/settings_profile.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/settings/profile.tmpl", data)
 }
 
 func PostProfile(c *gin.Context) {
@@ -165,7 +165,7 @@ func PostProfile(c *gin.Context) {
 func Login(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/settings_login.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/settings/login.tmpl", data)
 }
 
 func PostLogin(c *gin.Context) {
@@ -207,7 +207,7 @@ func PostLogin(c *gin.Context) {
 func LoginLogs(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysBaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/settings_login_logs.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/settings/login_logs.tmpl", data)
 }
 
 func LoginLogsList(c *gin.Context) {

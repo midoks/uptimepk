@@ -95,9 +95,9 @@ table.render({
      ]],
     page: true,
     done: function(res, curr, count){
-        console.log('Table response:', res);
-        console.log('Current page:', curr);
-        console.log('Total count:', count);
+        // console.log('Table response:', res);
+        // console.log('Current page:', curr);
+        // console.log('Total count:', count);
         $('#list').next('.layui-table-view').find('span.error-tip').on('mouseenter', function(){
             var errorMsg = $(this).attr('data-error');
             var hour = String($(this).attr('data-hour')).padStart(2, '0');

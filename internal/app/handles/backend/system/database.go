@@ -53,21 +53,21 @@ func Database(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/database.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/database/index.tmpl", data)
 }
 
 func DatabaseUpdate(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/database_update.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/database/update.tmpl", data)
 }
 
 func DatabaseClean(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
-	c.HTML(http.StatusOK, "backend/system/database_cleans.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/database/cleans.tmpl", data)
 }
 
 func DatabaseCleanSetting(c *gin.Context) {
@@ -84,7 +84,7 @@ func DatabaseCleanSetting(c *gin.Context) {
 		data["monitor_log_days"] = 180
 	}
 
-	c.HTML(http.StatusOK, "backend/system/database_clean_setting.tmpl", data)
+	c.HTML(http.StatusOK, "backend/system/database/clean_setting.tmpl", data)
 }
 
 func PostDatabaseCleanSetting(c *gin.Context) {
