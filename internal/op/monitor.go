@@ -214,6 +214,8 @@ func MonitorAddTask(mm model.Monitor) error {
 		cronExpr = fmt.Sprintf("* */%d * * * *", mm.Interval)
 	} else if mm.IntervalType == "hour" {
 		cronExpr = fmt.Sprintf("* * */%d * * *", mm.Interval)
+	} else if mm.IntervalType == "second" {
+		cronExpr = fmt.Sprintf("*/%d * * * * *", mm.Interval)
 	}
 
 	task := &MonitorTask{monitor: &mm}
