@@ -40,6 +40,8 @@ func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64
 	if err := db.Model(&model.Monitor{}).
 		Select("gid, COUNT(*) as num").
 		Where("gid IN ?", groupIDs).
+		Where("is_deleted", 0).
+		Where("status", 1).
 		Group("gid").
 		Find(&counts).Error; err != nil {
 		return nil, 0, errors.Wrapf(err, "failed get monitor counts")
