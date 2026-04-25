@@ -42,20 +42,15 @@ go mod vendor
 # cd /usr/local/uptimepk_dev/uptimepk && go build -o uptimepk main.go 
 # cd /usr/local/uptimepk_dev/uptimepk && go build -o uptimepk main.go && ./uptimepk web
 cd $TAGRT_DIR/uptimepk && go build -o uptimepk main.go 
-
-
-cd $TAGRT_DIR/uptimepk/scripts
-
-sh make.sh
-
-
 systemctl daemon-reload
+
+
+cd $TAGRT_DIR/uptimepk && ./uptimepk install
+systemctl restart uptimepk
 
 
 # rm -rf /usr/local/uptimepk_dev/uptimepk/custom
 # rm -rf /usr/local/uptimepk_dev/uptimepk/data
-
-service uptimepk restart
 
 cd $TAGRT_DIR/uptimepk && ./uptimepk -v
 
@@ -70,5 +65,5 @@ if [ ! -f /root/go/bin/zzz ];then
 	go install github.com/midoks/zzz@latest
 fi
 
-service uptimepk stop
+systemctl status uptimepk
 
