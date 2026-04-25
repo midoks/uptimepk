@@ -1,8 +1,6 @@
 package log
 
 import (
-	"fmt"
-	// "strconv"
 	"net/http"
 	"time"
 
