@@ -37,14 +37,14 @@ func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
 }
 
 func GetMonitorListSimple(page, size int) ([]model.Monitor, int64, error) {
-	cluster := db.Model(&model.Monitor{})
+	mm := db.Model(&model.Monitor{})
 	var count int64
-	if err := cluster.Count(&count).Error; err != nil {
+	if err := mm.Where("is_deleted=?", 0).Count(&count).Error; err != nil {
 		return nil, 0, errors.Wrapf(err, "failed get monitor count")
 	}
 
 	var list []model.Monitor
-	if err := db.Order(columnName("id")).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	if err := db.Order(columnName("create_time")+" desc").Where("is_deleted=?", 0).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		return nil, 0, errors.Wrap(err, "failed get monitor list")
 	}
 	return list, count, nil
@@ -67,7 +67,6 @@ func GetMonitorByID(id int64) (*model.Monitor, error) {
 }
 
 func MonitorTriggerStatus(id int64) error {
-
 	var data model.Monitor
 	if err := db.First(&data, id).Error; err != nil {
 		return errors.Wrapf(err, "failed get monitor data")
