@@ -12,6 +12,7 @@ import (
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
 	"uptimepk/internal/monitortask"
+	"uptimepk/internal/utils"
 )
 
 // MonitorTask 监控任务
@@ -43,6 +44,14 @@ func (t *MonitorTask) Run() error {
 	}
 }
 
+// 全局共享的HTTP客户端
+var httpClient *http.Client
+
+func init() {
+	// 初始化全局HTTP客户端，使用优化的配置
+	httpClient = utils.NewHTTPClient(30 * time.Second)
+}
+
 // runHttpMonitor 执行HTTP监控
 func (t *MonitorTask) runHttpMonitor() error {
 	// 获取HTTP监控参数
@@ -55,9 +64,10 @@ func (t *MonitorTask) runHttpMonitor() error {
 	// 记录重定向次数
 	redirectCount := 0
 
-	// 创建HTTP客户端，设置超时时间
+	// 使用全局共享的HTTP客户端，设置超时时间
 	client := &http.Client{
-		Timeout: time.Duration(t.monitor.Timeout) * time.Second,
+		Timeout:   time.Duration(t.monitor.Timeout) * time.Second,
+		Transport: httpClient.Transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			redirectCount = len(via)
 			if len(via) >= t.monitor.MaxRetries {

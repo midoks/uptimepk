@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -302,10 +303,29 @@ func MonitorLogDeleteByIDWithMonitorID(tx *gorm.DB, id int64, monitorID int64) e
 	return MonitorLogDeleteByID(tx, id, strconv.FormatInt(monitorID, 10))
 }
 
+// 表存在性缓存，减少频繁的表检查
+var tableExistsCache = make(map[string]bool)
+var tableCacheMutex sync.RWMutex
+
 // ensureMonitorLogTableExists 确保监控日志表存在
 func ensureMonitorLogTableExists(tableName string) error {
+	// 先检查缓存
+	tableCacheMutex.RLock()
+	exists, found := tableExistsCache[tableName]
+	tableCacheMutex.RUnlock()
+
+	if found && exists {
+		return nil
+	}
+
 	// 检查表是否存在
-	exists := GetDb().Migrator().HasTable(tableName)
+	exists = GetDb().Migrator().HasTable(tableName)
+
+	// 更新缓存
+	tableCacheMutex.Lock()
+	tableExistsCache[tableName] = exists
+	tableCacheMutex.Unlock()
+
 	if exists {
 		return nil
 	}
@@ -374,7 +394,14 @@ func ensureMonitorLogTableExists(tableName string) error {
 	}
 
 	// 创建表
-	return GetDb().Exec(createTableSQL).Error
+	err := GetDb().Exec(createTableSQL).Error
+	if err == nil {
+		// 更新缓存
+		tableCacheMutex.Lock()
+		tableExistsCache[tableName] = true
+		tableCacheMutex.Unlock()
+	}
+	return err
 }
 
 // CreateMonitorLogTable 创建监控日志分表

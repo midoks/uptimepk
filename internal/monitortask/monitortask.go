@@ -73,6 +73,14 @@ func (m *Manager) Stop() {
 	}
 }
 
+// 并发控制：限制同时运行的任务数量
+var taskSemaphore chan struct{}
+
+func init() {
+	// 初始化任务信号量，限制并发任务数为 50
+	taskSemaphore = make(chan struct{}, 50)
+}
+
 // AddTask 添加任务
 func (m *Manager) AddTask(task Task, cronExpr string) error {
 	m.mutex.Lock()
@@ -87,8 +95,25 @@ func (m *Manager) AddTask(task Task, cronExpr string) error {
 
 	// 添加到 cron
 	entryID, err := m.cron.AddFunc(cronExpr, func() {
-		if err := task.Run(); err != nil {
-			fmt.Printf("Task %s failed: %v\n", task.Name(), err)
+		// 获取信号量，限制并发
+		taskSemaphore <- struct{}{}
+		defer func() {
+			<-taskSemaphore
+		}()
+
+		// 执行任务，添加错误处理和超时控制
+		done := make(chan error, 1)
+		go func() {
+			done <- task.Run()
+		}()
+
+		select {
+		case err := <-done:
+			if err != nil {
+				fmt.Printf("Task %s failed: %v\n", task.Name(), err)
+			}
+		case <-time.After(30 * time.Second):
+			fmt.Printf("Task %s timed out\n", task.Name())
 		}
 	})
 
