@@ -314,6 +314,13 @@ func GetMonitorHourLogs(monitorID int64) []HourLog {
 }
 
 func SendMonitorStatusToClient(client *WSClient) {
+	hub.mu.RLock()
+	if _, ok := hub.clients[client]; !ok {
+		hub.mu.RUnlock()
+		return
+	}
+	hub.mu.RUnlock()
+
 	statusList, err := GetMonitorStatusList()
 	if err != nil {
 		return
@@ -339,7 +346,14 @@ func SendMonitorStatusToClient(client *WSClient) {
 		if err != nil {
 			return
 		}
-		client.send <- message
+		hub.mu.RLock()
+		if _, ok := hub.clients[client]; ok {
+			select {
+			case client.send <- message:
+			default:
+			}
+		}
+		hub.mu.RUnlock()
 		return
 	}
 
@@ -367,7 +381,14 @@ func SendMonitorStatusToClient(client *WSClient) {
 			if err != nil {
 				continue
 			}
-			client.send <- message
+			hub.mu.RLock()
+			if _, ok := hub.clients[client]; ok {
+				select {
+				case client.send <- message:
+				default:
+				}
+			}
+			hub.mu.RUnlock()
 
 			if chunkNum < chunks {
 				time.Sleep(10 * time.Millisecond)

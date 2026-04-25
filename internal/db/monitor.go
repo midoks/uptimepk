@@ -124,6 +124,18 @@ func MonitorSoftDeleteByID(id int64) error {
 	return nil
 }
 
+func MonitorSoftDeleteByGid(gid int64) error {
+	if err := db.Model(&model.Monitor{}).
+		Where("gid = ?", gid).
+		Updates(map[string]interface{}{
+			"is_deleted":  1,
+			"update_time": time.Now().Unix(),
+		}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func MonitorDeleteByID(id int64) error {
 	var d model.Monitor
 	return db.Where("id = ?", id).Delete(&d).Error

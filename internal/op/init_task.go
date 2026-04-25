@@ -196,8 +196,21 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 		return 0, 0, nil
 	}
 
+	// 清空之前监控任务
+	gmonitor_list, err := db.GetMonitorListByGid(gid)
+	if err != nil {
+		for _, gm := range gmonitor_list {
+			if err := db.MonitorSoftDeleteByID(gm.ID); err == nil { // 删除任务
+				if err := MonitorDeleteTask(gm); err != nil {
+					continue
+				}
+			}
+		}
+	}
+
 	for _, entry := range entries {
-		monitor := &model.Monitor{
+
+		common_data := &model.Monitor{
 			Name:         entry.Remark,
 			Type:         "http",
 			Status:       1,
@@ -211,22 +224,36 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 			UpdateTime:   time.Now().Unix(),
 		}
 
-		monitor.SetHttpTypeParams(model.MonitorHttpTypeParams{
+		common_data.SetHttpTypeParams(model.MonitorHttpTypeParams{
 			Addr: entry.URL,
 		})
 
-		if err := db.GetDb().Create(monitor).Error; err != nil {
-			fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
-			failCount++
-			continue
+		delete_id, err := db.GetMonitorDeletedID()
+		if err == nil {
+			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", delete_id).Update("is_deleted", 0).Error; err != nil {
+				continue
+			}
+
+			if err := db.GetDb().Where("id = ?", delete_id).Updates(common_data).Error; err != nil {
+				fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
+				failCount++
+				continue
+			}
+
+		} else {
+			if err := db.GetDb().Create(common_data).Error; err != nil {
+				fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
+				failCount++
+				continue
+			}
+
 		}
 
-		if err := MonitorAddTask(*monitor); err != nil {
+		if err := MonitorAddTask(*common_data); err != nil {
 			fmt.Printf("添加任务失败: %s - %v\n", entry.Remark, err)
 			failCount++
 			continue
 		}
-
 		successCount++
 	}
 
