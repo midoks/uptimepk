@@ -49,6 +49,11 @@ func InitSetting() error {
 	if err != nil {
 		return err
 	}
+
+	err = InitSettingDbConfData()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
