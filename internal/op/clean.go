@@ -22,7 +22,7 @@ func InitCleanTask() {
 			// time.Sleep(10 * time.Second)
 			// 执行清理
 			if err := CleanExpiredMonitorLogs(); err != nil {
-				fmt.Printf("[%s] 清理过期监控日志失败: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+				SysLog(fmt.Sprintf("[%s] 清理过期监控日志失败: %v", time.Now().Format("2006-01-02 15:04:05"), err))
 			}
 		}
 	}()

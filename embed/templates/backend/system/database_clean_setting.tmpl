@@ -31,7 +31,7 @@
                                 <td>监控日志保留天数</td>
                                 <td>
                                     <div class="layui-inline">
-                                        <input type="number" name="monitor_log_days" autocomplete="off" class="layui-input" value="{[if .setting_db_conf]}{[.setting_db_conf.GetDbConfValue.MonitorLogDays]}{[else]}180{[end]}" placeholder="">
+                                        <input type="number" name="monitor_log_days" autocomplete="off" class="layui-input" value="{[.monitor_log_days]}" placeholder="">
                                     </div>
                                     <p class="layui-font-12">超过此天数的日志将会被自动清理，至少1天。</p>
                                 </td>

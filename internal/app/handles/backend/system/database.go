@@ -83,7 +83,10 @@ func DatabaseCleanSetting(c *gin.Context) {
 	// 获取数据库配置设置
 	setting_db_conf, err := db.GetSysSettingByCode(db.SettingDbConf)
 	if err == nil {
-		data["setting_db_conf"] = setting_db_conf
+		db_conf, _ := setting_db_conf.GetDbConfValue()
+		data["monitor_log_days"] = db_conf.MonitorLogDays
+	} else {
+		data["monitor_log_days"] = 180
 	}
 
 	c.HTML(http.StatusOK, "backend/system/database_clean_setting.tmpl", data)
