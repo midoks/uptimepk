@@ -50,6 +50,8 @@ func ReloadTelegramTask() {
 				switch tp.TelegramListenStrategy {
 				case "default":
 					handler = TelegramMessageHandlertrategyDefault(tp.RelateMonitorGroupID)
+				case "append":
+					handler = TelegramMessageHandlertrategyAppend(tp.RelateMonitorGroupID)
 				default:
 					handler = TelegramMessageHandlerStrategyNone
 				}
@@ -208,6 +210,76 @@ func CreateMonitorsFromText(text string, gid int64) (successCount, failCount int
 				fmt.Printf("[Telegram]软删除任务失败:%v\n", err)
 			}
 		}
+	}
+
+	for _, entry := range entries {
+
+		common_data := &model.Monitor{
+			Name:         entry.Remark,
+			Type:         "http",
+			Status:       1,
+			Interval:     60,
+			IntervalType: "second",
+			MaxRetries:   3,
+			Timeout:      10,
+			Gid:          gid, // 添加关联 ID
+			Mark:         entry.Remark,
+			CreateTime:   time.Now().Unix(),
+			UpdateTime:   time.Now().Unix(),
+		}
+
+		common_data.SetHttpTypeParams(model.MonitorHttpTypeParams{
+			Addr: entry.URL,
+		})
+
+		delete_id, err := db.GetMonitorDeletedID()
+
+		if err == nil {
+			if err := db.GetDb().Model(&model.Monitor{}).Where("id = ?", delete_id).Update("is_deleted", 0).Error; err != nil {
+				continue
+			}
+
+			if err := db.GetDb().Where("id = ?", delete_id).Updates(common_data).Error; err != nil {
+				fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
+				failCount++
+				continue
+			}
+
+		} else {
+			if err := db.GetDb().Create(common_data).Error; err != nil {
+				fmt.Printf("创建监控失败: %s - %v\n", entry.Remark, err)
+				failCount++
+				continue
+			}
+		}
+
+		common_data.ID = delete_id
+
+		// 删除之前的监控日志（必须在添加任务之前）
+		if err := db.DeleteMonitorLogByMonitorID(common_data.ID); err != nil {
+			fmt.Printf("删除过期监控日志失败: %s - %v\n", entry.Remark, err)
+		}
+
+		if err := MonitorAddTask(*common_data); err != nil {
+			fmt.Printf("添加任务失败: %s - %v\n", entry.Remark, err)
+			failCount++
+			continue
+		}
+		successCount++
+	}
+
+	return successCount, failCount, nil
+}
+
+func CreateMonitorsFromTextAppend(text string, gid int64) (successCount, failCount int, err error) {
+	entries, err := ParseDomainEntries(text)
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if len(entries) == 0 {
+		return 0, 0, nil
 	}
 
 	for _, entry := range entries {

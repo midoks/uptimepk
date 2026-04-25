@@ -92,6 +92,7 @@ curl -x "你的代理服务地址" https://api.telegram.org 来测试你的代�
                                 <select name="telegram_listen_strategy" lay-verify="required" lay-search lay-filter="telegram_listen_strategy">
                                     <option value="none" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramListenStrategy "none" ]}selected{[end]}{[end]}>无</option>
                                     <option value="default" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramListenStrategy "default" ]}selected{[end]}{[end]}>默认</option>
+                                    <option value="append" {[if .Data]}{[if eq .Data.GetTelegramParams.TelegramListenStrategy "append" ]}selected{[end]}{[end]}>追加模式</option>
                                 </select>
                             </div>
 

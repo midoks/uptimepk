@@ -9,7 +9,7 @@ import (
 )
 
 // 默认策略
-func TelegramMessageHandlertrategyDefault(relateMonitorGroupID int64) tgtask.MessageHandler {
+func TelegramMessageHandlertrategyAppend(relateMonitorGroupID int64) tgtask.MessageHandler {
 	return func(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
 		// fmt.Printf("处理消息[default] (groupID: %d): %s\n", relateMonitorGroupID, update.Message.Text)
 
@@ -48,7 +48,7 @@ func TelegramMessageHandlertrategyDefault(relateMonitorGroupID int64) tgtask.Mes
 				resultMsg = "未绑定监控分组,无法导入!"
 			} else {
 				// 尝试解析域名数据
-				successCount, failCount, err := CreateMonitorsFromText(update.Message.Text, relateMonitorGroupID)
+				successCount, failCount, err := CreateMonitorsFromTextAppend(update.Message.Text, relateMonitorGroupID)
 				if err != nil || successCount == 0 {
 					if failCount == 0 {
 						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "接收到数据: "+update.Message.Text)
