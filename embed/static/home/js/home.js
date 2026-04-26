@@ -137,6 +137,10 @@
                 const container = document.getElementById('group-container');
                 if (!container) return;
 
+                // 清理所有旧的提示元素
+                const oldTips = document.querySelectorAll('.time-cell-tip, .status-indicator-tip');
+                oldTips.forEach(tip => tip.remove());
+
                 if (!this.data || this.data.length === 0) {
                     container.innerHTML = '<div class="loading">暂无分组数据</div>';
                     return;
@@ -161,12 +165,12 @@
                     const monitors = group.monitors || [];
                     const upCount = monitors.filter(function(m) { return m.is_valid; }).length;
                     const totalCount = monitors.length;
-                    const upRate = totalCount > 0 ? (upCount / totalCount * 100).toFixed(1) : '0.0';
+                    const upRate = totalCount > 0 ? (upCount / totalCount * 100).toFixed(1) + '%' : '0.0%';
 
                     html += '<div class="group-section" data-group-id="' + group.id + '">';
                     html += '<h2 style="margin-bottom: 20px; font-size: 18px; font-weight: 600;">' + HomeApp.utils.escapeHtml(group.name) + '</h2>';
                     html += '<div style="margin-bottom: 25px; font-size: 14px; color: #666;">';
-                    html += '正常: ' + upCount + '/' + totalCount + ' (' + upRate + '%)';
+                    html += '正常: ' + upCount + '/' + totalCount + ' (' + upRate + ')';
                     html += '</div>';
 
                     if (monitors.length > 0) {
@@ -174,105 +178,75 @@
                             const statusClass = monitor.is_valid ? 'up' : 'down';
                             const statusText = monitor.is_valid ? '正常' : '无法访问';
                             const statusIcon = monitor.is_valid ? 'fa-check' : 'fa-times';
-                            const statusColor = monitor.is_valid ? '#27ae60' : '#e74c3c';
 
-                            html += '<div class="status-card">';
+                            html += '<div class="status-card" data-category="tab-' + monitor.gid + '" data-id="' + monitor.id + '">';
                             html += '<div class="status-header">';
                             html += '<div class="service-name">' + HomeApp.utils.getTypeIcon(monitor.type) + ' ' + HomeApp.utils.escapeHtml(monitor.name) + '</div>';
                             html += '<div class="status-indicator ' + statusClass + '">';
-                            html += '<i class="fas ' + statusIcon + '"></i> ' + statusText + ' ' + (monitor.latency || '');
-                            html += '</div>';
-                            html += '</div>';
-
-                            html += '<div class="time-grid">';
-                            // 生成多行时间网格，使用 monitor.hour_logs 数据
-                            const hourLogs = monitor.hour_logs || [];
-                            
-                            // 如果没有日志数据，生成模拟数据
-                            if (hourLogs.length === 0) {
-                                for (let row = 0; row < 6; row++) {
-                                    html += '<div class="time-row">';
-                                    for (let i = 0; i < 24; i++) {
-                                        const isUp = Math.random() > 0.2;
-                                        const status = isUp ? 'up' : 'down';
-                                        const hour = HomeApp.utils.padZero(i);
-                                        const minute = HomeApp.utils.padZero(Math.floor(Math.random() * 60));
-                                        const timeStr = hour + ':' + minute;
-                                        const speed = (Math.random() * 1000).toFixed(2) + 'ms';
-                                        const size = (Math.random() * 200).toFixed(2) + 'kb';
-                                        
-                                        html += '<div class="time-cell ' + status + '" ' +
-                                            'data-status="' + status + '" ' +
-                                            'data-time="' + timeStr + '" ' +
-                                            'data-speed="' + speed + '" ' +
-                                            'data-size="' + size + '"></div>';
-                                    }
-                                    html += '</div>';
-                                }
-                            } else {
-                                // 使用实际日志数据
-                                for (let row = 0; row < 6; row++) {
-                                    html += '<div class="time-row">';
-                                    for (let i = 0; i < 24; i++) {
-                                        const log = hourLogs.find(function(l) {
-                                            return parseInt(l.hour) === i;
-                                        });
-                                        
-                                        if (log) {
-                                            const status = log.is_valid ? 'up' : 'down';
-                                            const timeStr = HomeApp.utils.padZero(log.hour) + ':' + HomeApp.utils.padZero(log.minute || 0);
-                                            let cellHtml = '<div class="time-cell ' + status + '" ' +
-                                                'data-status="' + status + '" ' +
-                                                'data-time="' + timeStr + '" ';
-                                            
-                                            if (log.error_msg) {
-                                                cellHtml += 'data-error="' + HomeApp.utils.escapeHtml(log.error_msg) + '" ';
-                                            }
-                                            if (log.speed) {
-                                                cellHtml += 'data-speed="' + log.speed + '" ';
-                                            }
-                                            if (log.size !== undefined && log.size !== null) {
-                                                let sizeStr;
-                                                if (log.size >= 1024) {
-                                                    sizeStr = (log.size / 1024).toFixed(2) + 'kb';
-                                                } else {
-                                                    sizeStr = log.size + 'b';
-                                                }
-                                                cellHtml += 'data-size="' + sizeStr + '" ';
-                                            }
-                                            cellHtml += '></div>';
-                                            html += cellHtml;
-                                        } else {
-                                            // 无数据时显示未知状态
-                                            html += '<div class="time-cell unknown" ' +
-                                                'data-status="unknown" ' +
-                                                'data-time="' + HomeApp.utils.padZero(i) + ':00" ' +
-                                                '></div>';
-                                        }
-                                    }
-                                    html += '</div>';
-                                }
+                            html += '<i class="fas ' + statusIcon + '"></i>';
+                            html += '<span>' + statusText + '</span>';
+                            if (monitor.latency) {
+                                html += '<span class="latency">' + monitor.latency + '</span>';
                             }
                             html += '</div>';
+                            html += '</div>';
 
+                            // 渲染时间格子 - 与 index 页面保持一致
+                            const hourLogs = monitor.hour_logs || [];
+
+                            html += '<div class="time-grid">';
+
+                            for (let i = 0; i < hourLogs.length; i++) {
+                                const log = hourLogs[i];
+                                const status = log.is_valid ? 'up' : 'down';
+                                const error = log.error_msg || '无法访问';
+                                const timeStr = HomeApp.utils.padZero(log.hour) + ':' + HomeApp.utils.padZero(log.minute || 0);
+                                let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + HomeApp.utils.escapeHtml(error) + '"';
+                                if (log.speed) {
+                                    cellHtml += ' data-speed="' + log.speed + '"';
+                                }
+                                if (log.size !== undefined && log.size !== null) {
+                                    let sizeStr;
+                                    if (log.size >= 1024) {
+                                        sizeStr = (log.size / 1024).toFixed(2) + 'kb';
+                                    } else {
+                                        sizeStr = log.size + 'b';
+                                    }
+                                    cellHtml += ' data-size="' + sizeStr + '"';
+                                }
+                                cellHtml += '></div>';
+                                html += cellHtml;
+                            }
+
+                            if (hourLogs.length === 0) {
+                                // 生成模拟数据，与 index 页面保持一致
+                                for (let i = 0; i < 468; i++) { // 6行 * 78列
+                                    const isUp = Math.random() > 0.2;
+                                    const status = isUp ? 'up' : 'down';
+                                    const hour = HomeApp.utils.padZero(Math.floor(i / 78));
+                                    const minute = HomeApp.utils.padZero(Math.floor((i % 78) * (60 / 78)));
+                                    const timeStr = hour + ':' + minute;
+                                    const speed = (Math.random() * 1000).toFixed(2) + 'ms';
+                                    const size = (Math.random() * 200).toFixed(2) + 'kb';
+                                    
+                                    html += '<div class="time-cell ' + status + '" ' +
+                                        'data-status="' + status + '" ' +
+                                        'data-time="' + timeStr + '" ' +
+                                        'data-speed="' + speed + '" ' +
+                                        'data-size="' + size + '"></div>';
+                                }
+                            }
+
+                            html += '</div>';
+
+                            // 图例
                             html += '<div class="legend">';
                             html += '<div class="legend-item"><div class="legend-color" style="background-color: #27ae60;"></div><span>正常</span></div>';
                             html += '<div class="legend-item"><div class="legend-color" style="background-color: #e74c3c;"></div><span>故障</span></div>';
                             html += '<div class="legend-item"><div class="legend-color" style="background-color: #f0f0f0;"></div><span>未知</span></div>';
                             html += '</div>';
 
-                            html += '<div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; margin-top: 15px;">';
-                            html += '<div>类型: ' + HomeApp.utils.escapeHtml(monitor.type) + '</div>';
-                            html += '<div>地址: ' + HomeApp.utils.escapeHtml(monitor.address) + '</div>';
-                            if (monitor.speed) {
-                                html += '<div>耗时: ' + monitor.speed + 'ms</div>';
-                            }
-                            if (monitor.size) {
-                                html += '<div>大小: ' + HomeApp.utils.formatSize(monitor.size) + '</div>';
-                            }
-                            html += '<div>日志: ' + (hourLogs.length || Math.floor(Math.random() * 1000)) + ' 条</div>';
-                            html += '</div>';
-
+                            // 页脚统计
                             html += '<div class="status-footer">';
                             html += '<div>今天</div>';
                             html += '<div class="status-stats">最近 60 天可用率 ' + (monitor.is_valid ? '100.0' : '0.0') + '%</div>';
@@ -373,109 +347,102 @@
                 const container = document.getElementById('monitor-container');
                 if (!container || !this.data) return;
 
+                // 清理所有旧的提示元素
+                const oldTips = document.querySelectorAll('.time-cell-tip, .status-indicator-tip');
+                oldTips.forEach(tip => tip.remove());
+
                 const data = this.data;
                 const statusClass = data.is_valid ? 'up' : 'down';
                 const statusText = data.is_valid ? '正常' : '无法访问';
                 const statusIcon = data.is_valid ? 'fa-check' : 'fa-times';
-                const statusColor = data.is_valid ? '#27ae60' : '#e74c3c';
 
-                let html = '<div class="status-card">';
+                let html = '<div class="status-card" data-category="tab-' + data.gid + '" data-id="' + data.id + '">';
                 html += '<div class="status-header">';
                 html += '<div class="service-name">' + HomeApp.utils.getTypeIcon(data.type) + ' ' + HomeApp.utils.escapeHtml(data.name) + '</div>';
                 html += '<div class="status-indicator ' + statusClass + '">';
-                html += '<i class="fas ' + statusIcon + '"></i> ' + statusText + ' ' + (data.latency || '');
-                html += '</div>';
-                html += '</div>';
-
-                html += '<div class="time-grid">';
-                const hourLogs = data.hour_logs || [];
-                
-                if (hourLogs.length === 0) {
-                    for (let row = 0; row < 6; row++) {
-                        html += '<div class="time-row">';
-                        for (let i = 0; i < 24; i++) {
-                            const isUp = Math.random() > 0.2;
-                            const status = isUp ? 'up' : 'down';
-                            const hour = HomeApp.utils.padZero(i);
-                            const minute = HomeApp.utils.padZero(Math.floor(Math.random() * 60));
-                            const timeStr = hour + ':' + minute;
-                            const speed = (Math.random() * 1000).toFixed(2) + 'ms';
-                            const size = (Math.random() * 200).toFixed(2) + 'kb';
-                            
-                            html += '<div class="time-cell ' + status + '" ' +
-                                'data-status="' + status + '" ' +
-                                'data-time="' + timeStr + '" ' +
-                                'data-speed="' + speed + '" ' +
-                                'data-size="' + size + '"></div>';
-                        }
-                        html += '</div>';
-                    }
-                } else {
-                    for (let row = 0; row < 6; row++) {
-                        html += '<div class="time-row">';
-                        for (let i = 0; i < 24; i++) {
-                            const log = hourLogs.find(function(l) {
-                                return parseInt(l.hour) === i;
-                            });
-                            
-                            if (log) {
-                                const status = log.is_valid ? 'up' : 'down';
-                                const timeStr = HomeApp.utils.padZero(log.hour) + ':' + HomeApp.utils.padZero(log.minute || 0);
-                                let cellHtml = '<div class="time-cell ' + status + '" ' +
-                                    'data-status="' + status + '" ' +
-                                    'data-time="' + timeStr + '" ';
-                                
-                                if (log.error_msg) {
-                                    cellHtml += 'data-error="' + HomeApp.utils.escapeHtml(log.error_msg) + '" ';
-                                }
-                                if (log.speed) {
-                                    cellHtml += 'data-speed="' + log.speed + '" ';
-                                }
-                                if (log.size !== undefined && log.size !== null) {
-                                    let sizeStr;
-                                    if (log.size >= 1024) {
-                                        sizeStr = (log.size / 1024).toFixed(2) + 'kb';
-                                    } else {
-                                        sizeStr = log.size + 'b';
-                                    }
-                                    cellHtml += 'data-size="' + sizeStr + '" ';
-                                }
-                                cellHtml += '></div>';
-                                html += cellHtml;
-                            } else {
-                                html += '<div class="time-cell unknown" ' +
-                                    'data-status="unknown" ' +
-                                    'data-time="' + HomeApp.utils.padZero(i) + ':00" ' +
-                                    '></div>';
-                            }
-                        }
-                        html += '</div>';
-                    }
+                html += '<i class="fas ' + statusIcon + '"></i>';
+                html += '<span>' + statusText + '</span>';
+                if (data.latency) {
+                    html += '<span class="latency">' + data.latency + '</span>';
                 }
                 html += '</div>';
+                html += '</div>';
 
+                // 渲染时间格子 - 与 index 页面保持一致
+                const hourLogs = data.hour_logs || [];
+
+                html += '<div class="time-grid">';
+
+                for (let i = 0; i < hourLogs.length; i++) {
+                    const log = hourLogs[i];
+                    const status = log.is_valid ? 'up' : 'down';
+                    const error = log.error_msg || '无法访问';
+                    const timeStr = HomeApp.utils.padZero(log.hour) + ':' + HomeApp.utils.padZero(log.minute || 0);
+                    let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + HomeApp.utils.escapeHtml(error) + '"';
+                    if (log.speed) {
+                        cellHtml += ' data-speed="' + log.speed + '"';
+                    }
+                    if (log.size !== undefined && log.size !== null) {
+                        let sizeStr;
+                        if (log.size >= 1024) {
+                            sizeStr = (log.size / 1024).toFixed(2) + 'kb';
+                        } else {
+                            sizeStr = log.size + 'b';
+                        }
+                        cellHtml += ' data-size="' + sizeStr + '"';
+                    }
+                    cellHtml += '></div>';
+                    html += cellHtml;
+                }
+
+                if (hourLogs.length === 0) {
+                    // 生成模拟数据，与 index 页面保持一致
+                    for (let i = 0; i < 468; i++) { // 6行 * 78列
+                        const isUp = Math.random() > 0.2;
+                        const status = isUp ? 'up' : 'down';
+                        const hour = HomeApp.utils.padZero(Math.floor(i / 78));
+                        const minute = HomeApp.utils.padZero(Math.floor((i % 78) * (60 / 78)));
+                        const timeStr = hour + ':' + minute;
+                        const speed = (Math.random() * 1000).toFixed(2) + 'ms';
+                        const size = (Math.random() * 200).toFixed(2) + 'kb';
+                        
+                        html += '<div class="time-cell ' + status + '" ' +
+                            'data-status="' + status + '" ' +
+                            'data-time="' + timeStr + '" ' +
+                            'data-speed="' + speed + '" ' +
+                            'data-size="' + size + '"></div>';
+                    }
+                }
+
+                html += '</div>';
+
+                // 图例
                 html += '<div class="legend">';
                 html += '<div class="legend-item"><div class="legend-color" style="background-color: #27ae60;"></div><span>正常</span></div>';
                 html += '<div class="legend-item"><div class="legend-color" style="background-color: #e74c3c;"></div><span>故障</span></div>';
                 html += '<div class="legend-item"><div class="legend-color" style="background-color: #f0f0f0;"></div><span>未知</span></div>';
                 html += '</div>';
 
-                html += '<div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; margin-top: 15px;">';
-                html += '<div>类型: ' + HomeApp.utils.escapeHtml(data.type) + '</div>';
-                html += '<div>地址: ' + HomeApp.utils.escapeHtml(data.address) + '</div>';
-                if (data.speed) {
-                    html += '<div>耗时: ' + data.speed + 'ms</div>';
-                }
-                if (data.size) {
-                    html += '<div>大小: ' + HomeApp.utils.formatSize(data.size) + '</div>';
-                }
-                html += '<div>日志: ' + (hourLogs.length || Math.floor(Math.random() * 1000)) + ' 条</div>';
-                html += '</div>';
-
+                // 页脚统计
                 html += '<div class="status-footer">';
-                html += '<div>今天</div>';
-                html += '<div class="status-stats">最近 60 天可用率 ' + (data.is_valid ? '100.0' : '0.0') + '%</div>';
-                html += '<div class="date">' + new Date().toLocaleDateString('zh-CN') + '</div>';
+                html += '<div class="status-stats">类型: ' + HomeApp.utils.escapeHtml(data.type) + '</div>';
+                html += '<div class="status-stats">日志: ' + hourLogs.length + ' 条</div>';
+                if (data.is_valid) {
+                    if (data.speed) {
+                        html += '<div class="status-stats">耗时: ' + data.speed + 'ms</div>';
+                    }
+                    if (data.size !== undefined && data.size !== null) {
+                        let sizeStr;
+                        if (data.size >= 1024) {
+                            sizeStr = (data.size / 1024).toFixed(2) + 'kb';
+                        } else {
+                            sizeStr = data.size + 'b';
+                        }
+                        html += '<div class="status-stats">大小: ' + sizeStr + '</div>';
+                    }
+                } else {
+                    html += '<div class="status-stats" style="color: #f44336;">无法访问</div>';
+                }
                 html += '</div>';
 
                 // 为状态指示器添加错误信息属性，用于 tooltip
@@ -766,6 +733,10 @@
         function renderStatusCards(data) {
             const container = document.getElementById('status-container');
             if (!container) return;
+
+            // 清理所有旧的提示元素
+            const oldTips = document.querySelectorAll('.time-cell-tip, .status-indicator-tip');
+            oldTips.forEach(tip => tip.remove());
 
             if (!data || data.length === 0) {
                 container.innerHTML = '<div class="loading">暂无监控数据</div>';
@@ -1123,9 +1094,28 @@
                                 chunkCount++;
                                 if (chunkCount >= data.chunks) {
                                     monitorData = chunkBuffer;
+                                    // 保存当前激活的标签
+                                    const activeTab = document.querySelector('.tab.active');
+                                    const activeTabName = activeTab ? activeTab.dataset.tab : 'all';
+                                    
                                     renderStatusCards(monitorData);
                                     if (chunkGroups) {
                                         renderTabs(chunkGroups);
+                                        // 恢复之前激活的标签
+                                        const newActiveTab = document.querySelector('.tab[data-tab="' + activeTabName + '"]');
+                                        if (newActiveTab) {
+                                            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                                            newActiveTab.classList.add('active');
+                                            // 重新应用标签过滤
+                                            const statusCards = document.querySelectorAll('.status-card');
+                                            statusCards.forEach(card => {
+                                                if (activeTabName === 'all' || card.dataset.category === activeTabName) {
+                                                    card.style.display = 'block';
+                                                } else {
+                                                    card.style.display = 'none';
+                                                }
+                                            });
+                                        }
                                     }
                                     chunkBuffer = [];
                                     chunkTotal = 0;
@@ -1134,9 +1124,28 @@
                                 }
                             } else {
                                 monitorData = data.data || [];
+                                // 保存当前激活的标签
+                                const activeTab = document.querySelector('.tab.active');
+                                const activeTabName = activeTab ? activeTab.dataset.tab : 'all';
+                                
                                 renderStatusCards(monitorData);
                                 if (data.groups) {
                                     renderTabs(data.groups);
+                                    // 恢复之前激活的标签
+                                    const newActiveTab = document.querySelector('.tab[data-tab="' + activeTabName + '"]');
+                                    if (newActiveTab) {
+                                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                                        newActiveTab.classList.add('active');
+                                        // 重新应用标签过滤
+                                        const statusCards = document.querySelectorAll('.status-card');
+                                        statusCards.forEach(card => {
+                                            if (activeTabName === 'all' || card.dataset.category === activeTabName) {
+                                                card.style.display = 'block';
+                                            } else {
+                                                card.style.display = 'none';
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         } else if (data.type === 'monitor_updates') {
