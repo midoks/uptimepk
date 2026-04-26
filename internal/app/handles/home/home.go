@@ -23,6 +23,24 @@ func Index(c *gin.Context) {
 	c.HTML(http.StatusOK, "home/index.tmpl", data)
 }
 
+func Groups(c *gin.Context) {
+	data := common.FrontendCommonVer(c)
+
+	groups, _ := db.GetMonitorGroupAll()
+	data["groups"] = groups
+
+	c.HTML(http.StatusOK, "home/groups.tmpl", data)
+}
+
+func Monitor(c *gin.Context) {
+	data := common.FrontendCommonVer(c)
+
+	monitorId := c.Query("id")
+	data["monitor_id"] = monitorId
+
+	c.HTML(http.StatusOK, "home/monitor.tmpl", data)
+}
+
 func NotFound(c *gin.Context) {
 	data := common.CommonVer(c)
 	c.HTML(http.StatusOK, "404.tmpl", data)

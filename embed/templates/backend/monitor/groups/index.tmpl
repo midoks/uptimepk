@@ -171,6 +171,7 @@ function opStatus(obj){
 </script>
 
 <script type="text/html" id="cmdTpl">
+<a class="layui-btn layui-btn-xs" target="_blank" href="/groups?id={{d.id}}">查看</a>
 <a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/group/add?id={{d.id}}',500,350)">修改</a>
 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/group/delete','{{d.id}}')">删除</a>
 </script>

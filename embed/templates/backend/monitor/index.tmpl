@@ -91,7 +91,7 @@ table.render({
         {field:'type', title:'类型',width:80},
         {field:'mark', title:'备注', toolbar:"#markTpl"},
         {field:'status', title:'状态', toolbar:"#statusTpl",width:80},
-        {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
+        {title:'操作', toolbar: '#cmdTpl', width:180, fixed: 'right'}
      ]],
     page: true,
     done: function(res, curr, count){
@@ -191,6 +191,7 @@ function opStatus(obj){
 
 
 <script type="text/html" id="cmdTpl">
+<a class="layui-btn layui-btn-xs" target="_blank" href="/monitor?id={{d.id}}">查看</a>
 <a class="layui-btn layui-btn-xs" lay-event='edit' onclick="Admin.open('修改','/{[$.admin_path]}/monitor/add?id={{d.id}}',800,600)">修改</a>
 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, '/{[$.admin_path]}/monitor/delete','{{d.id}}')">删除</a>
 </script>

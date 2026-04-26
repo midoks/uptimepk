@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -104,28 +105,66 @@ func (h *WSHub) run() {
 				close(client.send)
 			}
 			h.mu.Unlock()
-
-		case message := <-h.broadcast:
-			h.mu.RLock()
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-			h.mu.RUnlock()
 		}
 	}
 }
 
-func broadcastLoop() {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
+func (c *WSClient) readPump() {
+	defer func() {
+		hub.unregister <- c
+		c.conn.Close()
+	}()
 
-	for range ticker.C {
-		BroadcastMonitorUpdates()
+	for {
+		_, _, err := c.conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				fmt.Printf("error: %v\n", err)
+			}
+			break
+		}
+	}
+}
+
+func (c *WSClient) writePump() {
+	ticker := time.NewTicker(60 * time.Second)
+	defer func() {
+		ticker.Stop()
+		c.conn.Close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if !ok {
+				// The hub closed the channel.
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(message)
+
+			// Add queued chat messages to the current websocket message.
+			n := len(c.send)
+			for i := 0; i < n; i++ {
+				w.Write([]byte("\n"))
+				w.Write(<-c.send)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
 	}
 }
 
@@ -139,141 +178,164 @@ func WSHandler(c *gin.Context) {
 		conn:          conn,
 		send:          make(chan []byte, 256),
 		isFirstUpdate: true,
-		lastUpdate:    0,
+		lastUpdate:    time.Now().Unix(),
 	}
-
 	hub.register <- client
 
 	go client.writePump()
 	go client.readPump()
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		SendMonitorStatusToClient(client)
-	}()
 }
 
-func (c *WSClient) readPump() {
-	defer func() {
-		hub.unregister <- c
-		c.conn.Close()
-	}()
+func WSGroupsHandler(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
 
-	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
+	// 发送分组数据
+	groups, err := db.GetMonitorGroupAll()
+	if err != nil {
+		return
+	}
 
-	for {
-		_, message, err := c.conn.ReadMessage()
+	// 获取每个分组的监控状态
+	groupStatus := make([]map[string]interface{}, 0)
+	for _, group := range groups {
+		monitors, err := db.GetMonitorListByGid(group.ID)
 		if err != nil {
-			break
-		}
-
-		var req map[string]interface{}
-		if err := json.Unmarshal(message, &req); err != nil {
 			continue
 		}
 
-		if req["type"] == "ping" {
-			c.send <- []byte(`{"type":"pong"}`)
-		} else if req["type"] == "get_status" {
-			BroadcastMonitorStatus()
-		} else if req["type"] == "get_by_gid" {
-			if gid, ok := req["gid"].(float64); ok {
-				statusList := GetMonitorStatusListByGid(int64(gid))
-				data := map[string]interface{}{
-					"type":    "monitor_status_by_gid",
-					"gid":     int64(gid),
-					"data":    statusList,
-					"updated": time.Now().Unix(),
-				}
-				if msg, err := json.Marshal(data); err == nil {
-					c.send <- msg
-				}
+		monitorStatus := make([]MonitorStatus, 0)
+		for _, monitor := range monitors {
+			status, err := GetMonitorStatus(monitor.ID)
+			if err != nil {
+				continue
 			}
+			monitorStatus = append(monitorStatus, status)
 		}
+
+		groupData := map[string]interface{}{
+			"id":       group.ID,
+			"name":     group.Name,
+			"monitors": monitorStatus,
+		}
+		groupStatus = append(groupStatus, groupData)
 	}
+
+	data := map[string]interface{}{
+		"type": "group_status",
+		"data": groupStatus,
+	}
+
+	message, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+
+	conn.WriteMessage(websocket.TextMessage, message)
 }
 
-func (c *WSClient) writePump() {
-	ticker := time.NewTicker(30 * time.Second)
-	defer func() {
-		ticker.Stop()
-		c.conn.Close()
-	}()
+func WSMonitorHandler(c *gin.Context) {
+	monitorId := c.Query("id")
+	if monitorId == "" {
+		return
+	}
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+
+	// 发送监控点详情数据
+	monitorIdInt, err := strconv.ParseInt(monitorId, 10, 64)
+	if err != nil {
+		return
+	}
+	monitor, err := db.GetMonitorByID(monitorIdInt)
+	if err != nil {
+		return
+	}
+
+	status, err := GetMonitorStatus(monitor.ID)
+	if err != nil {
+		return
+	}
+
+	// 获取最近7天的日志
+	weekLogs, err := db.GetMonitorLogsByDateRange(monitor.ID, time.Now().AddDate(0, 0, -7), time.Now())
+	if err != nil {
+		weekLogs = []model.MonitorLog{}
+	}
+
+	weekLogData := make([]map[string]interface{}, 0)
+	for _, log := range weekLogs {
+		logData := map[string]interface{}{
+			"date":      time.Unix(log.CreateTime, 0).Format("2006-01-02 15:04:05"),
+			"is_valid":  log.IsValid,
+			"error_msg": log.ErrorMsg,
+			"speed":     log.Speed,
+			"size":      log.Size,
+		}
+		weekLogData = append(weekLogData, logData)
+	}
+
+	// 获取分组名称
+	group, err := db.GetMonitorGroupByID(monitor.Gid)
+	groupName := ""
+	if err == nil {
+		groupName = group.Name
+	}
+
+	data := map[string]interface{}{
+		"type":       "monitor_detail",
+		"data":       status,
+		"week_logs":  weekLogData,
+		"created_at": time.Unix(monitor.CreateTime, 0).Format("2006-01-02 15:04:05"),
+		"updated_at": time.Unix(monitor.UpdateTime, 0).Format("2006-01-02 15:04:05"),
+		"group_name": groupName,
+	}
+
+	message, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+
+	conn.WriteMessage(websocket.TextMessage, message)
+}
+
+func broadcastLoop() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
 	for {
-		select {
-		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			w.Write(message)
-
-			if err := w.Close(); err != nil {
-				return
-			}
-
-		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
+		<-ticker.C
+		BroadcastMonitorStatus()
 	}
 }
 
-func GetMonitorStatusList() ([]MonitorStatus, error) {
-	monitors, _, err := db.GetMonitorListSimple(1, 100)
+func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
+	monitor, err := db.GetMonitorByID(monitorID)
 	if err != nil {
-		return nil, err
+		return MonitorStatus{}, err
 	}
 
-	statusList := make([]MonitorStatus, 0, len(monitors))
-	for _, m := range monitors {
-		status := GetMonitorStatusFromMonitor(m)
-		statusList = append(statusList, status)
-	}
-
-	return statusList, nil
-}
-
-func GetMonitorStatusListByGid(gid int64) []MonitorStatus {
-	monitors, err := db.GetMonitorListByGid(gid)
-	if err != nil {
-		return []MonitorStatus{}
-	}
-
-	statusList := make([]MonitorStatus, 0, len(monitors))
-	for _, m := range monitors {
-		status := GetMonitorStatusFromMonitor(m)
-		statusList = append(statusList, status)
-	}
-
-	return statusList
-}
-
-func GetMonitorStatusFromMonitor(m model.Monitor) MonitorStatus {
 	status := MonitorStatus{
-		ID:        m.ID,
-		Name:      m.Name,
-		Gid:       m.Gid,
-		Type:      m.Type,
-		Status:    m.Status != 0,
-		UpdatedAt: m.UpdateTime,
-		HourLogs:  []HourLog{},
+		ID:        monitor.ID,
+		Name:      monitor.Name,
+		Gid:       monitor.Gid,
+		Type:      monitor.Type,
+		Status:    monitor.Status != 0,
+		IsValid:   false,
+		Latency:   "",
+		Speed:     0,
+		Size:      0,
+		ErrorMsg:  "",
+		HourLogs:  GetMonitorHourLogs(monitorID),
+		UpdatedAt: time.Now().Unix(),
 	}
 
-	latestLog, err := db.GetMonitorLatestLog(m.ID)
+	latestLog, err := db.GetMonitorLatestLog(monitorID)
 	if err == nil && latestLog != nil {
 		status.IsValid = latestLog.IsValid
 		status.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
@@ -282,10 +344,7 @@ func GetMonitorStatusFromMonitor(m model.Monitor) MonitorStatus {
 		status.ErrorMsg = latestLog.ErrorMsg
 	}
 
-	hourLogs := GetMonitorHourLogs(m.ID)
-	status.HourLogs = hourLogs
-
-	return status
+	return status, nil
 }
 
 func GetMonitorHourLogs(monitorID int64) []HourLog {
@@ -313,91 +372,22 @@ func GetMonitorHourLogs(monitorID int64) []HourLog {
 	return hourLogs
 }
 
-func SendMonitorStatusToClient(client *WSClient) {
-	hub.mu.RLock()
-	if _, ok := hub.clients[client]; !ok {
-		hub.mu.RUnlock()
-		return
-	}
-	hub.mu.RUnlock()
-
-	statusList, err := GetMonitorStatusList()
+func GetMonitorStatusList() ([]MonitorStatus, error) {
+	monitors, _, err := db.GetMonitorListSimple(1, 100)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	total := len(statusList)
-	if total == 0 {
-		data := map[string]interface{}{
-			"type":    "monitor_status",
-			"data":    []MonitorStatus{},
-			"groups":  nil,
-			"updated": time.Now().Unix(),
-			"total":   0,
-			"chunk":   0,
-			"chunks":  0,
-		}
-
-		if groups, err := db.GetMonitorGroupAll(); err == nil {
-			data["groups"] = groups
-		}
-
-		message, err := json.Marshal(data)
+	statusList := make([]MonitorStatus, 0, len(monitors))
+	for _, monitor := range monitors {
+		status, err := GetMonitorStatus(monitor.ID)
 		if err != nil {
-			return
+			continue
 		}
-		hub.mu.RLock()
-		if _, ok := hub.clients[client]; ok {
-			select {
-			case client.send <- message:
-			default:
-			}
-		}
-		hub.mu.RUnlock()
-		return
+		statusList = append(statusList, status)
 	}
 
-	chunks := (total + MonitorBatchSize - 1) / MonitorBatchSize
-
-	if groups, err := db.GetMonitorGroupAll(); err == nil {
-		for i := 0; i < total; i += MonitorBatchSize {
-			end := i + MonitorBatchSize
-			if end > total {
-				end = total
-			}
-			chunkNum := i/MonitorBatchSize + 1
-
-			data := map[string]interface{}{
-				"type":    "monitor_status",
-				"data":    statusList[i:end],
-				"groups":  groups,
-				"updated": time.Now().Unix(),
-				"total":   total,
-				"chunk":   chunkNum,
-				"chunks":  chunks,
-			}
-
-			message, err := json.Marshal(data)
-			if err != nil {
-				continue
-			}
-			hub.mu.RLock()
-			if _, ok := hub.clients[client]; ok {
-				select {
-				case client.send <- message:
-				default:
-				}
-			}
-			hub.mu.RUnlock()
-
-			if chunkNum < chunks {
-				time.Sleep(10 * time.Millisecond)
-			}
-		}
-	}
-
-	client.lastUpdate = time.Now().Unix()
-	client.isFirstUpdate = false
+	return statusList, nil
 }
 
 func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
@@ -437,62 +427,6 @@ func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
 	}
 
 	return updates, nil
-}
-
-func BroadcastMonitorUpdates() {
-	hub.mu.RLock()
-	defer hub.mu.RUnlock()
-
-	for client := range hub.clients {
-		var message []byte
-		var err error
-
-		if client.isFirstUpdate {
-			statusList, err := GetMonitorStatusList()
-			if err != nil {
-				continue
-			}
-
-			data := map[string]interface{}{
-				"type":    "monitor_status",
-				"data":    statusList,
-				"groups":  nil,
-				"updated": time.Now().Unix(),
-			}
-
-			if groups, err := db.GetMonitorGroupAll(); err == nil {
-				data["groups"] = groups
-			}
-
-			message, err = json.Marshal(data)
-			client.isFirstUpdate = false
-		} else {
-			updates, err := GetMonitorUpdatesSince(client.lastUpdate)
-			if err != nil {
-				continue
-			}
-
-			data := map[string]interface{}{
-				"type":    "monitor_updates",
-				"data":    updates,
-				"updated": time.Now().Unix(),
-			}
-
-			message, err = json.Marshal(data)
-		}
-
-		if err != nil {
-			continue
-		}
-
-		client.lastUpdate = time.Now().Unix()
-		select {
-		case client.send <- message:
-		default:
-			close(client.send)
-			delete(hub.clients, client)
-		}
-	}
 }
 
 func BroadcastMonitorStatus() {
@@ -572,7 +506,6 @@ func BroadcastMonitorStatus() {
 				default:
 					close(client.send)
 					delete(hub.clients, client)
-					break
 				}
 
 				if chunkNum < chunks {

@@ -221,7 +221,11 @@ func initRuoteFrontend(r *gin.Engine) {
 		c.String(200, "pong")
 	})
 	r.Use(middleware.CheckInstalled()).GET("/", home.Index)
+	r.Use(middleware.CheckInstalled()).GET("/groups", home.Groups)
+	r.Use(middleware.CheckInstalled()).GET("/monitor", home.Monitor)
 	r.GET("/ws/status", home.WSHandler)
+	r.GET("/ws/groups", home.WSGroupsHandler)
+	r.GET("/ws/monitor", home.WSMonitorHandler)
 }
 
 func initRuote(r *gin.Engine) {
