@@ -239,7 +239,7 @@ func WSGroupsHandler(c *gin.Context) {
 	}
 
 	data := map[string]interface{}{
-		"type": "group_status",
+		"type": "group_monitors",
 		"data": groupStatus,
 	}
 
