@@ -580,7 +580,7 @@
                     // 使用卡片式风格
                     let dayHtml = '<div class="status-card" style="margin-bottom: 20px;">';
                     dayHtml += '<div class="status-header">';
-                    dayHtml += '<div class="service-name">最近7天监控数据</div>';
+                    dayHtml += '<div class="service-name">最近7天监控数据 - ' + dayData.date + '</div>';
                     dayHtml += '<div class="status-indicator">';
                     dayHtml += '<span style="color: #27ae60;">正常: ' + dayData.up_count + '</span> / ';
                     dayHtml += '<span style="color: #e74c3c;">故障: ' + dayData.down_count + '</span> / ';
