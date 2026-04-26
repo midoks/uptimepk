@@ -25,3 +25,7 @@ type ID struct {
 type IDs struct {
 	Ids string `json:"ids" binding:"required"`
 }
+
+type DatabaseCommon struct {
+	TableName string `form:"table_name"`
+}

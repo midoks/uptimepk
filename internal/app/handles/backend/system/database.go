@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -60,7 +61,6 @@ func Database(c *gin.Context) {
 }
 
 func DatabaseList(c *gin.Context) {
-
 	tables, err := op.GetTableList()
 	if err != nil {
 		common.ErrorResp(c, err, -1)
@@ -81,6 +81,37 @@ func DatabaseClean(c *gin.Context) {
 	data["submenu"] = GetSysAdvancedSubMenu()
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
 	c.HTML(http.StatusOK, "backend/system/database/cleans.tmpl", data)
+}
+
+func PostDatabaseClean(c *gin.Context) {
+	var field form.DatabaseCommon
+	var err error
+	if err = c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	if err := op.CleanTableByName(field.TableName); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	common.SuccessResp(c)
+}
+
+func PostDatabaseDelete(c *gin.Context) {
+	var field form.DatabaseCommon
+	var err error
+	if err = c.ShouldBind(&field); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	if err := op.DeleteTableByName(field.TableName); err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+
+	common.SuccessResp(c)
 }
 
 func DatabaseCleanSetting(c *gin.Context) {
