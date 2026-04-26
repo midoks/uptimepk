@@ -11,6 +11,7 @@ import (
 	"uptimepk/internal/conf"
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
+	"uptimepk/internal/op"
 )
 
 func GetSysAdvancedSubMenu() []form.SubMenu {
@@ -56,6 +57,16 @@ func Database(c *gin.Context) {
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
 	data["Data"] = conf.Database
 	c.HTML(http.StatusOK, "backend/system/database/index.tmpl", data)
+}
+
+func DatabaseList(c *gin.Context) {
+
+	tables, err := op.GetTableList()
+	if err != nil {
+		common.ErrorResp(c, err, -1)
+		return
+	}
+	common.SuccessLayuiResp(c, int64(len(tables)), "ok", tables)
 }
 
 func DatabaseUpdate(c *gin.Context) {

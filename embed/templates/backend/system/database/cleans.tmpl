@@ -22,28 +22,6 @@
                     </ul>
                 </div>
 
-
-                <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
-                <form class="layui-form" action="" id="log_form" onclick="return false;">
-
-                    <div class="layui-inline mr0">
-                        <div class="layui-input-inline mr0">
-                            <input name="times" class="layui-input date-icon h30" type="text" placeholder="请选择日期范围" autocomplete="off" lay-key="1">
-                        </div>
-                    </div>
-
-                    <div class="layui-inline mr0">
-                        <div class="layui-input-inline mr0">
-                            <input type="text" name="key" placeholder="请输入关键字" autocomplete="off" class="layui-input h30" value="">
-                        </div>
-                    </div>
-
-                    <div class="layui-inline mr0">
-                        <button class="layui-btn layui-btn-sm" id="table-sreach" data-id="list" lay-submit lay-filter="table-sreach"><i class="layui-icon">&#xe615;</i>搜索
-                        </button>
-                    </div>
-                </form>
-                </div>
                 <div id="list"></div>
             </div>
         </div>
@@ -62,15 +40,15 @@ var admin = layui.admin
 
 table.render({
     elem: '#list',
-    url: '/{[.admin_path]}/log/list',
+    url: '/{[.admin_path]}/system/database/list',
     title: '数据表',
     cols: [[
-        {field:'content', title:'内容'},
-        {field:'uid', title:'用户ID'},
+        {field:'table_name', title:'数据表名'},
+        {field:'size', title:'占用空间'},
         {field:'ip', title:'IP'},
         {title:'操作', toolbar: '#cmdTpl', width:70, fixed: 'right'}
      ]],
-    page: true
+    page: false
 });
 
 
@@ -90,8 +68,10 @@ table.on('toolbar', function(obj){
 </script>
 
 
+
 <script type="text/html" id="cmdTpl">
-<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.id}}')">删除</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.table_name}}')">删除</a>
 </script>
+
 
 {[template "backend/common/footer.tmpl" .]}
