@@ -193,9 +193,24 @@ func WSGroupsHandler(c *gin.Context) {
 	}
 
 	// 发送分组数据
-	groups, err := db.GetMonitorGroupAll()
-	if err != nil {
-		return
+	var groups []model.MonitorGroup
+	groupID := c.Query("id")
+
+	if groupID != "" {
+		// 如果指定了分组ID，只获取该分组
+		groupIDInt, err := strconv.ParseInt(groupID, 10, 64)
+		if err == nil {
+			group, err := db.GetMonitorGroupByID(groupIDInt)
+			if err == nil {
+				groups = []model.MonitorGroup{*group}
+			}
+		}
+	} else {
+		// 否则获取所有分组
+		groups, err = db.GetMonitorGroupAll()
+		if err != nil {
+			return
+		}
 	}
 
 	// 获取每个分组的监控状态
