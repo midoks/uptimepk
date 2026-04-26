@@ -195,14 +195,11 @@
                     }
                     html += '<div class="status-stats">大小: ' + sizeStr + '</div>';
                 }
-            } else {
-                html += '<div class="status-stats" style="color: #f44336;">无法访问</div>';
             }
             if (showJump) {
                 html += '<div class="status-jump"><a href="/monitor?id=' + monitor.id + '" style="color: #3498db; text-decoration: none;"><i class="fas fa-arrow-right"></i></a></div>';
             }
             html += '</div>';
-
             // 为状态指示器添加错误信息属性，用于 tooltip
             html += '<div class="error-tooltip" style="display: none;" data-error="' + HomeApp.utils.escapeHtml(monitor.error_msg || '') + '"></div>';
 

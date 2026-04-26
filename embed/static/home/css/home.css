@@ -167,8 +167,11 @@ header h1 {
 .status-footer {
     display: flex;
     align-items: center;
-    font-size: 12px;
+    font-size: 14px;
     color: #7f8c8d;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eaeaea;
 }
 
 .status-stats {
