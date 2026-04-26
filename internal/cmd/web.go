@@ -39,6 +39,7 @@ func runWeb(c *cli.Context) error {
 	}
 
 	op.InitCleanTask()
+	op.SysLog("启动成功!")
 	app.Run()
 	return nil
 }
