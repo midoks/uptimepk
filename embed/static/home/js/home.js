@@ -263,7 +263,7 @@
                 const self = this;
                 const wsUrl = HomeApp.utils.getWsUrl('/ws/status');
 
-                HomeApp.connect(wsUrl, {
+                const handlers = {
                     onopen: function() {
                         console.log('Index WebSocket connected');
                     },
@@ -271,7 +271,6 @@
                         try {
                             const data = JSON.parse(event.data);
                             if (data.type === 'monitor_status') {
-                                // 保存当前激活的标签
                                 const activeTab = document.querySelector('.tab.active');
                                 const activeTabName = activeTab ? activeTab.dataset.tab : 'all';
 
@@ -280,7 +279,6 @@
                                 self.renderStatusCards();
                                 self.renderTabs();
 
-                                // 恢复之前激活的标签
                                 if (activeTabName) {
                                     const tabToActivate = document.querySelector('.tab[data-tab="' + activeTabName + '"]') || document.querySelector('.tab[data-tab="all"]');
                                     if (tabToActivate) {
@@ -294,12 +292,13 @@
                     },
                     onclose: function() {
                         console.log('Index WebSocket disconnected, reconnecting...');
-                        HomeApp.reconnect(wsUrl, this);
+                        HomeApp.reconnect(wsUrl, handlers);
                     },
                     onerror: function(error) {
                         console.error('Index WebSocket error:', error);
                     }
-                });
+                };
+                HomeApp.connect(wsUrl, handlers);
             },
 
             renderStatusCards: function() {
@@ -343,7 +342,7 @@
                     wsUrl += '?id=' + groupId;
                 }
 
-                HomeApp.connect(wsUrl, {
+                const handlers = {
                     onopen: function() {
                         console.log('Groups WebSocket connected');
                     },
@@ -360,12 +359,13 @@
                     },
                     onclose: function() {
                         console.log('Groups WebSocket disconnected, reconnecting...');
-                        HomeApp.reconnect(wsUrl, this);
+                        HomeApp.reconnect(wsUrl, handlers);
                     },
                     onerror: function(error) {
                         console.error('Groups WebSocket error:', error);
                     }
-                });
+                };
+                HomeApp.connect(wsUrl, handlers);
             },
 
             renderCards: function() {
@@ -457,6 +457,8 @@
         // 渲染 monitor 页面
         renderMonitor: {
             data: null,
+            historyDays: [],
+            loadingComplete: false,
 
             init: function() {
                 const self = this;
@@ -467,9 +469,12 @@
                     return;
                 }
 
+                this.historyDays = [];
+                this.loadingComplete = false;
+
                 const wsUrl = HomeApp.utils.getWsUrl('/ws/monitor', 'id=' + monitorId);
 
-                HomeApp.connect(wsUrl, {
+                const handlers = {
                     onopen: function() {
                         console.log('Monitor WebSocket connected');
                     },
@@ -479,6 +484,12 @@
                             if (data.type === 'monitor_detail') {
                                 self.data = data.data;
                                 self.render();
+                            } else if (data.type === 'history_day') {
+                                self.historyDays.push(data);
+                                self.renderHistory();
+                            } else if (data.type === 'history_done') {
+                                self.loadingComplete = true;
+                                self.renderHistoryComplete();
                             }
                         } catch (e) {
                             console.error('Failed to parse message:', e);
@@ -486,12 +497,13 @@
                     },
                     onclose: function() {
                         console.log('Monitor WebSocket disconnected, reconnecting...');
-                        HomeApp.reconnect(wsUrl, this);
+                        HomeApp.reconnect(wsUrl, handlers);
                     },
                     onerror: function(error) {
                         console.error('Monitor WebSocket error:', error);
                     }
-                });
+                };
+                HomeApp.connect(wsUrl, handlers);
             },
 
             render: function() {
@@ -508,27 +520,111 @@
                 // 渲染状态卡片
                 html += HomeApp.renderStatusCard(data, false);
 
-                // 渲染最近7天监控数据
-                html += '<div class="status-card">';
-                html += '<h3 style="font-size: 16px; font-weight: 600; margin-bottom: 15px;">最近7天监控数据</h3>';
-
-                if (data.week_logs && data.week_logs.length > 0) {
-                    const upCount = data.week_logs.filter(function(log) { return log.is_valid; }).length;
-                    const totalCount = data.week_logs.length;
-                    const upRate = totalCount > 0 ? (upCount / totalCount * 100).toFixed(1) : '0.0';
-
-                    html += '<div style="margin-top: 15px; display: flex; gap: 20px; font-size: 14px;">';
-                    html += '<div>总监控次数: ' + totalCount + ' 次</div>';
-                    html += '<div>正常次数: <span style="color: #27ae60;">' + upCount + ' 次</span></div>';
-                    html += '<div>正常率: <span style="color: #27ae60;">' + upRate + '%</span></div>';
-                    html += '</div>';
-                } else {
-                    html += '<div style="text-align: center; padding: 40px 0; color: #999;">暂无7天数据</div>';
-                }
-
+                // 添加历史数据容器
+                html += '<div id="history-container" class="history-container">';
+                html += '<div id="history-loading" class="loading" style="text-align: center; padding: 40px 0; color: #7f8c8d;">加载中...</div>';
+                html += '<div id="history-days"></div>';
                 html += '</div>';
 
                 container.innerHTML = html;
+            },
+
+            renderHistory: function() {
+                const historyDaysEl = document.getElementById('history-days');
+                if (!historyDaysEl) return;
+
+                // 清空现有内容，重新渲染所有天
+                historyDaysEl.innerHTML = '';
+
+                // 去重并按日期排序
+                const uniqueDays = {};
+                this.historyDays.forEach(function(dayData) {
+                    uniqueDays[dayData.date] = dayData;
+                });
+
+                // 转换为数组并按日期排序（从旧到新）
+                const sortedDays = Object.values(uniqueDays).sort(function(a, b) {
+                    return new Date(a.date) - new Date(b.date);
+                });
+
+                sortedDays.forEach(function(dayData) {
+                    // 使用卡片式风格
+                    let dayHtml = '<div class="status-card" style="margin-bottom: 20px;">';
+                    dayHtml += '<div class="status-header">';
+                    dayHtml += '<div class="service-name">最近7天监控数据</div>';
+                    dayHtml += '<div class="status-indicator">';
+                    dayHtml += '<span style="color: #27ae60;">正常: ' + dayData.up_count + '</span> / ';
+                    dayHtml += '<span style="color: #e74c3c;">故障: ' + dayData.down_count + '</span> / ';
+                    dayHtml += '可用率: ' + dayData.up_rate.toFixed(1) + '%';
+                    dayHtml += '</div>';
+                    dayHtml += '</div>';
+
+                    // 渲染时间网格
+                    dayHtml += '<div class="time-grid" style="max-height: none; overflow: visible;">';
+                    dayData.logs.forEach(function(log) {
+                        const status = log.is_valid ? 'up' : 'down';
+                        const error = log.error_msg || '无法访问';
+                        const timeStr = log.time || '';
+                        let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + HomeApp.utils.escapeHtml(error) + '"';
+                        if (log.speed) {
+                            cellHtml += ' data-speed="' + log.speed + '"';
+                        }
+                        if (log.size !== undefined && log.size !== null) {
+                            let sizeStr;
+                            if (log.size >= 1024) {
+                                sizeStr = (log.size / 1024).toFixed(2) + 'kb';
+                            } else {
+                                sizeStr = log.size + 'b';
+                            }
+                            cellHtml += ' data-size="' + sizeStr + '"';
+                        }
+                        cellHtml += '></div>';
+                        dayHtml += cellHtml;
+                    });
+                    dayHtml += '</div>';
+
+                    // 渲染图例
+                    dayHtml += HomeApp.renderLegend();
+
+                    // 渲染页脚统计
+                    dayHtml += '<div class="status-footer">';
+                    dayHtml += '<div class="status-stats">日志: ' + dayData.total + ' 条</div>';
+                    if (dayData.logs && dayData.logs.length > 0) {
+                        const lastLog = dayData.logs[dayData.logs.length - 1];
+                        if (lastLog.is_valid) {
+                            if (lastLog.speed) {
+                                dayHtml += '<div class="status-stats">耗时: ' + lastLog.speed + 'ms</div>';
+                            }
+                            if (lastLog.size !== undefined && lastLog.size !== null) {
+                                let sizeStr;
+                                if (lastLog.size >= 1024) {
+                                    sizeStr = (lastLog.size / 1024).toFixed(2) + 'kb';
+                                } else {
+                                    sizeStr = lastLog.size + 'b';
+                                }
+                                dayHtml += '<div class="status-stats">大小: ' + sizeStr + '</div>';
+                            }
+                        }
+                    }
+                    dayHtml += '</div>';
+
+                    dayHtml += '</div>';
+                    historyDaysEl.innerHTML += dayHtml;
+                });
+            },
+
+            renderHistoryComplete: function() {
+                const loadingEl = document.getElementById('history-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+
+                if (this.historyDays.length === 0) {
+                    const historyDaysEl = document.getElementById('history-days');
+                    if (historyDaysEl) {
+                        historyDaysEl.innerHTML = '<div style="text-align: center; padding: 40px 0; color: #999;">暂无7天数据</div>';
+                    }
+                }
             }
         },
 

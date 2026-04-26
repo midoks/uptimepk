@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -277,24 +278,6 @@ func WSMonitorHandler(c *gin.Context) {
 		return
 	}
 
-	// 获取最近7天的日志
-	weekLogs, err := db.GetMonitorLogsByDateRange(monitor.ID, time.Now().AddDate(0, 0, -7), time.Now())
-	if err != nil {
-		weekLogs = []model.MonitorLog{}
-	}
-
-	weekLogData := make([]map[string]interface{}, 0)
-	for _, log := range weekLogs {
-		logData := map[string]interface{}{
-			"date":      time.Unix(log.CreateTime, 0).Format("2006-01-02 15:04:05"),
-			"is_valid":  log.IsValid,
-			"error_msg": log.ErrorMsg,
-			"speed":     log.Speed,
-			"size":      log.Size,
-		}
-		weekLogData = append(weekLogData, logData)
-	}
-
 	// 获取分组名称
 	group, err := db.GetMonitorGroupByID(monitor.Gid)
 	groupName := ""
@@ -302,21 +285,119 @@ func WSMonitorHandler(c *gin.Context) {
 		groupName = group.Name
 	}
 
-	data := map[string]interface{}{
+	// 发送初始数据（今天的实时数据）
+	initData := map[string]interface{}{
 		"type":       "monitor_detail",
 		"data":       status,
-		"week_logs":  weekLogData,
 		"created_at": time.Unix(monitor.CreateTime, 0).Format("2006-01-02 15:04:05"),
 		"updated_at": time.Unix(monitor.UpdateTime, 0).Format("2006-01-02 15:04:05"),
 		"group_name": groupName,
 	}
 
-	message, err := json.Marshal(data)
+	initMessage, err := json.Marshal(initData)
 	if err != nil {
 		return
 	}
 
-	conn.WriteMessage(websocket.TextMessage, message)
+	conn.WriteMessage(websocket.TextMessage, initMessage)
+
+	// 获取最近7天的日志（按天分组）
+	weekLogs, err := db.GetMonitorLogsByDateRange(monitor.ID, time.Now().AddDate(0, 0, -7), time.Now())
+	if err != nil {
+		weekLogs = []model.MonitorLog{}
+	}
+
+	// 按天分组日志数据
+	logsByDay := make(map[string][]map[string]interface{})
+	for _, log := range weekLogs {
+		dayKey := time.Unix(log.CreateTime, 0).Format("2006-01-02")
+		logData := map[string]interface{}{
+			"time":        time.Unix(log.CreateTime, 0).Format("15:04:05"),
+			"is_valid":    log.IsValid,
+			"error_msg":   log.ErrorMsg,
+			"speed":       log.Speed,
+			"size":        log.Size,
+			"create_time": log.CreateTime, // 用于排序
+		}
+		logsByDay[dayKey] = append(logsByDay[dayKey], logData)
+	}
+
+	// 对每天内的日志按时间排序
+	for day, logs := range logsByDay {
+		sort.Slice(logs, func(i, j int) bool {
+			return logs[i]["create_time"].(int64) < logs[j]["create_time"].(int64)
+		})
+		// 移除排序用的字段
+		for i := range logs {
+			delete(logs[i], "create_time")
+		}
+		logsByDay[day] = logs
+	}
+
+	// 按日期排序发送每天的数据
+	type DayStat struct {
+		Date      string                   `json:"date"`
+		Total     int                      `json:"total"`
+		UpCount   int                      `json:"up_count"`
+		DownCount int                      `json:"down_count"`
+		UpRate    float64                  `json:"up_rate"`
+		Logs      []map[string]interface{} `json:"logs"`
+	}
+
+	var dayStats []DayStat
+	for day, logs := range logsByDay {
+		stat := DayStat{
+			Date:  day,
+			Total: len(logs),
+			Logs:  logs,
+		}
+		for _, log := range logs {
+			if log["is_valid"].(bool) {
+				stat.UpCount++
+			} else {
+				stat.DownCount++
+			}
+		}
+		if stat.Total > 0 {
+			stat.UpRate = float64(stat.UpCount) / float64(stat.Total) * 100
+		}
+		dayStats = append(dayStats, stat)
+	}
+
+	// 发送每天的统计数据
+	today := time.Now().Format("2006-01-02")
+	for _, stat := range dayStats {
+		// 跳过今天的数据
+		if stat.Date == today {
+			continue
+		}
+		data := map[string]interface{}{
+			"type":       "history_day",
+			"date":       stat.Date,
+			"total":      stat.Total,
+			"up_count":   stat.UpCount,
+			"down_count": stat.DownCount,
+			"up_rate":    stat.UpRate,
+			"logs":       stat.Logs,
+		}
+		message, err := json.Marshal(data)
+		if err != nil {
+			continue
+		}
+		conn.WriteMessage(websocket.TextMessage, message)
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// 发送完成消息
+	doneData := map[string]interface{}{
+		"type":       "history_done",
+		"total_days": len(dayStats),
+	}
+	doneMessage, err := json.Marshal(doneData)
+	if err != nil {
+		return
+	}
+	conn.WriteMessage(websocket.TextMessage, doneMessage)
 }
 
 func broadcastLoop() {
