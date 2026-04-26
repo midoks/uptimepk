@@ -23,28 +23,53 @@
                 </div>
 
 
-                <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
-                <form class="layui-form" action="" id="log_form" onclick="return false;">
+                <div class="cluster-boards bls_hover" style="margin-top: 10px;">
+                    <div class="layui-row layui-col-space10">
 
-                    <div class="layui-inline mr0">
-                        <div class="layui-input-inline mr0">
-                            <input name="times" class="layui-input date-icon h30" type="text" placeholder="请选择日期范围" autocomplete="off" lay-key="1">
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">数据库类型</div>
+                                <div style="font-size: 12px; color: #333;">{[if .Data]}{[.Data.Type]}{[end]}</div>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="layui-inline mr0">
-                        <div class="layui-input-inline mr0">
-                            <input type="text" name="key" placeholder="请输入关键字" autocomplete="off" class="layui-input h30" value="">
+          
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">主机地址（Host）</div>
+                                <div style="font-size: 12px;">{[if .Data]}{[.Data.Hostname]}{[end]}</div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="layui-inline mr0">
-                        <button class="layui-btn layui-btn-sm" id="table-sreach" data-id="list" lay-submit lay-filter="table-sreach"><i class="layui-icon">&#xe615;</i>搜索
-                        </button>
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">数据库端口（Port）</div>
+                                <div style="font-size: 12px;">{[if .Data]}{[.Data.Hostport]}{[end]}</div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">数据库名称（Database）</div>
+                                <div style="font-size: 12px;">{[if .Data]}{[.Data.Name]}{[end]}</div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">用户名（Username）</div>
+                                <div style="font-size: 12px;">{[if .Data]}{[.Data.User]}{[end]}</div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">密码（Password）</div>
+                                <div style="font-size: 12px;">****************</div>
+                            </div>
+                        </div>
+
                     </div>
-                </form>
                 </div>
-                <div id="list"></div>
             </div>
         </div>
     </div>

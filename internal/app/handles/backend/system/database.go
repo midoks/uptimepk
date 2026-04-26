@@ -8,6 +8,7 @@ import (
 
 	"uptimepk/internal/app/common"
 	"uptimepk/internal/app/form"
+	"uptimepk/internal/conf"
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
 )
@@ -53,6 +54,7 @@ func Database(c *gin.Context) {
 	data := common.CommonVer(c)
 	data["submenu"] = GetSysAdvancedSubMenu()
 	data["database_submenu"] = GetSysAdvancedDatabaseSubMenu()
+	data["Data"] = conf.Database
 	c.HTML(http.StatusOK, "backend/system/database/index.tmpl", data)
 }
 
