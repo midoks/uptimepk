@@ -79,12 +79,9 @@ func GetTableList() ([]TableInfo, error) {
 			}
 		}
 
-		if !found {
-			tableInfo.Type = "系统"
-			tableInfo.Actions = []string{"查看"}
+		if found {
+			tables = append(tables, tableInfo)
 		}
-
-		tables = append(tables, tableInfo)
 	}
 
 	return tables, nil
