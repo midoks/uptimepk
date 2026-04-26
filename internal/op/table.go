@@ -71,7 +71,7 @@ func GetTableList() ([]TableInfo, error) {
 		found := false
 
 		for prefix, typeInfo := range tableTypes {
-			if len(tableName) > len(prefix) && tableName[:len(prefix)] == prefix {
+			if len(tableName) >= len(prefix) && tableName[:len(prefix)] == prefix {
 				tableInfo.Type = typeInfo.Type
 				tableInfo.Actions = typeInfo.Actions
 				found = true
