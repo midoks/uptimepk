@@ -476,6 +476,7 @@
             data: null,
             historyDays: [],
             loadingComplete: false,
+            initialized: false, // 标记是否已经初始化过
 
             init: function() {
                 const self = this;
@@ -486,10 +487,19 @@
                     return;
                 }
 
-                this.historyDays = [];
-                this.loadingComplete = false;
+                // 只在第一次初始化时清空历史数据
+                if (!this.initialized) {
+                    this.historyDays = [];
+                    this.loadingComplete = false;
+                    this.initialized = true;
+                }
 
-                const wsUrl = HomeApp.utils.getWsUrl('/ws/monitor', 'id=' + monitorId);
+                // 根据是否已加载历史数据决定是否请求历史数据
+                let wsUrl = HomeApp.utils.getWsUrl('/ws/monitor', 'id=' + monitorId);
+                if (this.loadingComplete) {
+                    // 如果已经加载过历史数据，添加 no_history 参数
+                    wsUrl += '&no_history=1';
+                }
 
                 const handlers = {
                     onopen: function() {
@@ -501,10 +511,12 @@
                             if (data.type === 'monitor_detail') {
                                 self.data = data.data;
                                 self.render();
-                            } else if (data.type === 'history_day') {
+                            } else if (data.type === 'history_day' && !self.loadingComplete) {
+                                // 只在历史数据未加载完成时才处理
                                 self.historyDays.push(data);
                                 self.renderHistory();
-                            } else if (data.type === 'history_done') {
+                            } else if (data.type === 'history_done' && !self.loadingComplete) {
+                                // 只在历史数据未加载完成时才处理
                                 self.loadingComplete = true;
                                 self.renderHistoryComplete();
                             }

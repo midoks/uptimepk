@@ -259,6 +259,9 @@ func WSMonitorHandler(c *gin.Context) {
 		return
 	}
 
+	// 检查是否需要发送历史数据
+	noHistory := c.Query("no_history") == "1"
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
@@ -301,6 +304,27 @@ func WSMonitorHandler(c *gin.Context) {
 	}
 
 	conn.WriteMessage(websocket.TextMessage, initMessage)
+
+	// 如果不需要历史数据，直接进入实时更新循环
+	if noHistory {
+		// 发送完成消息（虽然没有历史数据，但也要告诉前端）
+		doneData := map[string]interface{}{
+			"type": "history_done",
+		}
+		doneMessage, _ := json.Marshal(doneData)
+		conn.WriteMessage(websocket.TextMessage, doneMessage)
+
+		// 进入实时更新循环
+		client := &WSClient{
+			conn:          conn,
+			send:          make(chan []byte, 256),
+			isFirstUpdate: true,
+		}
+		hub.register <- client
+		go client.writePump()
+		client.readPump()
+		return
+	}
 
 	// 获取最近7天的日志（按天分组）
 	weekLogs, err := db.GetMonitorLogsByDateRange(monitor.ID, time.Now().AddDate(0, 0, -7), time.Now())
@@ -399,6 +423,16 @@ func WSMonitorHandler(c *gin.Context) {
 		return
 	}
 	conn.WriteMessage(websocket.TextMessage, doneMessage)
+
+	// 进入实时更新循环
+	client := &WSClient{
+		conn:          conn,
+		send:          make(chan []byte, 256),
+		isFirstUpdate: true,
+	}
+	hub.register <- client
+	go client.writePump()
+	client.readPump()
 }
 
 func broadcastLoop() {
