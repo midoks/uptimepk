@@ -11,6 +11,8 @@ dirfilter:
 ext:
 - go
 - tmpl
+- js
+- css
 lang: go
 enablerun: true
 action:
