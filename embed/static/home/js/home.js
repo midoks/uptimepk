@@ -196,6 +196,8 @@
                     html += '<div class="status-stats">大小: ' + sizeStr + '</div>';
                 }
             }
+            // 总是显示可用率，即使为0
+            html += '<div class="status-stats">可用率: ' + (monitor.up_rate || 0).toFixed(1) + '%</div>';
             if (showJump) {
                 html += '<div class="status-jump"><a href="/monitor?id=' + monitor.id + '" style="color: #3498db; text-decoration: none;"><i class="fas fa-arrow-right"></i></a></div>';
             }
@@ -432,9 +434,24 @@
 
                             // 渲染页脚统计
                             cardHtml += '<div class="status-footer">';
-                            cardHtml += '<div class="status-stats">今天</div>';
-                            cardHtml += '<div class="status-stats">最近 60 天可用率 ' + (monitor.is_valid ? '100.0' : '0.0') + '%</div>';
-                            cardHtml += '<div class="status-stats">' + new Date().toLocaleDateString('zh-CN') + '</div>';
+                            cardHtml += '<div class="status-stats">类型: ' + HomeApp.utils.escapeHtml(monitor.type) + '</div>';
+                            cardHtml += '<div class="status-stats">日志: ' + (monitor.hour_logs ? monitor.hour_logs.length : 0) + ' 条</div>';
+                            if (monitor.is_valid) {
+                                if (monitor.speed) {
+                                    cardHtml += '<div class="status-stats">耗时: ' + monitor.speed + 'ms</div>';
+                                }
+                                if (monitor.size !== undefined && monitor.size !== null) {
+                                    let sizeStr;
+                                    if (monitor.size >= 1024) {
+                                        sizeStr = (monitor.size / 1024).toFixed(2) + 'kb';
+                                    } else {
+                                        sizeStr = monitor.size + 'b';
+                                    }
+                                    cardHtml += '<div class="status-stats">大小: ' + sizeStr + '</div>';
+                                }
+                            }
+                            // 总是显示可用率，即使为0
+                            cardHtml += '<div class="status-stats">可用率: ' + (monitor.up_rate || 0).toFixed(1) + '%</div>';
                             cardHtml += '<div class="status-jump"><a href="/monitor?id=' + monitor.id + '" style="color: #3498db; text-decoration: none;"><i class="fas fa-arrow-right"></i></a></div>';
                             cardHtml += '</div>';
                             // 为状态指示器添加错误信息属性，用于 tooltip
@@ -606,6 +623,7 @@
                             }
                         }
                     }
+                    dayHtml += '<div class="status-stats">可用率: ' + dayData.up_rate.toFixed(1) + '%</div>';
                     dayHtml += '</div>';
 
                     dayHtml += '</div>';

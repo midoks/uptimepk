@@ -41,6 +41,7 @@ type MonitorStatus struct {
 	Size      int64     `json:"size"`
 	ErrorMsg  string    `json:"error_msg"`
 	HourLogs  []HourLog `json:"hour_logs"`
+	UpRate    float64   `json:"up_rate"` // 今天的可用率
 	UpdatedAt int64     `json:"updated_at"`
 }
 
@@ -428,6 +429,7 @@ func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
 		Size:      0,
 		ErrorMsg:  "",
 		HourLogs:  GetMonitorHourLogs(monitorID),
+		UpRate:    0,
 		UpdatedAt: time.Now().Unix(),
 	}
 
@@ -438,6 +440,21 @@ func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
 		status.Speed = latestLog.Speed
 		status.Size = latestLog.Size
 		status.ErrorMsg = latestLog.ErrorMsg
+	}
+
+	// 计算今天的可用率
+	today := time.Now()
+	year, month, day := today.Date()
+	todayInt := int64(year*10000 + int(month)*100 + day)
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt)
+	if err == nil && len(logs) > 0 {
+		upCount := 0
+		for _, log := range logs {
+			if log.IsValid {
+				upCount++
+			}
+		}
+		status.UpRate = float64(upCount) / float64(len(logs)) * 100
 	}
 
 	return status, nil
