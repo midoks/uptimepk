@@ -244,6 +244,7 @@ Admin.prototype.tableNameDel = function(_this,_url,table_name) {
     });
 };
 
+Admin.prototype.tableNameClean = function(_this,_url,table_name) {
     layer.confirm('确定要清空该表吗?', { title:'删除提示', btn: ['确定', '取消'],shade:0.001}, function(index) {
         var data = { 'table_name':table_name };
         $.post(_url, data, function(res) {
