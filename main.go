@@ -20,7 +20,7 @@ const (
 func init() {
 	conf.App.Version = Version
 	if !(conf.App.RunMode == "prod") {
-		conf.App.Version = fmt.Sprintf("%s", Version, time.Now().Unix())
+		conf.App.Version = fmt.Sprintf("%s%d", Version, time.Now().Unix())
 	}
 	conf.App.Name = AppName
 }
