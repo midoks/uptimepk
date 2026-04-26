@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -11,12 +13,15 @@ import (
 )
 
 const (
-	Version = "1.0.2"
+	Version = "1.0.3"
 	AppName = "uptimepk"
 )
 
 func init() {
 	conf.App.Version = Version
+	if !(conf.App.RunMode == "prod") {
+		conf.App.Version = fmt.Sprintf("%s", Version, time.Now().Unix())
+	}
 	conf.App.Name = AppName
 }
 
