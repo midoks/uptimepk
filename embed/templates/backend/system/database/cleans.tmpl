@@ -44,7 +44,7 @@ table.render({
     title: '数据表',
     cols: [[
         {field:'table_name', title:'数据表名'},
-        {field:'size', title:'占用空间'},
+        {field:'size', title:'占用空间', toolbar:"#sizeTpl"},
         {field:'type', title:'用途'},
         {title:'操作', toolbar: '#cmdTpl', width:120, fixed: 'right'}
      ]],
@@ -69,12 +69,17 @@ table.on('toolbar', function(obj){
 
 
 
+<script type="text/html" id="sizeTpl">
+{{d.size}}MB
+</script>
+
+
 <script type="text/html" id="cmdTpl">
 {{# if (d.actions.indexOf('delete') > -1) { }}
-<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.del(this, 'delete','{{d.table_name}}')">删除</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event='delete' onclick="Admin.tableNameDel(this, 'delete','{{d.table_name}}')">删除</a>
 {{# } }}
 {{# if (d.actions.indexOf('clean') > -1) { }}
-<a class="layui-btn layui-btn-warm layui-btn-xs" lay-event='clean' onclick="Admin.del(this, 'clean','{{d.table_name}}')">清空</a>
+<a class="layui-btn layui-btn-warm layui-btn-xs" lay-event='clean' onclick="Admin.tableNameClean(this, 'clean','{{d.table_name}}')">清空</a>
 {{# } }}
 </script>
 

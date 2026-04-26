@@ -227,6 +227,37 @@ Admin.prototype.del = function(_this,_url,_id,monitor_id) {
         layer.close(index);
     });
 };
+
+
+Admin.prototype.tableNameDel = function(_this,_url,table_name) {
+    layer.confirm('确定要删除该表吗?', { title:'删除提示', btn: ['确定', '取消'],shade:0.001}, function(index) {
+        var data = { 'table_name':table_name };
+        $.post(_url, data, function(res) {
+            showMsg(res.msg, function(){
+                if(res.code > -1){
+                    location.reload();
+                }
+            },{icon: res.code > -1 ? 1 : 2,shift:res.code ? 0 : 6});
+        },'json');
+    }, function(index) {
+        layer.close(index);
+    });
+};
+
+    layer.confirm('确定要清空该表吗?', { title:'删除提示', btn: ['确定', '取消'],shade:0.001}, function(index) {
+        var data = { 'table_name':table_name };
+        $.post(_url, data, function(res) {
+            showMsg(res.msg, function(){
+                if(res.code > -1){
+                    location.reload();
+                }
+            },{icon: res.code > -1 ? 1 : 2,shift:res.code ? 0 : 6});
+        },'json');
+    }, function(index) {
+        layer.close(index);
+    });
+};
+
 //弹出层
 Admin.prototype.open = function (title,url,w,h,full) {
     // console.log(title,url,w,h,full);
