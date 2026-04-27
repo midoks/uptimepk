@@ -122,14 +122,11 @@ func LogDeleteAll(tx *gorm.DB) error {
 	return errors.WithStack(tx.Where("1 = 1").Delete(&d).Error)
 }
 
-func LogDeleteBeforeDays(tx *gorm.DB, days int) error {
-	if tx == nil {
-		tx = db
-	}
+func LogDeleteBeforeDays(days int) error {
 	if days <= 0 {
 		return nil
 	}
 	cutoff := time.Now().Add(-time.Duration(days) * 24 * time.Hour).Unix()
 	var d model.Log
-	return errors.WithStack(tx.Where("create_time < ?", cutoff).Delete(&d).Error)
+	return errors.WithStack(db.Where("create_time < ?", cutoff).Delete(&d).Error)
 }

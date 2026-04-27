@@ -28,7 +28,7 @@ func PostLogClean(c *gin.Context) {
 			return
 		}
 	} else {
-		if err := db.LogDeleteBeforeDays(nil, int(field.Day)); err != nil {
+		if err := db.LogDeleteBeforeDays(int(field.Day)); err != nil {
 			common.ErrorResp(c, err, 0)
 			return
 		}
