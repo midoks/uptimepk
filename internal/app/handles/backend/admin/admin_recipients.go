@@ -55,11 +55,20 @@ func Recipients(c *gin.Context) {
 func RecipientsAdd(c *gin.Context) {
 	data := common.CommonVer(c)
 
+	monitorList, _, _ := db.GetMonitorGroupList(1, 100)
+	data["MonitorList"] = monitorList
+
 	admin_list, _, _ := db.GetAdminList(1, 100)
 	data["AdminList"] = admin_list
 
+	groupList, _, _ := db.GetAdminRecipientsGroupList(1, 100)
+	data["GroupList"] = groupList
+
 	recipients_list, _, _ := db.GetAdminRecipientsInstancesList(1, 100)
 	data["RecipientsList"] = recipients_list
+
+	recipients_monitor_related_list, _ := db.GetAdminRecipientsMonitorRelatedByRecipientID(0)
+	data["RecipientsMonitorRelated"] = recipients_monitor_related_list
 
 	c.HTML(http.StatusOK, "backend/admin/recipients/add.tmpl", data)
 }
