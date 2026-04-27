@@ -2,6 +2,7 @@ package op
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -67,6 +68,22 @@ func InitSetting() error {
 	return nil
 }
 
+// getLocalIP 获取本地IP地址
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "localhost"
+	}
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "localhost"
+}
+
 func InitSettingAdminData() error {
 	common_data := &model.SysSetting{
 		Code: db.SettingAdminUI,
@@ -74,6 +91,7 @@ func InitSettingAdminData() error {
 	}
 
 	common_data.SetAdminUIValue(model.SysSettingAdminUIValue{
+		DomainName:  "http://" + getLocalIP() + ":9191",
 		ProductName: "uptimepk",
 		SystemName:  "监控面板",
 	})

@@ -23,6 +23,7 @@ type SysSettingLogValue struct {
 }
 
 type SysSettingAdminUIValue struct {
+	DomainName  string `json:"domain_name"`  // domain_name
 	ProductName string `json:"product_name"` // product_name
 	SystemName  string `json:"system_name"`  // system_name
 }

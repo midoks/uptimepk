@@ -255,6 +255,9 @@ func Run() {
 	// 初始化清理任务
 	op.InitCleanTask()
 
+	// 初始化接收人汇总任务
+	op.InitRecipientsSummaryTasks()
+
 	r := gin.New()
 
 	// 初始化 session 存储

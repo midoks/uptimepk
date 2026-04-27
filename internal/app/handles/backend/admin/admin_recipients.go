@@ -13,6 +13,7 @@ import (
 	"uptimepk/internal/app/form"
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
+	"uptimepk/internal/op"
 )
 
 func GetRecipientsSubMenu() []form.SubMenu {
@@ -157,6 +158,9 @@ func PostRecipientsAdd(c *gin.Context) {
 		return
 	}
 
+	// 重新加载接收人汇总任务
+	go op.ReloadRecipientsSummaryTasks()
+
 	common.SuccessResp(c)
 }
 
@@ -179,6 +183,8 @@ func RecipientsDelete(c *gin.Context) {
 
 	err := db.AdminRecipientsDeleteByID(nil, field.ID)
 	if err == nil {
+		// 重新加载接收人汇总任务
+		go op.ReloadRecipientsSummaryTasks()
 		common.SuccessResp(c)
 		return
 	}

@@ -60,6 +60,7 @@ func PostHome(c *gin.Context) {
 	}
 
 	common_data.SetAdminUIValue(model.SysSettingAdminUIValue{
+		DomainName:  field.DomainName,
 		ProductName: field.ProductName,
 		SystemName:  field.SystemName,
 	})

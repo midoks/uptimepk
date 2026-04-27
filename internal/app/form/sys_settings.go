@@ -11,6 +11,7 @@ type SettingLogin struct {
 }
 
 type SettingAdminUI struct {
+	DomainName  string `form:"domain_name" binding:"required"`
 	ProductName string `form:"product_name" binding:"required"`
 	SystemName  string `form:"system_name" binding:"required"`
 }

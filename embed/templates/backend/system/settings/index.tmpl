@@ -19,6 +19,16 @@
                         <colgroup><col width="150"><col></colgroup>
                         <tbody>
                             <tr>
+                                <td>本机地址 *</td>
+                                <td>
+                                    <div class="layui-input-inline">
+                                        <input type="text" name="domain_name" autocomplete="off" class="layui-input" value="{[if .setting_admin_ui]}{[.setting_admin_ui.GetAdminUIValue.DomainName]}{[end]}" placeholder="">
+                                    </div>
+                                    <p class="layui-font-12 pt5">和发送消息有关系。</p>
+                                </td>
+                            </tr>
+
+                            <tr>
                                 <td>产品名称 *</td>
                                 <td>
                                     <div class="layui-input-inline">
