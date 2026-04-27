@@ -54,7 +54,6 @@ function copyText(value) {
 //表单多维转一维
 function array2arr(sa){
     var t = {}
-
     for (var i = 0; i < sa.length; i++) {
         t[sa[i]['name']] = sa[i]['value'];
     }

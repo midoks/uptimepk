@@ -18,7 +18,7 @@
 
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline mr0">
-                            <input name="times" id="date_range" class="layui-input date-icon" type="text" placeholder="请选择日期范围" autocomplete="off">
+                            <input name="date_range" id="date_range" class="layui-input date-icon" type="text" placeholder="请选择日期范围" autocomplete="off">
                         </div>
                     </div>
 
@@ -58,6 +58,9 @@ laydate.render({
 });
 
 function renderTable(){
+    var where_data = $('#log_form').serializeArray();
+    where_data = array2arr(where_data);
+
     table.render({
         elem: '#list',
         url: '/{[.admin_path]}/log/list',
@@ -67,6 +70,7 @@ function renderTable(){
             {field:'create_time', title:'创建时间', width:185, templet: function(d){return layui.util.toDateString(d.create_time * 1000, 'yyyy-MM-dd HH:mm:ss');}},
             {title:'操作', toolbar: '#cmdTpl', width:90, fixed: 'right'}
             ]],
+        where:where_data,
         page: true,
         done: function(res, curr, count){
         }
