@@ -100,9 +100,61 @@ func (t *MonitorTask) runHttpMonitor() error {
 		req.Header.Set("Expires", "0")
 		resp, err = client.Do(req)
 		if err != nil {
-			errorMsg = err.Error()
+			// 获取目标IP地址
+			host := req.Host
+			if host == "" {
+				if req.URL != nil {
+					host = req.URL.Host
+				}
+			}
+			if host != "" {
+				// 提取主机名（去除端口）
+				hostname := host
+				if strings.Contains(host, ":") {
+					parts := strings.Split(host, ":")
+					hostname = parts[0]
+				}
+				// 判断是否是IP地址
+				ip := net.ParseIP(hostname)
+				if ip != nil {
+					errorMsg = fmt.Sprintf("%s (IP: %s)", err.Error(), ip.String())
+				} else {
+					ips, lookupErr := net.LookupIP(hostname)
+					if lookupErr == nil && len(ips) > 0 {
+						errorMsg = fmt.Sprintf("%s (IP: %s)", err.Error(), ips[0].String())
+					} else {
+						errorMsg = fmt.Sprintf("%s (Host: %s)", err.Error(), host)
+					}
+				}
+			} else {
+				errorMsg = err.Error()
+			}
 		} else {
 			defer resp.Body.Close()
+
+			// 获取目标IP地址
+			host := req.Host
+			dest_ip := ""
+			if host != "" {
+				// 提取主机名（去除端口）
+				hostname := host
+				if strings.Contains(host, ":") {
+					parts := strings.Split(host, ":")
+					hostname = parts[0]
+				}
+				// 判断是否是IP地址
+				ip := net.ParseIP(hostname)
+				if ip != nil {
+					dest_ip = ip.String()
+				} else {
+					ips, lookupErr := net.LookupIP(hostname)
+					fmt.Println("ips:", ips, lookupErr)
+					if lookupErr == nil && len(ips) > 0 {
+						dest_ip = ips[0].String()
+					}
+				}
+			}
+			// 获取目标IP地址 end
 
 			duration = time.Since(startTime)
 			// 使用 io.LimitReader 限制读取大小，防止服务器发送过多数据
@@ -124,7 +176,7 @@ func (t *MonitorTask) runHttpMonitor() error {
 				// fmt.Println("bodyStr:", bodyStr)
 				if !strings.Contains(bodyStr, params.CheckContent) {
 					isValid = false
-					errorMsg = fmt.Sprintf("获取内容成功,但未匹配到字符串: %s", params.CheckContent)
+					errorMsg = fmt.Sprintf("IP:%s|获取内容成功,但未匹配到字符串: %s", dest_ip, params.CheckContent)
 				}
 			}
 		}
