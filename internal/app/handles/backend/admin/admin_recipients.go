@@ -81,9 +81,10 @@ func PostRecipientsAdd(c *gin.Context) {
 	common_data := &model.AdminRecipients{
 		AdminID:     field.AdminID,
 		MediaID:     field.MediaID,
+		GroupID:     field.GroupID,
+		RecipientID: field.RecipientID,
 		Status:      field.Status,
 		Mark:        field.Mark,
-		RecipientID: field.RecipientID,
 		UpdateTime:  time.Now().Unix(),
 	}
 

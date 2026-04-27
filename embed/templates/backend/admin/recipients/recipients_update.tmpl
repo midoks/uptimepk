@@ -95,11 +95,11 @@
                                         <select name="group_id" lay-verify="required">
                                             <option value="">[选择分组]</option>
                                             <option value="0">暂无分组</option>
-                                            {[range $recipients_data := .RecipientsList]}
-                                                {[if eq $recipients_data.ID $.MediaID]}
-                                                <option value="{[$recipients_data.ID]}" selected>{[$recipients_data.Name]}</option>
+                                            {[range $g := .GroupList]}
+                                                {[if eq $g.ID $.GroupID]}
+                                                <option value="{[$g.ID]}" selected>{[$g.Name]}</option>
                                                 {[else]}
-                                                <option value="{[$recipients_data.ID]}">{[$recipients_data.Name]}</option>
+                                                <option value="{[$g.ID]}">{[$g.Name]}</option>
                                                 {[end]}
                                             {[end]}
                                         </select>
@@ -114,7 +114,10 @@
                                     <div class="layui-row">
                                     {[range $monitor := .MonitorList]}
                                         <div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
-                                            <input type="checkbox" name="cluster[{[$monitor.ID]}]" lay-text="{[$monitor.Name]}" {[range $rcr_data := $.RecipientsMonitorRelated]}{[if eq $rcr_data.MonitorGid $monitor.ID]}checked{[end]}{[end]}>
+                                            <input type="checkbox" name="cluster[{[$monitor.ID]}]" lay-text="{[$monitor.Name]}" 
+                                            {[range $rcr_data := $.RecipientsMonitorRelated]}
+                                                {[if eq $rcr_data.MonitorGid $monitor.ID]}checked{[end]}
+                                            {[end]}>
                                         </div>
                                     {[end]}
                                     </div>

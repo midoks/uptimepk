@@ -13,7 +13,7 @@ import (
 func GetAdminRecipientsMonitorRelatedByRecipientID(recipient_id int64) ([]model.AdminRecipientsMonitorRelated, error) {
 	recipientIDStr := fmt.Sprintf("%d", recipient_id)
 	var relations []model.AdminRecipientsMonitorRelated
-	if err := db.Where("recipient_id = ?", recipientIDStr).Where("status", true).Find(&relations).Error; err != nil {
+	if err := db.Where("recipient_id = ?", recipientIDStr).Where("status", 1).Find(&relations).Error; err != nil {
 		return nil, errors.Wrap(err, "查询失败")
 	}
 	return relations, nil
@@ -47,7 +47,7 @@ func UpdateAdminRecipientsMonitorRelated(tx *gorm.DB, recipient_id int64, cluste
 	for _, cid := range cluster_id {
 		if relation, exists := existingClusterMap[cid]; exists {
 			// 数据库中存在，将 status 设置为 1
-			if err := tx.Model(&relation).Update("status", true).Error; err != nil {
+			if err := tx.Model(&relation).Update("status", 1).Error; err != nil {
 				return false, errors.Wrap(err, "更新关联状态失败")
 			}
 		} else {
@@ -55,7 +55,7 @@ func UpdateAdminRecipientsMonitorRelated(tx *gorm.DB, recipient_id int64, cluste
 			newRelation := model.AdminRecipientsMonitorRelated{
 				RecipientID: recipientIDStr,
 				MonitorGid:  cid,
-				Status:      true,
+				Status:      1,
 				CreateTime:  time.Now().Unix(),
 				UpdateTime:  time.Now().Unix(),
 			}
