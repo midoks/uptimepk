@@ -29,7 +29,7 @@ func (t *RecipientsSummaryTask) ID() string {
 
 // Name 返回任务名称
 func (t *RecipientsSummaryTask) Name() string {
-	return fmt.Sprintf("Recipients Summary Task for %d", t.recipient.ID)
+	return fmt.Sprintf("recipients Summary Task for %d", t.recipient.ID)
 }
 
 // Run 执行任务

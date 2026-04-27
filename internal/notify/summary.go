@@ -23,7 +23,7 @@ func GenerateRecipientsSummaryMessage(recipient *model.AdminRecipients) (string,
 
 	// 获取管理UI设置，用于获取域名
 	domainName := ""
-	settingAdminUI, err := db.GetSysSettingByCode("setting_admin_ui")
+	settingAdminUI, err := db.GetSysSettingByCode(db.SettingAdminUI)
 	if err == nil {
 		adminUIValue, err := settingAdminUI.GetAdminUIValue()
 		if err == nil && adminUIValue.DomainName != "" {
@@ -32,7 +32,8 @@ func GenerateRecipientsSummaryMessage(recipient *model.AdminRecipients) (string,
 	}
 
 	// 构建消息内容
-	message := fmt.Sprintf("📊 监控汇总报告\n时间: %s\n\n", time.Now().Format("2006-01-02 15:04:05"))
+	message := fmt.Sprintf("📊 (%s): \n", time.Now().Format("2006-01-02 15:04:05"))
+	message += "=======================================\n\n"
 
 	for _, related := range relatedGroups {
 		// 获取监控分组信息
@@ -97,12 +98,11 @@ func GenerateRecipientsSummaryMessage(recipient *model.AdminRecipients) (string,
 		if domainName != "" {
 			groupURL = domainName + groupPath
 		}
-		message += fmt.Sprintf("📋 分组: %s\n", monitorGroup.Name)
-		message += fmt.Sprintf("🌐 分组链接: %s\n", groupURL)
-		message += fmt.Sprintf("📈 在线: %d, 离线: %d\n\n", onlineCount, offlineCount)
+		message += fmt.Sprintf("分组: %s(%s)\n", monitorGroup.Name, groupURL)
+		message += fmt.Sprintf("在线: %d, 离线: %d\n\n", onlineCount, offlineCount)
 		message += "监控点详情:\n"
 		message += monitorDetails
-		message += "\n"
+		message += "---------------------------------------------------\n\n"
 	}
 
 	return message, nil
