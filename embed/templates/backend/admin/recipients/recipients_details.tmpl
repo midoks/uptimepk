@@ -80,6 +80,22 @@
 
                         <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
                             <div class="ccc_hover">
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;;">汇总周期</div>
+                                <div style="font-size: 12px;">
+                                    {[if $.Data]}
+                                        {[if $.Data.Interval]}{[$.Data.Interval]}{[else]}60{[end]}
+                                        {[if eq $.Data.IntervalType "minute" ]}小时{[end]}
+                                        {[if eq $.Data.IntervalType "day" ]}天{[end]}
+                                    {[else]}
+                                        <span class="disabled">没有设置</span>
+                                    {[end]}
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="layui-col-xs12 layui-col-sm4 layui-col-md3">
+                            <div class="ccc_hover">
                                 <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;;">备注</div>
                                 <div style="font-size: 12px;">
                                     {[if .Data]}{[if eq .Data.Mark "" ]}<span class="disabled">没有设置</span>{[else]}{[.Data.Mark]}{[end]}{[end]}
