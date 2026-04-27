@@ -77,3 +77,29 @@ func UpdateAdminRecipientsMonitorRelated(tx *gorm.DB, recipient_id int64, relate
 
 	return true, nil
 }
+
+func GetAdminRecipientsByMonitorGid(monitorGid int64) ([]model.AdminRecipients, error) {
+	// 首先获取所有与该监控分组关联的接收人ID
+	var relations []model.AdminRecipientsMonitorRelated
+	if err := db.Where("monitor_gid = ?", monitorGid).Where("status", 1).Find(&relations).Error; err != nil {
+		return nil, errors.Wrap(err, "查询关联失败")
+	}
+
+	if len(relations) == 0 {
+		return []model.AdminRecipients{}, nil
+	}
+
+	// 提取接收人ID
+	recipientIDs := make([]string, 0, len(relations))
+	for _, relation := range relations {
+		recipientIDs = append(recipientIDs, relation.RecipientID)
+	}
+
+	// 根据接收人ID获取接收人信息
+	var recipients []model.AdminRecipients
+	if err := db.Where("recipient_id IN ?", recipientIDs).Where("status", 1).Find(&recipients).Error; err != nil {
+		return nil, errors.Wrap(err, "查询接收人失败")
+	}
+
+	return recipients, nil
+}

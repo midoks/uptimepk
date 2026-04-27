@@ -16,32 +16,15 @@ func TelegramMessageHandlertrategyAppend(relateMonitorGroupID int64) tgtask.Mess
 		// 示例：根据消息内容做不同处理
 		switch update.Message.Text {
 		case "/status":
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "正常运行!")
-			_, err := bot.Send(msg)
-			return err
+			return HandleStatusCommand(update, bot)
+		case "/last":
+			return HandleLastCommand(update, bot, relateMonitorGroupID)
 		case "/start":
 			fallthrough
 		case "/?":
 			fallthrough
 		case "/help":
-			helpText := `可用命令:
-/start - 开始使用
-/status - 检查运行状态
-/help - 显示此帮助信息
-
-批量导入格式:
-备注: https://example.com
-备注: https://test.com
-=========================
-备注: https://domain.com
-
-说明:
-- 每行格式: 备注: URL
-- 使用 ========================= 作为分组分隔符
-- URL 必须以 http:// 或 https:// 开头`
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)
-			_, err := bot.Send(msg)
-			return err
+			return HandleHelpCommand(update, bot, true)
 		default:
 			var resultMsg string
 			if relateMonitorGroupID == 0 {

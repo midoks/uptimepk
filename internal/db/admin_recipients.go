@@ -118,3 +118,11 @@ func AdminRecipientsDeleteByID(tx *gorm.DB, id int64) error {
 	var d model.AdminRecipients
 	return tx.Where("id = ?", id).Delete(&d).Error
 }
+
+func GetAdminRecipientsByRecipientID(recipientID string) (*model.AdminRecipients, error) {
+	var u model.AdminRecipients
+	if err := db.Where("recipient_id = ?", recipientID).First(&u).Error; err != nil {
+		return nil, errors.Wrapf(err, "failed get recipients data by recipient_id")
+	}
+	return &u, nil
+}

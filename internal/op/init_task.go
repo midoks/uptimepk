@@ -53,7 +53,7 @@ func ReloadTelegramTask() {
 				case "append":
 					handler = TelegramMessageHandlertrategyAppend(tp.RelateMonitorGroupID)
 				default:
-					handler = TelegramMessageHandlerStrategyNone
+					handler = TelegramMessageHandlerStrategyNone(tp.RelateMonitorGroupID)
 				}
 
 				if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, handler); err != nil {
@@ -98,8 +98,10 @@ func InitTelegramTask() {
 			switch tp.TelegramListenStrategy {
 			case "default":
 				handler = TelegramMessageHandlertrategyDefault(tp.RelateMonitorGroupID)
+			case "append":
+				handler = TelegramMessageHandlertrategyAppend(tp.RelateMonitorGroupID)
 			default:
-				handler = TelegramMessageHandlerStrategyNone
+				handler = TelegramMessageHandlerStrategyNone(tp.RelateMonitorGroupID)
 			}
 
 			if err := manager.AddBot(botID, tp.Token, data.GetTelegramProxy(), 0, handler); err != nil {
