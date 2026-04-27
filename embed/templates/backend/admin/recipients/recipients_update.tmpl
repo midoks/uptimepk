@@ -43,10 +43,8 @@
 </div>
 
 <script>
-$(document).ready(function(){
-//
 layui.use(['form', 'layer'], function(){
-//
+////
 var form = layui.form;
 var layer = layui.layer;
 
@@ -54,10 +52,10 @@ form.on('submit(submit)', function(data){
     var field = data.field;
     var index = layer.load(2);
     
-    // 收集所有选中的 cluster_ids
+    // 收集所有选中的 related_ids
     var selected = [];
     for (var k in field) {
-        var m = k.match(/^cluster\[(\d+)\]$/);
+        var m = k.match(/^related\[(\d+)\]$/);
         if (m) {
             if (field[k] === 'on') {
                 selected.push(parseInt(m[1], 10));
@@ -65,7 +63,7 @@ form.on('submit(submit)', function(data){
             delete field[k];
         }
     }
-    field['cluster_ids'] = selected;
+    field['related_ids'] = selected;
 
     if (field['status'] == "on"){
         field['status'] = 1;
@@ -77,7 +75,7 @@ form.on('submit(submit)', function(data){
         url: "/{[$.admin_path]}/admin/recipients/add",
         type: "POST",
         data: field,
-        traditional: true, // arrays -> cluster_ids=1&cluster_ids=2
+        traditional: true, // arrays -> related_ids=1&related_ids=2
         dataType: "json",
         success: function(res){
             showMsg(res.msg, function(){
@@ -90,9 +88,7 @@ form.on('submit(submit)', function(data){
     });
     return false;
 });
-//
-});
-//
+////
 });
 </script>
 

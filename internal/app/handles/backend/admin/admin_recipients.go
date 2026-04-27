@@ -1,8 +1,9 @@
 package admin
 
 import (
-	"encoding/json"
-	"fmt"
+	// "encoding/json"
+	// "fmt"
+	"errors"
 	"net/http"
 	"time"
 
@@ -80,21 +81,45 @@ func PostRecipientsAdd(c *gin.Context) {
 		return
 	}
 
-	if b, err := json.Marshal(field); err == nil {
-		fmt.Println(string(b))
-	} else {
-		fmt.Println("json marshal error:", err)
+	// if b, err := json.Marshal(field); err == nil {
+	// 	fmt.Println(string(b))
+	// } else {
+	// 	fmt.Println("json marshal error:", err)
+	// }
+
+	if field.IntervalType == "second" {
+		if !(field.Interval >= 5 && field.Interval <= 60) {
+			common.ErrorResp(c, errors.New("选择秒时,范围之在[5-60]"), -1)
+			return
+		}
+	} else if field.IntervalType == "minute" {
+		if !(field.Interval >= 1 && field.Interval <= 60) {
+			common.ErrorResp(c, errors.New("选择分钟时,范围之在[1-60]"), -1)
+			return
+		}
+	} else if field.IntervalType == "hour" {
+		if !(field.Interval >= 1 && field.Interval <= 23) {
+			common.ErrorResp(c, errors.New("选择小时时,范围之在[1-23]"), -1)
+			return
+		}
+	} else if field.IntervalType == "hour" {
+		if !(field.Interval >= 1 && field.Interval <= 7) {
+			common.ErrorResp(c, errors.New("选择小时时,范围之在[1-7]"), -1)
+			return
+		}
 	}
 
-	// 设置默认的 ClusterID（如果 ClustersID 不为空）
+	// 设置默认的 RelatedIDs RelatedIDs 不为空）
 	common_data := &model.AdminRecipients{
-		AdminID:     field.AdminID,
-		MediaID:     field.MediaID,
-		GroupID:     field.GroupID,
-		RecipientID: field.RecipientID,
-		Status:      field.Status,
-		Mark:        field.Mark,
-		UpdateTime:  time.Now().Unix(),
+		AdminID:      field.AdminID,
+		MediaID:      field.MediaID,
+		GroupID:      field.GroupID,
+		RecipientID:  field.RecipientID,
+		Interval:     field.Interval,
+		IntervalType: field.IntervalType,
+		Status:       field.Status,
+		Mark:         field.Mark,
+		UpdateTime:   time.Now().Unix(),
 	}
 
 	tx := db.GetDb().Begin()
@@ -106,7 +131,7 @@ func PostRecipientsAdd(c *gin.Context) {
 			return
 		}
 
-		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, field.ID, field.ClustersID); err != nil {
+		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, field.ID, field.RelatedIDs); err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
 			return
@@ -120,7 +145,7 @@ func PostRecipientsAdd(c *gin.Context) {
 			return
 		}
 
-		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, common_data.ID, field.ClustersID); err != nil {
+		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, common_data.ID, field.RelatedIDs); err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
 			return
