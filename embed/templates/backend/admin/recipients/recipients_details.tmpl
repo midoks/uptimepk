@@ -95,13 +95,13 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {[range $cluster := .ClusterList]}
+                                            {[range $monitor := .MonitorList]}
                                             <tr>
-                                                <td><a href="/{[.admin_path]}/clusters/cluster/details?cluster_id={[index $cluster "ID"]}" style="color: #1890ff;">{[index $cluster "Name"]}</a></td>
-                                                <td><a href="javascript:void(0);" onclick="cancelCluster({[index $cluster "ID"]})" style="color: #1890ff;">取消</a></td>
+                                                <td><a href="/{[.admin_path]}/clusters/cluster/details?cluster_id={[index $monitor "ID"]}" style="color: #1890ff;">{[index $monitor "Name"]}</a></td>
+                                                <td><a href="javascript:void(0);" onclick="cancelCluster({[index $monitor "ID"]})" style="color: #1890ff;">取消</a></td>
                                             </tr>
                                             {[end]}
-                                            {[if eq (len .ClusterList) 0]}
+                                            {[if eq (len .MonitorList) 0]}
                                             <tr>
                                                 <td colspan="2" style="text-align: center; color: #999;">暂无关联监控分组</td>
                                             </tr>

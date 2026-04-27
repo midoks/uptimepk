@@ -22,18 +22,18 @@ func RecipientsRecipientsDetails(c *gin.Context) {
 	data["Data"] = recipient_data
 
 	// 获取关联的集群列表
-	// clusterRelatedList, _ := db.GetAdminRecipientsClusterRelatedByRecipientID(idint)
-	// var clusterList []map[string]interface{}
-	// for _, related := range clusterRelatedList {
-	// 	cluster, _ := db.GetClusterByID(related.ClusterID)
-	// 	if cluster.ID > 0 {
-	// 		clusterList = append(clusterList, map[string]interface{}{
-	// 			"ID":   cluster.ID,
-	// 			"Name": cluster.Name,
-	// 		})
-	// 	}
-	// }
-	// data["ClusterList"] = clusterList
+	monitorRelatedList, _ := db.GetAdminRecipientsMonitorRelatedByRecipientID(idint)
+	var monitorList []map[string]interface{}
+	for _, related := range monitorRelatedList {
+		mgid, _ := db.GetMonitorByID(related.MonitorGid)
+		if mgid.ID > 0 {
+			monitorList = append(monitorList, map[string]interface{}{
+				"ID":   mgid.ID,
+				"Name": mgid.Name,
+			})
+		}
+	}
+	data["MonitorList"] = monitorList
 
 	c.HTML(http.StatusOK, "backend/admin/recipients/recipients_details.tmpl", data)
 }
@@ -51,8 +51,8 @@ func RecipientsRecipientsUpdate(c *gin.Context) {
 	data["MediaID"] = recipient_data.MediaID
 	data["GroupID"] = recipient_data.GroupID
 
-	// cluster_list, _, _ := db.GetClusterList(1, 100)
-	// data["ClusterList"] = cluster_list
+	monitorList, _, _ := db.GetMonitorGroupList(1, 100)
+	data["MonitorList"] = monitorList
 
 	admin_list, _, _ := db.GetAdminList(1, 100)
 	data["AdminList"] = admin_list
@@ -60,8 +60,8 @@ func RecipientsRecipientsUpdate(c *gin.Context) {
 	recipients_list, _, _ := db.GetAdminRecipientsInstancesList(1, 100)
 	data["RecipientsList"] = recipients_list
 
-	recipients_cluster_related_list, _ := db.GetAdminRecipientsMonitorRelatedByRecipientID(idint)
-	data["RecipientsClusterRelated"] = recipients_cluster_related_list
+	recipients_monitor_related_list, _ := db.GetAdminRecipientsMonitorRelatedByRecipientID(idint)
+	data["RecipientsMonitorRelated"] = recipients_monitor_related_list
 
 	c.HTML(http.StatusOK, "backend/admin/recipients/recipients_update.tmpl", data)
 }

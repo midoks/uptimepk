@@ -13,7 +13,7 @@ import (
 func GetMonitorGroupList(page, size int) ([]entity.MonitorGroupEntityList, int64, error) {
 	var count int64
 	if err := db.Model(&model.MonitorGroup{}).Count(&count).Error; err != nil {
-		return nil, 0, errors.Wrapf(err, "failed get cluster group count")
+		return nil, 0, errors.Wrapf(err, "failed get monitor group count")
 	}
 
 	var list []model.MonitorGroup
@@ -143,7 +143,7 @@ func UpdateMonitorGroup(tx *gorm.DB, name string, id int64) error {
 func GetMonitorGroupByID(id int64) (*model.MonitorGroup, error) {
 	var data model.MonitorGroup
 	if err := db.First(&data, id).Error; err != nil {
-		return nil, errors.Wrapf(err, "failed get cluster group")
+		return nil, errors.Wrapf(err, "failed get monitor group")
 	}
 	return &data, nil
 }

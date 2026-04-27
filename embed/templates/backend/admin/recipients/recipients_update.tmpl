@@ -87,14 +87,34 @@
                                     <p class="layui-font-12">接收人标识，如：邮箱地址、手机号、Telegram ID 等。</p>
                                 </td>
                             </tr>
+
+                            <tr>
+                                <td>分组</td>
+                                <td>
+                                    <div class="layui-input-inline">
+                                        <select name="group_id" lay-verify="required">
+                                            <option value="">[选择分组]</option>
+                                            <option value="0">暂无分组</option>
+                                            {[range $recipients_data := .RecipientsList]}
+                                                {[if eq $recipients_data.ID $.MediaID]}
+                                                <option value="{[$recipients_data.ID]}" selected>{[$recipients_data.Name]}</option>
+                                                {[else]}
+                                                <option value="{[$recipients_data.ID]}">{[$recipients_data.Name]}</option>
+                                                {[end]}
+                                            {[end]}
+                                        </select>
+                                    </div>
+                                    <div>
+                                </td>
+                            </tr>
                             
                             <tr>
                                 <td>关联的监控分组</td>
                                 <td>
                                     <div class="layui-row">
-                                    {[range $cluster := .ClusterList]}
+                                    {[range $monitor := .MonitorList]}
                                         <div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
-                                            <input type="checkbox" name="cluster[{[$cluster.ID]}]" lay-text="{[$cluster.Name]}" {[range $rcr_data := $.RecipientsClusterRelated]}{[if eq $rcr_data.ClusterID $cluster.ID]}checked{[end]}{[end]}>
+                                            <input type="checkbox" name="cluster[{[$monitor.ID]}]" lay-text="{[$monitor.Name]}" {[range $rcr_data := $.RecipientsMonitorRelated]}{[if eq $rcr_data.MonitorGid $monitor.ID]}checked{[end]}{[end]}>
                                         </div>
                                     {[end]}
                                     </div>
