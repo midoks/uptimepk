@@ -31,16 +31,16 @@ func GetRecipientsSubMenu() []form.SubMenu {
 			Name:   "媒介",
 			Link:   "admin/recipients/instances",
 		},
-		{
-			Number: 4,
-			Name:   "发送记录",
-			Link:   "admin/recipients/logs",
-		},
-		{
-			Number: 5,
-			Name:   "任务队列",
-			Link:   "admin/recipients/tasks",
-		},
+		// {
+		// 	Number: 4,
+		// 	Name:   "发送记录",
+		// 	Link:   "admin/recipients/logs",
+		// },
+		// {
+		// 	Number: 5,
+		// 	Name:   "任务队列",
+		// 	Link:   "admin/recipients/tasks",
+		// },
 	}
 	return menu
 }
