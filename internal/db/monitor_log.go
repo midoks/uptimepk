@@ -350,7 +350,10 @@ func ensureMonitorLogTableExists(tableName string) error {
 			max_retries INTEGER NOT NULL,
 			create_time INTEGER NOT NULL
 		);
-		`, tableName)
+		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id ON %s (monitor_id);
+		CREATE INDEX IF NOT EXISTS idx_%s_day ON %s (day);
+		CREATE INDEX IF NOT EXISTS idx_%s_create_time ON %s (create_time);
+		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
 	case "mysql":
 		createTableSQL = fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
