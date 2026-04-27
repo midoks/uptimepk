@@ -6,6 +6,15 @@
         <div class="layui-card">
             <div class="layui-card-body">
 
+                <div class="layui-breadcrumb" style="margin-bottom: 15px;">
+                    <a href="/{[.admin_path]}/">首页</a>
+                    <a href="/{[.admin_path]}/admin/recipients">接收人</a>
+                    <a><cite>{[if .Data]}
+                        {[.Data.AdminName]} （{[.Data.MediaName]}）
+                        {[end]}</cite></a>
+                </div>
+
+                <!-- margin-top: 1rem; -->
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom: 1rem;">
                     <a href="/{[.admin_path]}/admin/recipients" style="display:flex;align-items:center;">
                         <i class="layui-icon layui-icon-return"></i>  
@@ -76,12 +85,12 @@
                     <div class="layui-row layui-col-space10">
                         <div class="layui-col-xs12">
                             <div class="ccc_hover">
-                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">关联的CDN集群</div>
+                                <div style="color: rgb(100, 116, 139); font-size: 14px; margin-bottom: 6px;">关联的监控分组</div>
                                 <div style="font-size: 12px; color: #333;">
                                     <table class="layui-table" style="width: 400px;margin-top: 10px;">
                                         <thead>
                                             <tr>
-                                                <th style="background-color: #f8f9fa;">集群名称</th>
+                                                <th style="background-color: #f8f9fa;">监控分组</th>
                                                 <th style="background-color: #f8f9fa; width: 100px;">操作</th>
                                             </tr>
                                         </thead>
@@ -94,7 +103,7 @@
                                             {[end]}
                                             {[if eq (len .ClusterList) 0]}
                                             <tr>
-                                                <td colspan="2" style="text-align: center; color: #999;">暂无关联集群</td>
+                                                <td colspan="2" style="text-align: center; color: #999;">暂无关联监控分组</td>
                                             </tr>
                                             {[end]}
                                         </tbody>

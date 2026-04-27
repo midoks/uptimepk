@@ -5,6 +5,15 @@
         <div class="layui-card">
             <div class="layui-card-body">
 
+                <div class="layui-breadcrumb" style="margin-bottom: 15px;">
+                    <a href="/{[.admin_path]}/">首页</a>
+                    <a href="/{[.admin_path]}/admin/recipients">接收人</a>
+                    <a><cite>{[if .Data]}
+                        {[.Data.AdminName]} （{[.Data.MediaName]}）
+                        {[end]}</cite></a>
+                </div>
+
+
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom: 1rem;">
                     <a href="/{[.admin_path]}/admin/recipients/instances" style="display:flex;align-items:center;">
                         <i class="layui-icon layui-icon-return"></i>  
@@ -80,7 +89,7 @@
                             </tr>
                             
                             <tr>
-                                <td>关联的边缘节点集群</td>
+                                <td>关联的监控分组</td>
                                 <td>
                                     <div class="layui-row">
                                     {[range $cluster := .ClusterList]}
@@ -118,11 +127,17 @@
                                     <p class="layui-font-12">备注信息。</p>
                                 </td>
                             </tr>
+
+                            <tr>
+                                <td colspan="2">
+                                    <input type="hidden" name="id" value="{[.id]}">
+                                    <button class="layui-btn" lay-filter="submit" lay-submit>保存</button>
+                                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                                </td>
+                            </tr>
+
                         </tbody>
                     </table>
-                    <input type="hidden" name="id" value="{[.id]}">
-                    <button class="layui-btn layui-btn-normal" lay-submit lay-filter="submit">保存</button>
-                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
                 </form>
                 </div>
 
