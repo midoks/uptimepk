@@ -38,9 +38,9 @@ func UpdateAdminRecipientsMonitorRelated(tx *gorm.DB, recipient_id int64, cluste
 	}
 
 	// 构建传入 monitor_gid 的映射，方便快速查找
-	inputClusterMap := make(map[int64]bool)
+	inputMonitorMap := make(map[int64]bool)
 	for _, cid := range cluster_id {
-		inputClusterMap[cid] = true
+		inputMonitorMap[cid] = true
 	}
 
 	// 处理传入的 monitor_gid
@@ -67,7 +67,7 @@ func UpdateAdminRecipientsMonitorRelated(tx *gorm.DB, recipient_id int64, cluste
 
 	// 处理数据库中存在但传入列表中不存在的 monitor_gid
 	for cid, relation := range existingClusterMap {
-		if !inputClusterMap[cid] {
+		if !inputMonitorMap[cid] {
 			// 数据库中存在但传入列表中不存在，将 status 设置为 0
 			if err := tx.Model(&relation).Update("status", false).Error; err != nil {
 				return false, errors.Wrap(err, "更新关联状态失败")
