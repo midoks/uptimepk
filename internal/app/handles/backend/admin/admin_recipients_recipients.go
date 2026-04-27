@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"fmt"
+	// "fmt"
 	"net/http"
 	"strconv"
 
@@ -60,8 +60,6 @@ func RecipientsRecipientsUpdate(c *gin.Context) {
 
 	groupList, _, _ := db.GetAdminRecipientsGroupList(1, 100)
 	data["GroupList"] = groupList
-
-	fmt.Println("groupList:", groupList)
 
 	recipients_list, _, _ := db.GetAdminRecipientsInstancesList(1, 100)
 	data["RecipientsList"] = recipients_list
