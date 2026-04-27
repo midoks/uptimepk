@@ -96,7 +96,7 @@ func PostRecipientsAdd(c *gin.Context) {
 			return
 		}
 
-		if _, err := db.UpdateAdminRecipientsClusterRelated(tx, field.ID, field.ClustersID); err != nil {
+		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, field.ID, field.ClustersID); err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
 			return
@@ -110,7 +110,7 @@ func PostRecipientsAdd(c *gin.Context) {
 			return
 		}
 
-		if _, err := db.UpdateAdminRecipientsClusterRelated(tx, common_data.ID, field.ClustersID); err != nil {
+		if _, err := db.UpdateAdminRecipientsMonitorRelated(tx, common_data.ID, field.ClustersID); err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
 			return

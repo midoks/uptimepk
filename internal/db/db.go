@@ -173,7 +173,7 @@ func Init(d *gorm.DB) {
 		new(model.SysSetting),
 		new(model.Admin),
 		new(model.AdminRecipients),
-		new(model.AdminRecipientsClusterRelated),
+		new(model.AdminRecipientsMonitorRelated),
 		new(model.AdminMediaInstance),
 		new(model.AdminMediaGroup),
 		new(model.AdminRecipientsTasks),

@@ -60,7 +60,7 @@ func RecipientsRecipientsUpdate(c *gin.Context) {
 	recipients_list, _, _ := db.GetAdminRecipientsInstancesList(1, 100)
 	data["RecipientsList"] = recipients_list
 
-	recipients_cluster_related_list, _ := db.GetAdminRecipientsClusterRelatedByRecipientID(idint)
+	recipients_cluster_related_list, _ := db.GetAdminRecipientsMonitorRelatedByRecipientID(idint)
 	data["RecipientsClusterRelated"] = recipients_cluster_related_list
 
 	c.HTML(http.StatusOK, "backend/admin/recipients/recipients_update.tmpl", data)
