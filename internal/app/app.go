@@ -92,7 +92,7 @@ func initTmplFunc(r *gin.Engine) {
 func initRuoteAdmin(r *gin.Engine) {
 	// fmt.Println("conf.Web.AdminPath:", conf.Web.AdminPath)
 	backstage := r.Group(conf.Web.AdminPath)
-	backstage.Use(middleware.CheckInstalled(), middleware.AuthRequired())
+	backstage.Use(middleware.CheckInstalled())
 	backstage.GET("/login", backend.LoginPage)
 	backstage.POST("/login", backend.PostLogin)
 	backstage.GET("/logout", backend.LoginOut)
