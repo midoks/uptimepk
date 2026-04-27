@@ -2,6 +2,7 @@ package op
 
 import (
 	"fmt"
+	"strings"
 
 	"uptimepk/internal/db"
 	"uptimepk/internal/monitortask"
@@ -28,9 +29,10 @@ func InitRecipientsSummaryTasks() {
 
 			// 添加到任务管理器
 			if err := manager.AddTask(task, cronExpr); err != nil {
-				fmt.Printf("Failed to add recipients summary task for %d: %v\n", recipient.ID, err)
+				fmt.Printf("failed to add recipients summary task for %d: %v\n", recipient.ID, err)
+				SysLog(fmt.Sprintf("failed to add recipients summary task for %d: %v\n", recipient.ID, err))
 			} else {
-				fmt.Printf("Added recipients summary task for %d with cron: %s\n", recipient.ID, cronExpr)
+				SysLog(fmt.Sprintf("added recipients summary task for %d with cron: %s\n", recipient.ID, cronExpr))
 			}
 		}
 	}
@@ -43,9 +45,9 @@ func ReloadRecipientsSummaryTasks() {
 	// 移除所有现有的接收人汇总任务
 	tasks := manager.ListTasks()
 	for _, task := range tasks {
-		if len(task.ID) > 19 && task.ID[:19] == "recipients_summary_" {
+		if strings.HasPrefix(task.ID, "recipients_summary_") {
 			if err := manager.RemoveTask(task.ID); err != nil {
-				fmt.Printf("Failed to remove recipients summary task %s: %v\n", task.ID, err)
+				fmt.Printf("failed to remove recipients summary task %s: %v\n", task.ID, err)
 			}
 		}
 	}
