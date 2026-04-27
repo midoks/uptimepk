@@ -1,5 +1,12 @@
 package form
 
+type LogList struct {
+	Page
+
+	Key   string `form:"key"`
+	Times string `form:"times"`
+}
+
 type LogClean struct {
 	Clean string `form:"clean"`
 	Day   int64  `form:"day"`

@@ -38,13 +38,13 @@ func Home(c *gin.Context) {
 }
 
 func List(c *gin.Context) {
-	var field form.Page
+	var field form.LogList
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
 
-	result, count, _ := db.GetLogList(field.Page, field.Limit)
+	result, count, _ := db.GetLogListByArgs(field)
 	common.SuccessLayuiResp(c, count, "ok", result)
 }
 

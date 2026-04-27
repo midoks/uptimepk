@@ -18,7 +18,7 @@
 
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline mr0">
-                            <input name="date_range" id="date_range" class="layui-input date-icon" type="text" placeholder="请选择日期范围" autocomplete="off">
+                            <input name="times" id="date_range" class="layui-input date-icon" type="text" placeholder="请选择日期范围" autocomplete="off">
                         </div>
                     </div>
 
@@ -52,10 +52,7 @@ var $ = layui.$
 ,laypage = layui.laypage;
 
 // date range
-laydate.render({
-    elem: '#date_range',
-    range: true
-});
+
 
 function renderTable(){
     var where_data = $('#log_form').serializeArray();
