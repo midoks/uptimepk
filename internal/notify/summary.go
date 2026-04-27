@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"uptimepk/internal/db"
-	"uptimepk/internal/model"
 )
 
 // GenerateRecipientsSummaryMessage 生成接收人监控汇总消息
-func GenerateRecipientsSummaryMessage(recipient *model.AdminRecipients) (string, error) {
+func GenerateRecipientsSummaryMessage(recipientID int64) (string, error) {
 	// 获取关联的监控分组
-	relatedGroups, err := db.GetAdminRecipientsMonitorRelatedByRecipientID(recipient.ID)
+	relatedGroups, err := db.GetAdminRecipientsMonitorRelatedByRecipientID(recipientID)
 	if err != nil {
 		return "", fmt.Errorf("failed to get related monitor groups: %v", err)
 	}

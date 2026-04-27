@@ -56,7 +56,7 @@ func (t *RecipientsSummaryTask) Run() error {
 	}
 
 	// 生成消息内容
-	message, err := notify.GenerateRecipientsSummaryMessage(t.recipient)
+	message, err := notify.GenerateRecipientsSummaryMessage(t.recipient.ID)
 	if err != nil {
 		return fmt.Errorf("failed to generate summary message: %v", err)
 	}
