@@ -84,7 +84,8 @@
                                 <div style="font-size: 12px;">
                                     {[if $.Data]}
                                         {[if $.Data.Interval]}{[$.Data.Interval]}{[else]}60{[end]}
-                                        {[if eq $.Data.IntervalType "minute" ]}小时{[end]}
+                                        {[if eq $.Data.IntervalType "minute" ]}分钟{[end]}
+                                        {[if eq $.Data.IntervalType "hour" ]}小时{[end]}
                                         {[if eq $.Data.IntervalType "day" ]}天{[end]}
                                     {[else]}
                                         <span class="disabled">没有设置</span>
