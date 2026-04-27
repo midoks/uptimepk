@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"uptimepk/internal/model"
 )
@@ -37,10 +36,7 @@ func GetAdminRecipientsInstancesByTelegram() ([]model.AdminMediaInstance, error)
 	return list, nil
 }
 
-func AdminRecipientsInstancesDeleteByID(tx *gorm.DB, id int64) error {
-	if tx == nil {
-		tx = db
-	}
+func AdminRecipientsInstancesDeleteByID(id int64) error {
 	var d model.AdminMediaInstance
-	return tx.Where("id = ?", id).Delete(&d).Error
+	return db.Where("id = ?", id).Delete(&d).Error
 }

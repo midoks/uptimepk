@@ -84,6 +84,13 @@ form.on("submit(submit_recipients)", function(data){
     var index = layer.load();
     var field = data.field;
 
+    // 处理布尔值
+    if (field['status'] == "on"){
+        field['status'] = true;
+    } else {
+        field['status'] = false;
+    }
+
     $.post("/{[$.admin_path]}/admin/recipients/add", field, function(res) {
         showMsg(res.msg, function(){
             layer.close(index);

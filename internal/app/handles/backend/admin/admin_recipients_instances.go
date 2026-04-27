@@ -163,22 +163,19 @@ func PostRecipientsInstancesAdd(c *gin.Context) {
 			common.ErrorResp(c, err, -1)
 			return
 		}
-		if field.MediaType == "telegram" {
-			go op.ReloadTelegramTask()
+	} else {
+		common_data.Status = true
+		common_data.CreateTime = time.Now().Unix()
+		if err := db.GetDb().Create(common_data).Error; err != nil {
+			common.ErrorResp(c, err, -1)
+			return
 		}
-		common.SuccessResp(c)
-		return
-	}
-	common_data.Status = true
-	common_data.CreateTime = time.Now().Unix()
-	if err := db.GetDb().Create(common_data).Error; err != nil {
-		common.ErrorResp(c, err, -1)
-		return
 	}
 
 	if field.MediaType == "telegram" {
 		go op.ReloadTelegramTask()
 	}
+
 	common.SuccessResp(c)
 }
 
@@ -194,10 +191,12 @@ func RecipientsInstancesDelete(c *gin.Context) {
 		return
 	}
 
-	err := db.AdminRecipientsInstancesDeleteByID(nil, field.ID)
-	if err == nil {
-		common.SuccessResp(c)
+	err := db.AdminRecipientsInstancesDeleteByID(field.ID)
+	if err != nil {
+		common.ErrorResp(c, err, -1)
 		return
 	}
-	common.ErrorResp(c, err, -1)
+
+	go op.ReloadTelegramTask()
+	common.SuccessResp(c)
 }
