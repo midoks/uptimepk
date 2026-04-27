@@ -110,23 +110,22 @@ func PostRecipientsAdd(c *gin.Context) {
 		}
 	}
 
-	// 设置默认的 RelatedIDs RelatedIDs 不为空）
-	common_data := &model.AdminRecipients{
-		AdminID:      field.AdminID,
-		MediaID:      field.MediaID,
-		GroupID:      field.GroupID,
-		RecipientID:  field.RecipientID,
-		Interval:     field.Interval,
-		IntervalType: field.IntervalType,
-		Status:       field.Status,
-		Mark:         field.Mark,
-		UpdateTime:   time.Now().Unix(),
-	}
-
 	tx := db.GetDb().Begin()
 
 	if field.ID > 0 {
-		if err := tx.Model(&model.AdminRecipients{}).Where("id = ?", field.ID).Updates(common_data).Error; err != nil {
+		// 使用map更新所有字段，包括布尔值false
+		updates := map[string]interface{}{
+			"admin_id":      field.AdminID,
+			"media_id":      field.MediaID,
+			"group_id":      field.GroupID,
+			"recipient_id":  field.RecipientID,
+			"interval":      field.Interval,
+			"interval_type": field.IntervalType,
+			"status":        field.Status,
+			"mark":          field.Mark,
+			"update_time":   time.Now().Unix(),
+		}
+		if err := tx.Model(&model.AdminRecipients{}).Where("id = ?", field.ID).Updates(updates).Error; err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
 			return
@@ -138,8 +137,19 @@ func PostRecipientsAdd(c *gin.Context) {
 			return
 		}
 	} else {
-		common_data.Status = true
-		common_data.CreateTime = time.Now().Unix()
+		// 创建新接收人
+		common_data := &model.AdminRecipients{
+			AdminID:      field.AdminID,
+			MediaID:      field.MediaID,
+			GroupID:      field.GroupID,
+			RecipientID:  field.RecipientID,
+			Interval:     field.Interval,
+			IntervalType: field.IntervalType,
+			Status:       field.Status,
+			Mark:         field.Mark,
+			CreateTime:   time.Now().Unix(),
+			UpdateTime:   time.Now().Unix(),
+		}
 		if err := tx.Create(common_data).Error; err != nil {
 			tx.Rollback()
 			common.ErrorResp(c, err, -1)
