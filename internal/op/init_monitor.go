@@ -148,7 +148,6 @@ func (t *MonitorTask) runHttpMonitor() error {
 					dest_ip = ip.String()
 				} else {
 					ips, lookupErr := net.LookupIP(hostname)
-					fmt.Println("ips:", ips, lookupErr)
 					if lookupErr == nil && len(ips) > 0 {
 						dest_ip = ips[0].String()
 					}
