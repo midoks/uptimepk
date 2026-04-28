@@ -693,10 +693,14 @@
                                     var lastLog = data.list[tlen - 1];
                                     var lastLogId = lastLog.id;
                                     console.log("send[monitor_1]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
-                                    // 延迟1秒后发送请求，避免过快请求
+                                    HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
+
+                                } else {
                                     setTimeout(function() {
+                                        var lastLog = data.list[tlen - 1];
+                                        var lastLogId = lastLog.id;
                                         HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
-                                    }, 1000);
+                                    }, 10000);
                                 }
 
                             } else if (data.type === 'history_day' && !self.loadingComplete) {
