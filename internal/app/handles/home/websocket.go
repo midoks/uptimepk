@@ -26,8 +26,7 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	MonitorBatchSize   = 20
-	MonitorUpdateBatch = 10
+	MonitorBatchSize = 20
 )
 
 type MonitorStatus struct {
@@ -721,89 +720,6 @@ func BroadcastMonitorStatus() {
 		default:
 			close(client.send)
 			delete(hub.clients, client)
-		}
-	}
-	return
-
-	statusList, err := GetMonitorStatusList()
-	if err != nil {
-		return
-	}
-
-	total := len(statusList)
-	if total == 0 {
-		data := map[string]interface{}{
-			"type":    "monitor_status",
-			"data":    []MonitorStatus{},
-			"groups":  nil,
-			"updated": time.Now().Unix(),
-			"total":   0,
-			"chunk":   0,
-			"chunks":  0,
-		}
-
-		if groups, err := db.GetMonitorGroupAll(); err == nil {
-			data["groups"] = groups
-		}
-
-		message, err := json.Marshal(data)
-		if err != nil {
-			return
-		}
-
-		for client := range hub.clients {
-			client.lastUpdate = time.Now().Unix()
-			client.isFirstUpdate = false
-			select {
-			case client.send <- message:
-			default:
-				close(client.send)
-				delete(hub.clients, client)
-			}
-		}
-		return
-	}
-
-	chunks := (total + MonitorBatchSize - 1) / MonitorBatchSize
-
-	for client := range hub.clients {
-		client.lastUpdate = time.Now().Unix()
-		client.isFirstUpdate = false
-
-		if groups, err := db.GetMonitorGroupAll(); err == nil {
-			for i := 0; i < total; i += MonitorBatchSize {
-				end := i + MonitorBatchSize
-				if end > total {
-					end = total
-				}
-				chunkNum := i/MonitorBatchSize + 1
-
-				data := map[string]interface{}{
-					"type":    "monitor_status",
-					"data":    statusList[i:end],
-					"groups":  groups,
-					"updated": time.Now().Unix(),
-					"total":   total,
-					"chunk":   chunkNum,
-					"chunks":  chunks,
-				}
-
-				message, err := json.Marshal(data)
-				if err != nil {
-					continue
-				}
-
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(hub.clients, client)
-				}
-
-				if chunkNum < chunks {
-					time.Sleep(10 * time.Millisecond)
-				}
-			}
 		}
 	}
 }

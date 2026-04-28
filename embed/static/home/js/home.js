@@ -294,30 +294,21 @@
                                 self.groups = data.groups || [];
                             } else if (data.type === 'init_monitor_data'){
                                 self.data = data.data || [];
-
-                                // 开启追加模式
                                 for (var i = 0; i < self.data.length; i++) {
                                     var t = self.data[i];
-                                    var tlen = t.list.length;
-
+                                    var tlen = t.list ? t.list.length : 0;
                                     var lastLogId = null;
                                     if (tlen > 0) {
                                         var lastLog = t.list[tlen - 1];
                                         lastLogId = lastLog.id;
                                     }
-                                    console.log("send:",'monitor_id:', t.id, 'last_log_id:', lastLogId);
-                                    // 发送追加请求（即使没有日志也要发送）
                                     HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(t.id), last_log_id: Number(lastLogId)}));
                                 }
                             } else if (data.type === 'append_monitor_data'){
-                                console.log(data);
-                                // 将新日志追加到对应的监控器
                                 if (data.monitor_id && data.list && data.list.length > 0) {
                                     for (var i = 0; i < self.data.length; i++) {
                                         if (self.data[i].id === data.monitor_id) {
-                                            // 将新日志追加到 list 中
                                             self.data[i].list = self.data[i].list.concat(data.list);
-                                            console.log('追加日志成功，monitor_id:', data.monitor_id, '新增日志数:', data.list.length);
                                             break;
                                         }
                                     }
@@ -328,23 +319,22 @@
                                 if (tlen > 0) {
                                     var lastLog = data.list[tlen - 1];
                                     var lastLogId = lastLog.id;
-                                    console.log("send[1]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
-                                    // 延迟1秒后发送请求，避免过快请求
-
                                     HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
                                 } else {
+                                    // 没有新数据时，延迟10秒后继续请求
                                     setTimeout(function() {
                                         var lastLogId = null;
-                                        var t = self.data.list;
-                                        var tlen = t.length;
-                                        if (tlen > 0) {
-                                            var lastLog = t[tlen - 1];
-                                            lastLogId = lastLog.id;
+                                        for (var i = 0; i < self.data.length; i++) {
+                                            if (self.data[i].id === data.monitor_id) {
+                                                var monitorList = self.data[i].list || [];
+                                                if (monitorList.length > 0) {
+                                                    lastLogId = monitorList[monitorList.length - 1].id;
+                                                }
+                                                break;
+                                            }
                                         }
-                                        console.log("send[monitor_10s]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
-                                        HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: lastLogId}));
+                                        HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
                                     }, 10000);
-
                                 }
                             }
 
@@ -415,7 +405,6 @@
 
                 const handlers = {
                     onopen: function() {
-                        console.log('groups WebSocket connected');
                         HomeApp.ws.send(JSON.stringify({type:'init_group_monitors', group_id:Number(groupId)}));
                     },
                     onmessage: function(event) {
@@ -425,14 +414,11 @@
 
                         try {
                             const data = JSON.parse(event.data);
-                            console.log('renderGroups:', data);
-                            
+
                             if (data.type === 'init_group_monitors') {
                                 self.data = data.data;
-                                console.log('Groups data received:', self.data);
                                 self.renderCards();
 
-                                // 开启追加模式 - 遍历所有分组中的所有监控器
                                 for (var groupIdx = 0; groupIdx < self.data.length; groupIdx++) {
                                     var group = self.data[groupIdx];
                                     if (group.monitors && group.monitors.length > 0) {
@@ -441,60 +427,55 @@
                                             var monitorList = monitor.list || [];
                                             var lastLogId = null;
                                             if (monitorList.length > 0) {
-                                                var lastLog = monitorList[monitorList.length - 1];
-                                                lastLogId = lastLog.id;
+                                                lastLogId = monitorList[monitorList.length - 1].id;
                                             }
-                                            console.log("send[group_monitor]:", 'monitor_id:', monitor.id, 'last_log_id:', lastLogId);
                                             HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(monitor.id), last_log_id: Number(lastLogId)}));
                                         }
                                     }
                                 }
                             } else if (data.type === 'append_monitor_data') {
-                                console.log('append_monitor_data:', data);
-                                // 将新日志追加到对应的监控器（在分组中查找）
                                 if (data.monitor_id && data.list && data.list.length > 0) {
-                                    var found = false;
                                     for (var groupIdx = 0; groupIdx < self.data.length; groupIdx++) {
                                         var group = self.data[groupIdx];
                                         if (group.monitors && group.monitors.length > 0) {
                                             for (var mIdx = 0; mIdx < group.monitors.length; mIdx++) {
                                                 var monitor = group.monitors[mIdx];
                                                 if (monitor.id === data.monitor_id) {
-                                                    // 将新日志追加到该监控器的 list 中
                                                     if (!monitor.list) {
                                                         monitor.list = [];
                                                     }
                                                     monitor.list = monitor.list.concat(data.list);
-                                                    console.log('追加日志成功，monitor_id:', data.monitor_id, '新增日志数:', data.list.length);
-                                                    found = true;
                                                     break;
                                                 }
                                             }
-                                            if (found) break;
                                         }
                                     }
                                 }
 
-                                // 只有当收到新数据时才继续请求
                                 var tlen = data.list ? data.list.length : 0;
                                 if (tlen > 0) {
                                     var lastLog = data.list[tlen - 1];
                                     var lastLogId = lastLog.id;
-                                    console.log("send[group_append]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
-                                    // 延迟1秒后发送请求，避免过快请求
                                     HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
-
                                 } else {
                                     setTimeout(function() {
                                         var lastLogId = null;
-                                        var t = self.data.list;
-                                        var tlen = t.length;
-                                        if (tlen > 0) {
-                                            var lastLog = t[tlen - 1];
-                                            lastLogId = lastLog.id;
+                                        for (var groupIdx = 0; groupIdx < self.data.length; groupIdx++) {
+                                            var group = self.data[groupIdx];
+                                            if (group.monitors && group.monitors.length > 0) {
+                                                for (var mIdx = 0; mIdx < group.monitors.length; mIdx++) {
+                                                    var monitor = group.monitors[mIdx];
+                                                    if (monitor.id === data.monitor_id) {
+                                                        var monitorList = monitor.list || [];
+                                                        if (monitorList.length > 0) {
+                                                            lastLogId = monitorList[monitorList.length - 1].id;
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
                                         }
-                                        console.log("send[monitor_10s]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
-                                        HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: lastLogId}));
+                                        HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
                                     }, 10000);
                                 }
                                 self.renderCards();
@@ -660,54 +641,38 @@
                                 self.data = data.data;
                                 self.render();
 
-                                console.log("init_monitor_data:",data.data);
-
-                                // 开启追加模式
                                 var list = data.data[0] ? data.data[0].list : [];
                                 var tlen = list ? list.length : 0;
-
                                 var lastLogId = null;
                                 if (tlen > 0) {
-                                    var lastLog = list[tlen - 1];
-                                    lastLogId = lastLog.id;
+                                    lastLogId = list[tlen - 1].id;
                                 }
-                                console.log("send[monitor]:",'monitor_id:', Number(monitorId), 'last_log_id:', lastLogId);
                                 HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
-
                             } else if (data.type === 'append_monitor_data'){
-                                console.log("append_monitor_data:",data);
-                                console.log("append_monitor_data[self]:",self.data);
-                                // 将新日志追加到对应的监控器
                                 if (data.monitor_id && data.list && data.list.length > 0) {
-                                    
                                     self.data.list = self.data.list.concat(data.list);
-                                    console.log('追加日志成功，monitor_id:', data.monitor_id, '新增日志数:', data.list.length);
-                                        
                                 }
 
                                 self.render();
 
-                                // 只有当收到新数据时才继续请求
                                 var tlen = data.list ? data.list.length : 0;
                                 if (tlen > 0) {
                                     var lastLog = data.list[tlen - 1];
                                     var lastLogId = lastLog.id;
-                                    console.log("send[monitor_1]:", {type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)});
                                     HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
-
                                 } else {
                                     setTimeout(function() {
-                                        var lastLog = data.list[tlen - 1];
-                                        var lastLogId = lastLog.id;
+                                        var lastLogId = null;
+                                        if (self.data.list && self.data.list.length > 0) {
+                                            lastLogId = self.data.list[self.data.list.length - 1].id;
+                                        }
                                         HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
                                     }, 10000);
                                 }
 
                             } else if (data.type === 'history_day' && !self.loadingComplete) {
-                                // 只在历史数据未加载完成时才处理
                                 self.historyDays.push(data);
                                 self.renderHistory();
-                                console.log("historyDays:",self.historyDays);
                             } else if (data.type === 'history_done' && !self.loadingComplete) {
                                 // 只在历史数据未加载完成时才处理
                                 self.loadingComplete = true;
