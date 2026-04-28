@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 // Convert string to specify type.
@@ -164,4 +165,15 @@ func Int2HexStr(num int) (hex string) {
 		num = num / 16
 	}
 	return hex
+}
+
+// TimeToDateInt converts time.Time to date integer (YYYYMMDD format).
+func TimeToDateInt(t time.Time) int64 {
+	year, month, day := t.Date()
+	return int64(year*10000 + int(month)*100 + day)
+}
+
+// TodayToDateInt returns today's date as integer (YYYYMMDD format).
+func TodayToDateInt() int64 {
+	return TimeToDateInt(time.Now())
 }

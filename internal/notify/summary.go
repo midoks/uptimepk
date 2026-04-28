@@ -49,7 +49,7 @@ func generateMonitorGroupSummary(monitorGid int64, domainName string) (string, e
 		today := time.Now()
 		year, month, day := today.Date()
 		todayInt := int64(year*10000 + int(month)*100 + day)
-		logs, err := db.GetMonitorLogListByDate(monitor.ID, todayInt)
+		logs, err := db.GetMonitorLogListByDate(monitor.ID, todayInt, 0, 0)
 
 		upRate := 0.0
 		if err == nil && len(logs) > 0 {

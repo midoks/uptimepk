@@ -179,7 +179,7 @@ func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.Mon
 	return resultList, totalCount, nil
 }
 
-func GetMonitorLogListByDate(monitor_id int64, day int64) ([]model.MonitorLog, error) {
+func GetMonitorLogListByDate(monitor_id int64, day int64, pos int64, size int) ([]model.MonitorLog, error) {
 	// 将 day 转换为 time.Time
 	dayStr := strconv.FormatInt(day, 10)
 	if len(dayStr) != 8 {
@@ -196,7 +196,14 @@ func GetMonitorLogListByDate(monitor_id int64, day int64) ([]model.MonitorLog, e
 	tableName := getMonitorLogTableName(targetDate)
 
 	var list []model.MonitorLog
-	if err := GetDb().Table(tableName).Where("monitor_id = ?", monitor_id).Order(columnName("id") + " asc").Find(&list).Error; err != nil {
+
+	mm := GetDb().Table(tableName)
+
+	if pos > 0 {
+		mm = mm.Where("id > ?", pos)
+	}
+
+	if err := mm.Where("monitor_id = ?", monitor_id).Order(columnName("id") + " asc").Limit(size).Find(&list).Error; err != nil {
 		return nil, errors.Wrapf(err, "failed get monitor log list by date")
 	}
 	return list, nil

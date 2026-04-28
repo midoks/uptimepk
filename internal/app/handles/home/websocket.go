@@ -14,6 +14,7 @@ import (
 
 	"uptimepk/internal/db"
 	"uptimepk/internal/model"
+	"uptimepk/internal/utils"
 )
 
 var upgrader = websocket.Upgrader{
@@ -40,12 +41,13 @@ type MonitorStatus struct {
 	Speed     float64   `json:"speed"`
 	Size      int64     `json:"size"`
 	ErrorMsg  string    `json:"error_msg"`
-	HourLogs  []HourLog `json:"hour_logs"`
+	List      []ListLog `json:"list"`
 	UpRate    float64   `json:"up_rate"` // 今天的可用率
 	UpdatedAt int64     `json:"updated_at"`
 }
 
-type HourLog struct {
+type ListLog struct {
+	ID       int64   `json:"id"`
 	Hour     int64   `json:"hour"`
 	Minute   int     `json:"minute"`
 	IsValid  bool    `json:"is_valid"`
@@ -61,7 +63,7 @@ type MonitorUpdate struct {
 	Speed     float64  `json:"speed"`
 	Size      int64    `json:"size"`
 	ErrorMsg  string   `json:"error_msg"`
-	NewLog    *HourLog `json:"new_log,omitempty"`
+	NewLog    *ListLog `json:"new_log,omitempty"`
 	UpdatedAt int64    `json:"updated_at"`
 }
 
@@ -118,14 +120,144 @@ func (c *WSClient) readPump() {
 	}()
 
 	for {
-		_, _, err := c.conn.ReadMessage()
+		_, msg, err := c.conn.ReadMessage()
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				fmt.Printf("error: %v\n", err)
 			}
 			break
 		}
+		// fmt.Println("received message:", string(msg))
+
+		// 解析 JSON 消息
+		var message struct {
+			Type      string `json:"type"`
+			GroupID   int64  `json:"group_id"`
+			MonitorID int64  `json:"monitor_id"`
+			LastLogID int64  `json:"last_log_id"`
+		}
+		if err := json.Unmarshal(msg, &message); err != nil {
+			fmt.Println("failed to parse message:", err)
+			continue
+		}
+
+		if message.Type == "init_monitor_groups" {
+			data := map[string]interface{}{
+				"type": "init_monitor_groups",
+			}
+			if groups, err := db.GetMonitorGroupAll(); err == nil {
+				data["groups"] = groups
+			}
+			responseMsg, _ := json.Marshal(data)
+			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
+		} else if message.Type == "init_monitor_data" {
+			data := map[string]interface{}{
+				"type":       "init_monitor_data",
+				"monitor_id": int64(message.MonitorID),
+			}
+
+			if message.MonitorID > 0 {
+				status, err := GetMonitorStatusInit(message.MonitorID)
+				// fmt.Println("status:", status)
+				if err != nil {
+					fmt.Println("failed to get monitor status init:", err)
+					return
+				}
+
+				data["data"] = status
+				initMessage, err := json.Marshal(data)
+				if err != nil {
+					fmt.Println("failed to get monitor status init list:", err)
+					return
+				}
+
+				c.conn.WriteMessage(websocket.TextMessage, initMessage)
+			} else {
+				// 处理初始化监控数据
+				statusList, err := GetMonitorStatusList()
+				if err != nil {
+					fmt.Println("failed to get monitor status list:", err)
+					return
+				}
+
+				data["data"] = statusList
+
+				initMessage, _ := json.Marshal(data)
+				c.conn.WriteMessage(websocket.TextMessage, initMessage)
+			}
+
+		} else if message.Type == "append_monitor_data" {
+			data := map[string]interface{}{
+				"type":       "append_monitor_data",
+				"monitor_id": int64(message.MonitorID),
+			}
+
+			todayInt := utils.TodayToDateInt()
+			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 10)
+
+			if err == nil {
+				data["list"] = logs
+			}
+
+			responseMsg, _ := json.Marshal(data)
+			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
+		} else if message.Type == "init_group_monitors" {
+			// 发送分组数据
+			var groups []model.MonitorGroup
+			groupID := message.GroupID
+
+			if groupID <= 0 {
+				return
+			}
+			// 如果指定了分组ID，只获取该分组
+			group, err := db.GetMonitorGroupByID(groupID)
+			if err == nil {
+				groups = []model.MonitorGroup{*group}
+			}
+			fmt.Println("init_group_monitors:", err)
+
+			// 获取每个分组的监控状态
+			groupStatus := make([]map[string]interface{}, 0)
+			for _, group := range groups {
+				monitors, err := db.GetMonitorListByGid(group.ID)
+				if err != nil {
+					continue
+				}
+
+				monitorStatus := make([]MonitorStatus, 0)
+				for _, monitor := range monitors {
+					status, err := GetMonitorStatusInit(monitor.ID)
+					if err != nil {
+						continue
+					}
+					monitorStatus = append(monitorStatus, status)
+				}
+
+				groupData := map[string]interface{}{
+					"id":       group.ID,
+					"name":     group.Name,
+					"monitors": monitorStatus,
+				}
+				groupStatus = append(groupStatus, groupData)
+			}
+
+			data := map[string]interface{}{
+				"type": "init_group_monitors",
+				"data": groupStatus,
+			}
+
+			fmt.Println("ss:", data)
+
+			message, err := json.Marshal(data)
+			if err != nil {
+				return
+			}
+
+			c.conn.WriteMessage(websocket.TextMessage, message)
+		}
 	}
+	fmt.Println("readPump exiting")
 }
 
 func (c *WSClient) writePump() {
@@ -225,7 +357,7 @@ func WSGroupsHandler(c *gin.Context) {
 
 		monitorStatus := make([]MonitorStatus, 0)
 		for _, monitor := range monitors {
-			status, err := GetMonitorStatus(monitor.ID)
+			status, err := GetMonitorStatusInit(monitor.ID)
 			if err != nil {
 				continue
 			}
@@ -277,7 +409,7 @@ func WSMonitorHandler(c *gin.Context) {
 		return
 	}
 
-	status, err := GetMonitorStatus(monitor.ID)
+	status, err := GetMonitorStatusInit(monitor.ID)
 	if err != nil {
 		return
 	}
@@ -436,7 +568,7 @@ func WSMonitorHandler(c *gin.Context) {
 }
 
 func broadcastLoop() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -445,11 +577,15 @@ func broadcastLoop() {
 	}
 }
 
-func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
+func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 	monitor, err := db.GetMonitorByID(monitorID)
 	if err != nil {
 		return MonitorStatus{}, err
 	}
+
+	// 获取今天的日志（只查询一次）
+	todayInt := utils.TodayToDateInt()
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, 10)
 
 	status := MonitorStatus{
 		ID:        monitor.ID,
@@ -462,7 +598,7 @@ func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
 		Speed:     0,
 		Size:      0,
 		ErrorMsg:  "",
-		HourLogs:  GetMonitorHourLogs(monitorID),
+		List:      GetMonitorHourLogsFromLogs(logs),
 		UpRate:    0,
 		UpdatedAt: time.Now().Unix(),
 	}
@@ -477,10 +613,6 @@ func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
 	}
 
 	// 计算今天的可用率
-	today := time.Now()
-	year, month, day := today.Date()
-	todayInt := int64(year*10000 + int(month)*100 + day)
-	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt)
 	if err == nil && len(logs) > 0 {
 		upCount := 0
 		for _, log := range logs {
@@ -494,19 +626,12 @@ func GetMonitorStatus(monitorID int64) (MonitorStatus, error) {
 	return status, nil
 }
 
-func GetMonitorHourLogs(monitorID int64) []HourLog {
-	now := time.Now()
-	year, month, day := now.Date()
-	todayInt := int64(year*10000 + int(month)*100 + day)
-
-	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt)
-	if err != nil {
-		return []HourLog{}
-	}
-
-	hourLogs := make([]HourLog, 0, len(logs))
+// GetMonitorHourLogsFromLogs 从已有的日志列表生成小时日志
+func GetMonitorHourLogsFromLogs(logs []model.MonitorLog) []ListLog {
+	listLogs := make([]ListLog, 0, len(logs))
 	for _, log := range logs {
-		hourLogs = append(hourLogs, HourLog{
+		listLogs = append(listLogs, ListLog{
+			ID:       log.ID,
 			Hour:     log.Hour,
 			Minute:   log.Minute,
 			IsValid:  log.IsValid,
@@ -515,19 +640,28 @@ func GetMonitorHourLogs(monitorID int64) []HourLog {
 			Size:     log.Size,
 		})
 	}
+	return listLogs
+}
 
-	return hourLogs
+// GetMonitorHourLogs 通过 monitorID 获取小时日志
+func GetMonitorHourLogs(monitorID int64) []ListLog {
+	todayInt := utils.TodayToDateInt()
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, 0)
+	if err != nil {
+		return []ListLog{}
+	}
+	return GetMonitorHourLogsFromLogs(logs)
 }
 
 func GetMonitorStatusList() ([]MonitorStatus, error) {
-	monitors, _, err := db.GetMonitorListSimple(1, 100)
+	monitors, _, err := db.GetMonitorListSimple(1, 1000)
 	if err != nil {
 		return nil, err
 	}
 
 	statusList := make([]MonitorStatus, 0, len(monitors))
 	for _, monitor := range monitors {
-		status, err := GetMonitorStatus(monitor.ID)
+		status, err := GetMonitorStatusInit(monitor.ID)
 		if err != nil {
 			continue
 		}
@@ -559,7 +693,8 @@ func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
 			update.ErrorMsg = latestLog.ErrorMsg
 
 			if latestLog.CreateTime > since {
-				update.NewLog = &HourLog{
+				update.NewLog = &ListLog{
+					ID:       latestLog.ID,
 					Hour:     latestLog.Hour,
 					Minute:   latestLog.Minute,
 					IsValid:  latestLog.IsValid,
@@ -579,6 +714,16 @@ func GetMonitorUpdatesSince(since int64) ([]MonitorUpdate, error) {
 func BroadcastMonitorStatus() {
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
+
+	for client := range hub.clients {
+		select {
+		case client.send <- []byte("ping"):
+		default:
+			close(client.send)
+			delete(hub.clients, client)
+		}
+	}
+	return
 
 	statusList, err := GetMonitorStatusList()
 	if err != nil {

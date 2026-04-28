@@ -53,6 +53,13 @@
                 return bytes + 'b';
             },
 
+            formatSpeed: function(speed) {
+                if (speed === undefined || speed === null) {
+                    return '';
+                }
+                return speed.toFixed(2) + 'ms';
+            },
+
             getUrlParam: function(name) {
                 return new URLSearchParams(window.location.search).get(name);
             },
@@ -173,7 +180,7 @@
             html += '</div>';
 
             // 渲染时间网格
-            html += this.renderTimeGrid(monitor.hour_logs);
+            html += this.renderTimeGrid(monitor.list);
 
             // 渲染图例
             html += this.renderLegend();
@@ -181,7 +188,7 @@
             // 渲染页脚统计
             html += '<div class="status-footer">';
             html += '<div class="status-stats">类型: ' + HomeApp.utils.escapeHtml(monitor.type) + '</div>';
-            html += '<div class="status-stats">日志: ' + (monitor.hour_logs ? monitor.hour_logs.length : 0) + ' 条</div>';
+            html += '<div class="status-stats">日志: ' + (monitor.list ? monitor.list.length : 0) + ' 条</div>';
             if (monitor.is_valid) {
                 if (monitor.speed) {
                     html += '<div class="status-stats">耗时: ' + monitor.speed + 'ms</div>';

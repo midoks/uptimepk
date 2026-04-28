@@ -44,7 +44,7 @@ func GetMonitorListSimple(page, size int) ([]model.Monitor, int64, error) {
 	}
 
 	var list []model.Monitor
-	if err := db.Order(columnName("create_time")+" desc").Where("is_deleted=?", 0).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	if err := db.Order(columnName("create_time")+" desc").Where("status=?", 1).Where("is_deleted=?", 0).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		return nil, 0, errors.Wrap(err, "failed get monitor list")
 	}
 	return list, count, nil
