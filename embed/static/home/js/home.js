@@ -131,21 +131,25 @@
                 }
             } else {
                 // 生成模拟数据
-                for (let i = 0; i < 468; i++) { // 6行 * 78列
-                    const isUp = Math.random() > 0.2;
-                    const status = isUp ? 'up' : 'down';
-                    const hour = HomeApp.utils.padZero(Math.floor(i / 78));
-                    const minute = HomeApp.utils.padZero(Math.floor((i % 78) * (60 / 78)));
-                    const timeStr = hour + ':' + minute;
-                    const speed = (Math.random() * 1000).toFixed(2) + 'ms';
-                    const size = (Math.random() * 200).toFixed(2) + 'kb';
+                // for (let i = 0; i < 468; i++) { // 6行 * 78列
+                //     const isUp = Math.random() > 0.2;
+                //     const status = isUp ? 'up' : 'down';
+                //     const hour = HomeApp.utils.padZero(Math.floor(i / 78));
+                //     const minute = HomeApp.utils.padZero(Math.floor((i % 78) * (60 / 78)));
+                //     const timeStr = hour + ':' + minute;
+                //     const speed = (Math.random() * 1000).toFixed(2) + 'ms';
+                //     const size = (Math.random() * 200).toFixed(2) + 'kb';
                     
-                    html += '<div class="time-cell ' + status + '" ' +
-                        'data-status="' + status + '" ' +
-                        'data-time="' + timeStr + '" ' +
-                        'data-speed="' + speed + '" ' +
-                        'data-size="' + size + '"></div>';
-                }
+                //     html += '<div class="time-cell ' + status + '" ' +
+                //         'data-status="' + status + '" ' +
+                //         'data-time="' + timeStr + '" ' +
+                //         'data-speed="' + speed + '" ' +
+                //         'data-size="' + size + '"></div>';
+                // }
+
+                
+                // 数据为空时显示提示信息
+                html += '<div class="empty-grid">暂无监控数据</div>';
             }
 
             html += '</div>';
