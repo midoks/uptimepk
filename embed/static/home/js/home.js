@@ -326,7 +326,21 @@
                                 if (data.monitor_id && data.list && data.list.length > 0) {
                                     for (var i = 0; i < self.data.length; i++) {
                                         if (self.data[i].id === data.monitor_id) {
-                                            self.data[i].list = self.data[i].list.concat(data.list);
+                                            if (!self.data[i].list) {
+                                                self.data[i].list = [];
+                                            }
+                                            // 去重：只添加不在当前列表中的数据
+                                            var existingIds = {};
+                                            for (var j = 0; j < self.data[i].list.length; j++) {
+                                                existingIds[self.data[i].list[j].id] = true;
+                                            }
+                                            for (var k = 0; k < data.list.length; k++) {
+                                                var item = data.list[k];
+                                                if (!existingIds[item.id]) {
+                                                    self.data[i].list.push(item);
+                                                    existingIds[item.id] = true;
+                                                }
+                                            }
                                             break;
                                         }
                                     }
@@ -664,11 +678,16 @@
 
                             const data = JSON.parse(event.data);
                             if (data.type === 'init_monitor_data') {
-                                self.data = data.data;
+                                // 后端返回单个监控时是对象，多个时是数组
+                                if (Array.isArray(data.data)) {
+                                    self.data = data.data[0] || {};
+                                } else {
+                                    self.data = data.data || {};
+                                }
                                 self.render();
 
-                                var list = data.data[0] ? data.data[0].list : [];
-                                var tlen = list ? list.length : 0;
+                                var list = self.data.list || [];
+                                var tlen = list.length;
                                 var lastLogId = null;
                                 if (tlen > 0) {
                                     lastLogId = list[tlen - 1].id;
@@ -679,7 +698,21 @@
 
                             } else if (data.type === 'append_monitor_data'){
                                 if (data.monitor_id && data.list && data.list.length > 0) {
-                                    self.data.list = self.data.list.concat(data.list);
+                                    if (!self.data.list) {
+                                        self.data.list = [];
+                                    }
+                                    // 去重：只添加不在当前列表中的数据
+                                    var existingIds = {};
+                                    for (var j = 0; j < self.data.list.length; j++) {
+                                        existingIds[self.data.list[j].id] = true;
+                                    }
+                                    for (var k = 0; k < data.list.length; k++) {
+                                        var item = data.list[k];
+                                        if (!existingIds[item.id]) {
+                                            self.data.list.push(item);
+                                            existingIds[item.id] = true;
+                                        }
+                                    }
                                 }
 
                                 self.render()
