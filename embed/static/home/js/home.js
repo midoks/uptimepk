@@ -765,14 +765,28 @@
                 });
 
                 sortedDays.forEach(function(dayData) {
+                    // 实时计算正常、故障数量和可用率
+                    const logs = dayData.list || [];
+                    let up_count = 0;
+                    let down_count = 0;
+                    logs.forEach(function(d) {
+                        if (d.is_valid) {
+                            up_count++;
+                        } else {
+                            down_count++;
+                        }
+                    });
+                    const total_count = up_count + down_count;
+                    const up_rate = total_count > 0 ? (up_count / total_count * 100) : 0;
+
                     // 使用卡片式风格
                     let dayHtml = '<div class="status-card" style="margin-bottom: 20px;">';
                     dayHtml += '<div class="status-header">';
                     dayHtml += '<div class="service-name">最近7天监控数据 - ' + dayData.date + '</div>';
                     dayHtml += '<div class="status-indicator">';
-                    dayHtml += '<span style="color: #27ae60;">正常: ' + dayData.up_count + '</span> / ';
-                    dayHtml += '<span style="color: #e74c3c;">故障: ' + dayData.down_count + '</span> / ';
-                    dayHtml += '可用率: ' + (dayData.up_rate || 0).toFixed(1) + '%';
+                    dayHtml += '<span style="color: #27ae60;">正常: ' + up_count + '</span> / ';
+                    dayHtml += '<span style="color: #e74c3c;">故障: ' + down_count + '</span> / ';
+                    dayHtml += '可用率: ' + up_rate.toFixed(1) + '%';
                     dayHtml += '</div>';
                     dayHtml += '</div>';
 
@@ -781,7 +795,10 @@
                     (dayData.list || []).forEach(function(d) {
                         const status = d.is_valid ? 'up' : 'down';
                         const error = d.error_msg || '无法访问';
-                        const timeStr = d.time || '';
+                        // 使用 hour 和 minute 拼接时间字符串
+                        const hour = d.hour !== undefined ? d.hour.toString().padStart(2, '0') : '00';
+                        const minute = d.minute !== undefined ? d.minute.toString().padStart(2, '0') : '00';
+                        const timeStr = hour + ':' + minute;
                         let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + HomeApp.utils.escapeHtml(error) + '"';
                         if (d.speed) {
                             cellHtml += ' data-speed="' + d.speed + '"';
@@ -805,9 +822,9 @@
 
                     // 渲染页脚统计
                     dayHtml += '<div class="status-footer">';
-                    dayHtml += '<div class="status-stats">日志: ' + dayData.total + ' 条</div>';
-                    if (dayData.list && dayData.list.length > 0) {
-                        const lastLog = dayData.list[dayData.list.length - 1];
+                    dayHtml += '<div class="status-stats">日志: ' + (logs.length || dayData.total) + ' 条</div>';
+                    if (logs.length > 0) {
+                        const lastLog = logs[logs.length - 1];
                         if (lastLog.is_valid) {
                             if (lastLog.speed) {
                                 dayHtml += '<div class="status-stats">耗时: ' + lastLog.speed + 'ms</div>';
@@ -823,7 +840,7 @@
                             }
                         }
                     }
-                    dayHtml += '<div class="status-stats">可用率: ' + (dayData.up_rate || 0).toFixed(1) + '%</div>';
+                    dayHtml += '<div class="status-stats">可用率: ' + up_rate.toFixed(1) + '%</div>';
                     dayHtml += '</div>';
 
                     dayHtml += '</div>';
