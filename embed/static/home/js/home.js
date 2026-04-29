@@ -295,8 +295,12 @@
 
                 const handlers = {
                     onopen: function() {
-                        HomeApp.ws.send(JSON.stringify({type:'init_monitor_groups'}));
-                        HomeApp.ws.send(JSON.stringify({type:'init_monitor_data'}));
+
+                        if (!self.data){
+                            HomeApp.ws.send(JSON.stringify({type:'init_monitor_groups'}));
+                            HomeApp.ws.send(JSON.stringify({type:'init_monitor_data'}));
+                        }
+                        
                     },
                     onmessage: function(event) {
                         try {
@@ -437,7 +441,11 @@
 
                 const handlers = {
                     onopen: function() {
-                        HomeApp.ws.send(JSON.stringify({type:'init_group_monitors', group_id:Number(groupId)}));
+
+                        if (!self.data){
+                            HomeApp.ws.send(JSON.stringify({type:'init_group_monitors', group_id:Number(groupId)}));
+                        }
+                        
                     },
                     onmessage: function(event) {
                         if (event.data == 'ping'){
@@ -668,7 +676,9 @@
 
                 const handlers = {
                     onopen: function() {
-                        HomeApp.ws.send(JSON.stringify({type:'init_monitor_data', monitor_id:Number(monitorId)}));
+                        if (!self.data){
+                            HomeApp.ws.send(JSON.stringify({type:'init_monitor_data', monitor_id:Number(monitorId)}));
+                        }
                     },
                     onmessage: function(event) {
                         try {
@@ -998,7 +1008,10 @@
                 if (e.target.classList.contains('time-cell')) {
                     const cell = e.target;
                     if (cell._tip) {
-                        document.body.removeChild(cell._tip);
+                        // 检查 tip 是否确实是 body 的子节点
+                        if (cell._tip.parentNode === document.body) {
+                            document.body.removeChild(cell._tip);
+                        }
                         delete cell._tip;
                     }
                 }
