@@ -440,7 +440,7 @@ func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 
 	// 获取今天的日志（只查询一次）
 	todayInt := utils.TodayToDateInt()
-	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, 10)
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, 1)
 
 	status := MonitorStatus{
 		ID:        monitor.ID,
