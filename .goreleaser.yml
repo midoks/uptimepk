@@ -60,7 +60,7 @@ release:
   prerelease: false
 
 snapshot:
-  name_template: "v1.0.4"
+  name_template: "v1.0.6"
 changelog:
   sort: asc
   filters:
