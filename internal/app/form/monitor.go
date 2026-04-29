@@ -41,7 +41,9 @@ type MonitorList struct {
 type MonitorLogList struct {
 	Page
 
-	Times string `form:"times"`
-	Type  string `form:"type"`
-	Key   string `form:"key"`
+	Times     string `form:"times"`
+	Type      string `form:"type"`
+	Key       string `form:"key"`
+	StartTime string `form:"start_time"`
+	EndTime   string `form:"end_time"`
 }

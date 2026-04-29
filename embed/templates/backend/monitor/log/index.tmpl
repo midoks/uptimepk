@@ -7,7 +7,7 @@
             <div class="layui-card-body">
 
                 <div class="layui-form toolbar" style="margin-top: 10px;margin-bottom: 10px;">
-                <form class="layui-form" action="" id="monitor_form" onclick="return false;">
+                <form class="layui-form" action="" id="monitor_log_form" onclick="return false;">
 
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline mr0">
@@ -18,7 +18,10 @@
                     <div class="layui-inline mr0">
                         <div class="layui-input-inline h30">
                             <select name="type" id="type" class="layui-input h30">
-                                <option value="">类型</option>
+                                <option value="">监控类型</option>
+                                <option value="http">HTTP</option>
+                                <option value="tcp">TCP</option>
+                                <option value="ping">PING</option>
                                 <option value="monitor_id">监控ID</option>
                             </select>
                         </div>
@@ -57,9 +60,14 @@ var admin = layui.admin
 var tableIns, tableData = [];
 
 function renderTable(){
+    // 获取表单参数
+    var where_data = $('#monitor_log_form').serializeArray();
+    where_data = array2arr(where_data);
+    
     tableIns = table.render({
         elem: '#list',
         url: '/{[.admin_path]}/monitor/log/list',
+        where: where_data,
         title: '数据表',
         cols: [[
             {field:'id', title:'ID', width:80},

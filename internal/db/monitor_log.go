@@ -34,47 +34,90 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 	page := field.Page.Page
 	size := field.Page.Limit
 
-	// 确保 page 至少为 1
 	if page <= 0 {
 		page = 1
 	}
-	// 确保 size 至少为 1
 	if size <= 0 {
 		size = 10
 	}
 
-	// 计算日期范围（最近30天）
-	endDate := time.Now()
-	startDate := endDate.AddDate(0, 0, -30)
+	// 计算日期范围
+	var startDate, endDate time.Time
 
-	// 遍历日期范围，同时计算总记录数和收集数据
+	// 优先使用日期范围
+	if field.StartTime != "" && field.EndTime != "" {
+		var err error
+		startDate, err = time.Parse("2006-01-02 15:04:05", field.StartTime)
+		if err != nil {
+			startDate, _ = time.Parse("2006-01-02", field.StartTime)
+		}
+		endDate, err = time.Parse("2006-01-02 15:04:05", field.EndTime)
+		if err != nil {
+			endDate, _ = time.Parse("2006-01-02", field.EndTime)
+			endDate = endDate.AddDate(0, 0, 1).Add(-time.Nanosecond)
+		}
+	} else if field.Times != "" {
+		// 使用天数
+		days := 30
+		if parsedDays, err := strconv.Atoi(field.Times); err == nil && parsedDays > 0 {
+			days = parsedDays
+		}
+		endDate = time.Now()
+		startDate = endDate.AddDate(0, 0, -days)
+	} else {
+		// 默认最近30天
+		endDate = time.Now()
+		startDate = endDate.AddDate(0, 0, -30)
+	}
+
+	// 获取需要过滤的监控ID列表
+	var monitorIDs []string
+	var err error
+
+	if field.Type == "monitor_id" && field.Key != "" {
+		// 按监控ID查询
+		monitorIDs = []string{field.Key}
+	} else {
+		monitorIDs, err = getMonitorIDsByFilter(field.Type, field.Key)
+		if err != nil {
+			return []model.MonitorLog{}, 0, nil
+		}
+	}
+
+	// 如果没有监控ID，返回空结果
+	if len(monitorIDs) == 0 {
+		return []model.MonitorLog{}, 0, nil
+	}
+
+	// 遍历日期范围收集数据
 	var totalCount int64
 	var resultList []model.MonitorLog
 	remaining := size
 	offset := (page - 1) * size
 
-	currentDate := endDate // 从最近的日期开始
+	currentDate := endDate
 	for currentDate.After(startDate) || currentDate.Equal(startDate) {
 		tableName := getMonitorLogTableName(currentDate)
 
-		// 检查表格是否存在
 		exists := GetDb().Migrator().HasTable(tableName)
 		if !exists {
 			currentDate = currentDate.AddDate(0, 0, -1)
 			continue
 		}
 
-		// 计算当前表的数据量
+		query := GetDb().Table(tableName).Where("monitor_id IN ?", monitorIDs)
+		// 如果不是按监控ID查询，并且有关键词，则在错误消息中搜索
+		if field.Type != "monitor_id" && field.Key != "" {
+			query = query.Where("error_msg LIKE ?", "%"+field.Key+"%")
+		}
+
 		var count int64
-		if err := GetDb().Table(tableName).Count(&count).Error; err != nil {
+		if err := query.Count(&count).Error; err != nil {
 			currentDate = currentDate.AddDate(0, 0, -1)
 			continue
 		}
-
-		// 累加总记录数
 		totalCount += count
 
-		// 如果还有数据需要获取
 		if remaining > 0 {
 			if offset > 0 {
 				if int64(offset) >= count {
@@ -84,7 +127,8 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 				}
 
 				var tableData []model.MonitorLog
-				if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
+				if err := GetDb().Table(tableName).Where("monitor_id IN ?", monitorIDs).
+					Order(columnName("id") + " desc").Offset(offset).Limit(remaining).Find(&tableData).Error; err != nil {
 					currentDate = currentDate.AddDate(0, 0, -1)
 					continue
 				}
@@ -93,7 +137,8 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 				offset = 0
 			} else {
 				var tableData []model.MonitorLog
-				if err := GetDb().Table(tableName).Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
+				if err := GetDb().Table(tableName).Where("monitor_id IN ?", monitorIDs).
+					Order(columnName("id") + " desc").Limit(remaining).Find(&tableData).Error; err != nil {
 					currentDate = currentDate.AddDate(0, 0, -1)
 					continue
 				}
@@ -106,6 +151,29 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 	}
 
 	return resultList, totalCount, nil
+}
+
+// getMonitorIDsByFilter 根据 Type 和 Key 获取监控ID列表
+func getMonitorIDsByFilter(monitorType, key string) ([]string, error) {
+	query := GetDb().Model(&model.Monitor{}).Where("is_deleted = ?", 0)
+
+	if monitorType != "" && monitorType != "monitor_id" {
+		query = query.Where("type = ?", monitorType)
+	}
+	if key != "" {
+		query = query.Where("name LIKE ? OR mark LIKE ?", "%"+key+"%", "%"+key+"%")
+	}
+
+	var monitors []model.Monitor
+	if err := query.Find(&monitors).Error; err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, len(monitors))
+	for i, m := range monitors {
+		ids[i] = strconv.FormatInt(m.ID, 10)
+	}
+	return ids, nil
 }
 
 func GetMonitorLogListByMonitorID(monitor_id int64, page, size int) ([]model.MonitorLog, int64, error) {
