@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -135,6 +134,7 @@ func (c *WSClient) readPump() {
 			GroupID   int64  `json:"group_id"`
 			MonitorID int64  `json:"monitor_id"`
 			LastLogID int64  `json:"last_log_id"`
+			Day       int64  `json:"day"`
 		}
 		if err := json.Unmarshal(msg, &message); err != nil {
 			fmt.Println("failed to parse message:", err)
@@ -251,6 +251,7 @@ func (c *WSClient) readPump() {
 			}
 			c.conn.WriteMessage(websocket.TextMessage, message)
 		} else if message.Type == "init_history_day" {
+			fmt.Println("Received init_history_day request for monitor:", message.MonitorID)
 			weekLogs, err := db.GetMonitorLogsByDateRangeByPos(message.MonitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, 10)
 			if err != nil {
 				weekLogs = []model.MonitorLog{}
@@ -331,15 +332,32 @@ func (c *WSClient) readPump() {
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			// doneData := map[string]interface{}{
-			// 	"type":       "init_history_day",
-			// 	"total_days": len(dayStats),
-			// }
-			// doneMsg, err := json.Marshal(doneData)
-			// if err != nil {
-			// 	return
-			// }
-			// c.conn.WriteMessage(websocket.TextMessage, doneMsg)
+			doneData := map[string]interface{}{
+				"type":       "history_done",
+				"total_days": len(dayStats),
+			}
+			doneMsg, err := json.Marshal(doneData)
+			if err != nil {
+				fmt.Println("Error marshaling history_done:", err)
+				return
+			}
+			c.conn.WriteMessage(websocket.TextMessage, doneMsg)
+		} else if message.Type == "append_history_data" {
+			data := map[string]interface{}{
+				"type":       "append_history_data",
+				"monitor_id": int64(message.MonitorID),
+				"day":        int64(message.Day),
+			}
+
+			todayInt := message.Day
+			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 10)
+
+			if err == nil {
+				data["list"] = logs
+			}
+
+			responseMsg, _ := json.Marshal(data)
+			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
 		}
 	}
 }

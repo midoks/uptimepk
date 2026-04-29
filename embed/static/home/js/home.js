@@ -702,7 +702,7 @@
                                 var day = lastData.day;
                                 HomeApp.ws.send(JSON.stringify({type:'append_history_day', day:Number(day), monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
 
-                            } else if (data.type == "append_history_day"){
+                            } else if (data.type === 'append_history_day'){
                                 console.log(data);
                             }
                         } catch (e) {
