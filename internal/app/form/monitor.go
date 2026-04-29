@@ -32,15 +32,6 @@ type MonitorGroupAdd struct {
 	Status   bool   `form:"status"`
 }
 
-type MonitorCreateNode struct {
-	Name string `form:"name"`
-	Ip   string `form:"ip"`
-}
-
-type MonitorNodeDelete struct {
-	NodeID int64 `form:"node_id"`
-}
-
 type MonitorList struct {
 	Page
 	Gid int64  `form:"gid"`
