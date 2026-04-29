@@ -755,8 +755,10 @@
                                 var strday = data.date;
                                 var tlen = list.length;
                                 var monitor_id = data.id;
-                                var lastData = list[tlen -1];
+                                var lastData = list[tlen-1];
                                 var lastLogId = lastData.id;
+                                // console.log("lastData:",lastData);
+                                // console.log("lastLogId:",lastLogId);
                                 var day = strday.slice(0, 4) + strday.slice(5, 7) + strday.slice(8, 10);
                                 // console.log(day,monitorId);
                                 HomeApp.ws.send(JSON.stringify({type:'append_history_data', day:Number(day), monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));

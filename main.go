@@ -16,7 +16,7 @@ import (
 const (
 	Version = "1.0.6"
 	AppName = "uptimepk"
-	CodeDev = false
+	CodeDev = true
 )
 
 func init() {

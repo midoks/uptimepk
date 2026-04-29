@@ -252,7 +252,7 @@ func handleInitGroupMonitors(c *WSClient, groupID int64) {
 }
 
 func handleInitHistoryDay(c *WSClient, monitorID int64) {
-	weekLogs, err := db.GetMonitorLogsByDateRangeByPos(monitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, MonitorBatchSize)
+	weekLogs, err := db.GetMonitorLogsByDateRangeByPos(monitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, 1)
 	if err != nil {
 		weekLogs = []model.MonitorLog{}
 	}
@@ -267,6 +267,9 @@ func handleInitHistoryDay(c *WSClient, monitorID int64) {
 			"speed":       log.Speed,
 			"size":        log.Size,
 			"create_time": log.CreateTime,
+			"hour":        log.Hour,
+			"minute":      log.Minute,
+			"id":          log.ID,
 		}
 		logsByDay[dayKey] = append(logsByDay[dayKey], logData)
 	}

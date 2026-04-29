@@ -678,7 +678,7 @@ func GetMonitorLogsByDateRangeByPos(monitorID int64, startDate, endDate time.Tim
 		}
 
 		var tableData []model.MonitorLog
-		if err := mm.Where("monitor_id = ?", strconv.FormatInt(monitorID, 10)).Order(columnName("id") + " desc").Limit(size).Find(&tableData).Error; err != nil {
+		if err := mm.Where("monitor_id = ?", strconv.FormatInt(monitorID, 10)).Order(columnName("id") + " asc").Limit(size).Find(&tableData).Error; err != nil {
 			currentDate = currentDate.AddDate(0, 0, 1)
 			continue
 		}
