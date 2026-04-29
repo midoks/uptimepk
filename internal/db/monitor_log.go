@@ -44,6 +44,7 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 
 	// 计算日期范围
 	var startDate, endDate time.Time
+	dateRangeParsed := false
 
 	// 优先使用日期范围（前端可能传递合并格式 "开始时间 - 结束时间"）
 	if field.Times != "" && strings.Contains(field.Times, " - ") {
@@ -52,35 +53,47 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 			var err error
 			startDate, err = time.Parse("2006-01-02 15:04:05", parts[0])
 			if err != nil {
-				startDate, _ = time.Parse("2006-01-02", parts[0])
+				startDate, err = time.Parse("2006-01-02", parts[0])
 			}
 			endDate, err = time.Parse("2006-01-02 15:04:05", parts[1])
 			if err != nil {
-				endDate, _ = time.Parse("2006-01-02", parts[1])
+				endDate, err = time.Parse("2006-01-02", parts[1])
+			}
+			if !startDate.IsZero() && !endDate.IsZero() {
 				endDate = endDate.AddDate(0, 0, 1).Add(-time.Nanosecond)
+				dateRangeParsed = true
 			}
 		}
-	} else if field.StartTime != "" && field.EndTime != "" {
+	}
+
+	// 如果日期范围解析失败，尝试使用单独的开始和结束时间
+	if !dateRangeParsed && field.StartTime != "" && field.EndTime != "" {
 		var err error
 		startDate, err = time.Parse("2006-01-02 15:04:05", field.StartTime)
 		if err != nil {
-			startDate, _ = time.Parse("2006-01-02", field.StartTime)
+			startDate, err = time.Parse("2006-01-02", field.StartTime)
 		}
 		endDate, err = time.Parse("2006-01-02 15:04:05", field.EndTime)
 		if err != nil {
-			endDate, _ = time.Parse("2006-01-02", field.EndTime)
+			endDate, err = time.Parse("2006-01-02", field.EndTime)
+		}
+		if !startDate.IsZero() && !endDate.IsZero() {
 			endDate = endDate.AddDate(0, 0, 1).Add(-time.Nanosecond)
+			dateRangeParsed = true
 		}
-	} else if field.Times != "" {
-		// 使用天数
-		days := 30
-		if parsedDays, err := strconv.Atoi(field.Times); err == nil && parsedDays > 0 {
-			days = parsedDays
+	}
+
+	// 如果日期范围解析失败，尝试使用天数
+	if !dateRangeParsed && field.Times != "" {
+		if days, err := strconv.Atoi(field.Times); err == nil && days > 0 {
+			endDate = time.Now()
+			startDate = endDate.AddDate(0, 0, -days)
+			dateRangeParsed = true
 		}
-		endDate = time.Now()
-		startDate = endDate.AddDate(0, 0, -days)
-	} else {
-		// 默认最近30天
+	}
+
+	// 如果都失败，使用默认值
+	if !dateRangeParsed {
 		endDate = time.Now()
 		startDate = endDate.AddDate(0, 0, -30)
 	}
