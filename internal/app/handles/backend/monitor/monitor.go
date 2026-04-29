@@ -28,13 +28,13 @@ func Home(c *gin.Context) {
 }
 
 func List(c *gin.Context) {
-	var field form.Page
+	var field form.MonitorList
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
 
-	result, count, err := db.GetMonitorList(field.Page, field.Limit)
+	result, count, err := db.GetMonitorListByArgs(field)
 	if err != nil {
 		common.ErrorResp(c, err, -1)
 		return

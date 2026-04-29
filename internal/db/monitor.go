@@ -4,10 +4,59 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"uptimepk/internal/app/entity"
+	"uptimepk/internal/app/form"
 	"uptimepk/internal/model"
 )
+
+// 应用监控过滤器
+func applyMonitorFilters(query *gorm.DB, field form.MonitorList) *gorm.DB {
+	// 条件查询: key like content
+	if field.Key != "" {
+		query = query.Where("name LIKE ?", "%"+field.Key+"%").Where("mark LIKE ?", "%"+field.Key+"%")
+
+	}
+
+	if field.Gid > 0 {
+		query = query.Where("gid = ? ", field.Gid)
+	}
+
+	return query
+}
+
+func GetMonitorListByArgs(field form.MonitorList) ([]entity.MonitorEntityList, int64, error) {
+	page := field.Page.Page
+	size := field.Page.Limit
+
+	// 应用过滤器
+	baseQuery := applyMonitorFilters(db.Model(&model.Monitor{}), field)
+
+	var count int64
+	if err := baseQuery.Where("is_deleted=?", 0).Count(&count).Error; err != nil {
+		return nil, 0, errors.Wrapf(err, "failed get monitor count")
+	}
+
+	var list []model.Monitor
+	if err := baseQuery.Order(columnName("create_time")+" desc").Where("is_deleted=?", 0).Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+		return nil, 0, errors.Wrap(err, "failed get monitor list")
+	}
+
+	if len(list) == 0 {
+		return []entity.MonitorEntityList{}, count, nil
+	}
+
+	result := make([]entity.MonitorEntityList, len(list))
+	for i, item := range list {
+		loglist, _, _ := GetMonitorLogListByMonitorID(item.ID, 1, 10)
+		result[i] = entity.MonitorEntityList{
+			Monitor: item,
+			LogList: loglist,
+		}
+	}
+	return result, count, nil
+}
 
 func GetMonitorList(page, size int) ([]entity.MonitorEntityList, int64, error) {
 	mm := db.Model(&model.Monitor{})

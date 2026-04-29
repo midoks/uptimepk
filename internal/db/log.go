@@ -11,7 +11,7 @@ import (
 	"uptimepk/internal/model"
 )
 
-// applyLogFilters 应用日志查询过滤器
+// 应用日志查询过滤器
 func applyLogFilters(query *gorm.DB, field form.LogList) *gorm.DB {
 	// 条件查询: key like content
 	if field.Key != "" {

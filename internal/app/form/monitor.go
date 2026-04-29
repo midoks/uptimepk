@@ -41,7 +41,8 @@ type MonitorNodeDelete struct {
 	NodeID int64 `form:"node_id"`
 }
 
-type MonitorNodeList struct {
+type MonitorList struct {
 	Page
-	ClusterID int64 `form:"cluster_id"`
+	Gid int64  `form:"gid"`
+	Key string `form:"key"`
 }
