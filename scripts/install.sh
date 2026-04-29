@@ -17,8 +17,8 @@ NC='\033[0m' # No Color
 VERSION="v1.0.6"
 REPO="midoks/uptimepk"
 INSTALL_DIR="/opt/uptimepk"
-DATA_DIR="/var/lib/uptimepk"
-CONF_FILE="/etc/uptimepk.conf"
+DATA_DIR="${INSTALL_DIR}/custom/data"
+CONF_FILE="${INSTALL_DIR}/custom/conf"
 SERVICE_NAME="uptimepk"
 
 # 检测架构
@@ -64,8 +64,6 @@ install_deps() {
 create_dirs() {
     echo -e "${YELLOW}创建目录结构...${NC}"
     mkdir -p "$INSTALL_DIR"
-    mkdir -p "$DATA_DIR"
-    mkdir -p /etc/uptimepk
 }
 
 # 下载并解压
@@ -88,174 +86,13 @@ download_and_extract() {
     echo -e "${GREEN}解压完成${NC}"
 }
 
-# 创建配置文件
-create_config() {
-    echo -e "${YELLOW}创建配置文件...${NC}"
-    
-    # 询问用户配置
-    read -p "请输入监听端口 (默认: 9191): " PORT
-    PORT=${PORT:-9191}
-    
-    read -p "请输入管理员用户名 (默认: admin): " ADMIN_USER
-    ADMIN_USER=${ADMIN_USER:-admin}
-    
-    read -p "请输入管理员密码 (默认: admin123): " ADMIN_PASS
-    ADMIN_PASS=${ADMIN_PASS:-admin123}
-    
-    cat > "$CONF_FILE" << EOF
-# uptimepk 配置文件
-
-# 服务配置
-[server]
-port = ${PORT}
-admin_path = "admin"
-
-# 数据库配置
-[database]
-type = "sqlite"
-path = "${DATA_DIR}/uptimepk.db"
-
-# 管理员配置
-[admin]
-username = "${ADMIN_USER}"
-password = "${ADMIN_PASS}"
-
-# 日志配置
-[log]
-level = "info"
-path = "${DATA_DIR}/logs"
-EOF
-    
-    echo -e "${GREEN}配置文件创建完成${NC}"
-}
-
 # 创建系统服务
 create_service() {
     echo -e "${YELLOW}创建系统服务...${NC}"
     
-    if [ "$OS" = "centos" ]; then
-        # CentOS 7+ systemd
-        cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
-[Unit]
-Description=uptimepk - Website monitoring service
-After=network.target
+    cd $INSTALL_DIR && ./uptimepk install
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=${INSTALL_DIR}
-ExecStart=${INSTALL_DIR}/uptimepk -c ${CONF_FILE}
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-        systemctl daemon-reload
-        systemctl enable ${SERVICE_NAME}
-    elif [ "$OS" = "debian" ]; then
-        # Debian/Ubuntu systemd
-        cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
-[Unit]
-Description=uptimepk - Website monitoring service
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=${INSTALL_DIR}
-ExecStart=${INSTALL_DIR}/uptimepk -c ${CONF_FILE}
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-        systemctl daemon-reload
-        systemctl enable ${SERVICE_NAME}
-    else
-        # 通用 init.d 脚本
-        cat > /etc/init.d/${SERVICE_NAME} << 'EOF'
-#!/bin/bash
-# chkconfig: 2345 90 10
-# description: uptimepk - Website monitoring service
-
-### BEGIN INIT INFO
-# Provides:          uptimepk
-# Required-Start:    $network
-# Required-Stop:     $network
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: Start/stop uptimepk monitoring service
-### END INIT INFO
-
-INSTALL_DIR="/opt/uptimepk"
-CONF_FILE="/etc/uptimepk.conf"
-PID_FILE="/var/run/uptimepk.pid"
-
-case "$1" in
-    start)
-        echo "Starting uptimepk..."
-        cd $INSTALL_DIR && nohup ./uptimepk -c $CONF_FILE > /var/log/uptimepk.log 2>&1 &
-        echo $! > $PID_FILE
-        ;;
-    stop)
-        echo "Stopping uptimepk..."
-        kill -TERM $(cat $PID_FILE) 2>/dev/null || true
-        rm -f $PID_FILE
-        ;;
-    restart)
-        $0 stop
-        sleep 2
-        $0 start
-        ;;
-    status)
-        if [ -f $PID_FILE ] && kill -0 $(cat $PID_FILE) 2>/dev/null; then
-            echo "uptimepk is running"
-            exit 0
-        else
-            echo "uptimepk is not running"
-            exit 1
-        fi
-        ;;
-    *)
-        echo "Usage: $0 {start|stop|restart|status}"
-        exit 1
-        ;;
-esac
-exit 0
-EOF
-        chmod +x /etc/init.d/${SERVICE_NAME}
-        if command -v chkconfig &>/dev/null; then
-            chkconfig --add ${SERVICE_NAME}
-        fi
-    fi
-    
     echo -e "${GREEN}服务创建完成${NC}"
-}
-
-# 启动服务
-start_service() {
-    echo -e "${YELLOW}启动服务...${NC}"
-    if [ "$OS" = "centos" ] || [ "$OS" = "debian" ]; then
-        systemctl start ${SERVICE_NAME}
-        sleep 3
-        if systemctl is-active --quiet ${SERVICE_NAME}; then
-            echo -e "${GREEN}服务启动成功${NC}"
-        else
-            echo -e "${RED}服务启动失败，请检查日志${NC}"
-            exit 1
-        fi
-    else
-        /etc/init.d/${SERVICE_NAME} start
-        sleep 3
-        if /etc/init.d/${SERVICE_NAME} status; then
-            echo -e "${GREEN}服务启动成功${NC}"
-        else
-            echo -e "${RED}服务启动失败，请检查日志${NC}"
-            exit 1
-        fi
-    fi
 }
 
 # 显示安装信息
@@ -275,22 +112,11 @@ show_info() {
     echo -e "  http://$(hostname -I | awk '{print $1}'):${PORT}"
     echo -e "  管理后台: http://$(hostname -I | awk '{print $1}'):${PORT}/admin"
     echo ""
-    echo -e "${YELLOW}登录信息:${NC}"
-    echo -e "  用户名: ${ADMIN_USER}"
-    echo -e "  密码: ${ADMIN_PASS}"
-    echo ""
     echo -e "${YELLOW}服务管理:${NC}"
-    if [ "$OS" = "centos" ] || [ "$OS" = "debian" ]; then
-        echo -e "  启动: systemctl start ${SERVICE_NAME}"
-        echo -e "  停止: systemctl stop ${SERVICE_NAME}"
-        echo -e "  重启: systemctl restart ${SERVICE_NAME}"
-        echo -e "  状态: systemctl status ${SERVICE_NAME}"
-    else
-        echo -e "  启动: /etc/init.d/${SERVICE_NAME} start"
-        echo -e "  停止: /etc/init.d/${SERVICE_NAME} stop"
-        echo -e "  重启: /etc/init.d/${SERVICE_NAME} restart"
-        echo -e "  状态: /etc/init.d/${SERVICE_NAME} status"
-    fi
+    echo -e "  启动: systemctl start ${SERVICE_NAME}"
+    echo -e "  停止: systemctl stop ${SERVICE_NAME}"
+    echo -e "  重启: systemctl restart ${SERVICE_NAME}"
+    echo -e "  状态: systemctl status ${SERVICE_NAME}"
     echo ""
     echo -e "${GREEN}========================================${NC}"
 }
@@ -322,14 +148,11 @@ main() {
     # 下载解压
     download_and_extract
     
-    # 创建配置
-    create_config
-    
     # 创建服务
     create_service
     
     # 启动服务
-    start_service
+    systemctl start uptimepk
     
     # 显示信息
     show_info
