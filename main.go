@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"log"
 	"os"
 
@@ -11,15 +14,16 @@ import (
 )
 
 const (
-	Version = "1.0.5"
+	Version = "1.0.6"
 	AppName = "uptimepk"
+	CodeDev = false
 )
 
 func init() {
 	conf.App.Version = Version
-	// if !(conf.App.RunMode == "prod") {
-	// 	conf.App.Version = fmt.Sprintf("%s%d", Version, time.Now().Unix())
-	// }
+	if CodeDev {
+		conf.App.Version = fmt.Sprintf("%s%d", Version, time.Now().Unix())
+	}
 	conf.App.Name = AppName
 }
 
