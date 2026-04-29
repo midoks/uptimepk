@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"uptimepk/internal/db"
@@ -44,12 +45,75 @@ func (t *MonitorTask) Run() error {
 	}
 }
 
+// DNS缓存
+var dnsCache = struct {
+	sync.RWMutex
+	data map[string]string
+}{
+	data: make(map[string]string),
+}
+
+// getHostIP 获取主机IP地址，带缓存
+func getHostIP(host string) string {
+	// 提取主机名（去除端口）
+	hostname := host
+	if strings.Contains(host, ":") {
+		parts := strings.Split(host, ":")
+		hostname = parts[0]
+	}
+
+	// 检查是否是IP地址
+	ip := net.ParseIP(hostname)
+	if ip != nil {
+		return ip.String()
+	}
+
+	// 尝试从缓存获取
+	dnsCache.RLock()
+	cachedIP, exists := dnsCache.data[hostname]
+	dnsCache.RUnlock()
+	if exists {
+		return cachedIP
+	}
+
+	// 执行DNS查询
+	ips, err := net.LookupIP(hostname)
+	if err != nil || len(ips) == 0 {
+		return ""
+	}
+
+	// 缓存结果（5分钟过期）
+	ipStr := ips[0].String()
+	dnsCache.Lock()
+	dnsCache.data[hostname] = ipStr
+	dnsCache.Unlock()
+
+	// 启动后台清理缓存
+	go func() {
+		time.Sleep(5 * time.Minute)
+		dnsCache.Lock()
+		delete(dnsCache.data, hostname)
+		dnsCache.Unlock()
+	}()
+
+	return ipStr
+}
+
 // 全局共享的HTTP客户端
 var httpClient *http.Client
 
 func init() {
 	// 初始化全局HTTP客户端，使用优化的配置
 	httpClient = utils.NewHTTPClient(30 * time.Second)
+}
+
+// HTTP客户端缓存池
+var httpClientPool = sync.Pool{
+	New: func() interface{} {
+		return &http.Client{
+			Transport: httpClient.Transport,
+		}
+	},
 }
 
 // runHttpMonitor 执行HTTP监控
@@ -61,28 +125,18 @@ func (t *MonitorTask) runHttpMonitor() error {
 		return err
 	}
 
-	// 记录重定向次数
-	redirectCount := 0
+	// 从池中获取HTTP客户端
+	client := httpClientPool.Get().(*http.Client)
+	defer httpClientPool.Put(client)
 
-	// 使用全局共享的HTTP客户端，设置超时时间
-	client := &http.Client{
-		Timeout:   time.Duration(t.monitor.Timeout) * time.Second,
-		Transport: httpClient.Transport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			redirectCount = len(via)
-			if len(via) >= t.monitor.MaxRetries {
-				return http.ErrUseLastResponse
-			}
-			return nil
-		},
-	}
+	// 设置超时时间
+	client.Timeout = time.Duration(t.monitor.Timeout) * time.Second
 
 	// 初始化监控日志参数
 	isValid := false
 	size := 0
 	var duration time.Duration
 	errorMsg := ""
-	var resp *http.Response
 
 	// 发送HTTP请求
 	startTime := time.Now()
@@ -98,33 +152,20 @@ func (t *MonitorTask) runHttpMonitor() error {
 		req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		req.Header.Set("Pragma", "no-cache")
 		req.Header.Set("Expires", "0")
-		resp, err = client.Do(req)
+
+		resp, err := client.Do(req)
 		if err != nil {
 			// 获取目标IP地址
 			host := req.Host
-			if host == "" {
-				if req.URL != nil {
-					host = req.URL.Host
-				}
+			if host == "" && req.URL != nil {
+				host = req.URL.Host
 			}
 			if host != "" {
-				// 提取主机名（去除端口）
-				hostname := host
-				if strings.Contains(host, ":") {
-					parts := strings.Split(host, ":")
-					hostname = parts[0]
-				}
-				// 判断是否是IP地址
-				ip := net.ParseIP(hostname)
-				if ip != nil {
-					errorMsg = fmt.Sprintf("%s (IP: %s)", err.Error(), ip.String())
+				ip := getHostIP(host)
+				if ip != "" {
+					errorMsg = fmt.Sprintf("%s (IP: %s)", err.Error(), ip)
 				} else {
-					ips, lookupErr := net.LookupIP(hostname)
-					if lookupErr == nil && len(ips) > 0 {
-						errorMsg = fmt.Sprintf("%s (IP: %s)", err.Error(), ips[0].String())
-					} else {
-						errorMsg = fmt.Sprintf("%s (Host: %s)", err.Error(), host)
-					}
+					errorMsg = fmt.Sprintf("%s (Host: %s)", err.Error(), host)
 				}
 			} else {
 				errorMsg = err.Error()
@@ -132,50 +173,29 @@ func (t *MonitorTask) runHttpMonitor() error {
 		} else {
 			defer resp.Body.Close()
 
-			// 获取目标IP地址
-			host := req.Host
-			dest_ip := ""
-			if host != "" {
-				// 提取主机名（去除端口）
-				hostname := host
-				if strings.Contains(host, ":") {
-					parts := strings.Split(host, ":")
-					hostname = parts[0]
-				}
-				// 判断是否是IP地址
-				ip := net.ParseIP(hostname)
-				if ip != nil {
-					dest_ip = ip.String()
-				} else {
-					ips, lookupErr := net.LookupIP(hostname)
-					if lookupErr == nil && len(ips) > 0 {
-						dest_ip = ips[0].String()
-					}
-				}
-			}
-			// 获取目标IP地址 end
-
 			duration = time.Since(startTime)
+
 			// 使用 io.LimitReader 限制读取大小，防止服务器发送过多数据
 			maxSize := int64(10 * 1024 * 1024) // 10MB
 			body, err := io.ReadAll(io.LimitReader(resp.Body, maxSize))
-			if err != nil {
-				// 忽略 Content-Length 不匹配的错误
-				if !strings.Contains(err.Error(), "server replied with more than declared Content-Length") {
-					errorMsg = err.Error()
-				}
+			if err != nil && !strings.Contains(err.Error(), "server replied with more than declared Content-Length") {
+				errorMsg = err.Error()
 			}
+
 			// 检查状态码
 			isValid = resp.StatusCode >= 200 && resp.StatusCode < 300
 			size = len(body)
 
-			//检查内容
-			if params.CheckContent != "" {
-				bodyStr := string(body)
-				// fmt.Println("bodyStr:", bodyStr)
-				if !strings.Contains(bodyStr, params.CheckContent) {
+			// 检查内容
+			if params.CheckContent != "" && isValid {
+				if !strings.Contains(string(body), params.CheckContent) {
 					isValid = false
-					errorMsg = fmt.Sprintf("IP:%s|获取内容成功,但未匹配到字符串: %s", dest_ip, params.CheckContent)
+					host := req.Host
+					if host == "" && req.URL != nil {
+						host = req.URL.Host
+					}
+					ip := getHostIP(host)
+					errorMsg = fmt.Sprintf("IP:%s|获取内容成功,但未匹配到字符串: %s", ip, params.CheckContent)
 				}
 			}
 		}
@@ -184,9 +204,9 @@ func (t *MonitorTask) runHttpMonitor() error {
 	// 记录监控日志
 	speedMs := 0.0
 	if duration > 0 {
-		speedMs = duration.Seconds() * 1000 // 转换为毫秒
+		speedMs = duration.Seconds() * 1000
 	}
-	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, redirectCount); err != nil {
+	if err := db.CreateMonitorLog(t.monitor.ID, isValid, size, speedMs, errorMsg, 0); err != nil {
 		return err
 	}
 

@@ -76,6 +76,7 @@ func PostAdd(c *gin.Context) {
 		MaxRetries:   field.MaxRetries,
 		Timeout:      field.Timeout,
 		Gid:          field.Gid,
+		Mark:         field.Mark,
 		CreateTime:   time.Now().Unix(),
 	}
 

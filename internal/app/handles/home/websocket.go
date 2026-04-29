@@ -449,13 +449,24 @@ func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 		UpdatedAt: time.Now().Unix(),
 	}
 
-	latestLog, err := db.GetMonitorLatestLog(monitorID)
-	if err == nil && latestLog != nil {
+	// 优先从今天的日志中获取最新状态
+	if len(logs) > 0 {
+		latestLog := logs[len(logs)-1]
 		status.IsValid = latestLog.IsValid
 		status.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
 		status.Speed = latestLog.Speed
 		status.Size = latestLog.Size
 		status.ErrorMsg = latestLog.ErrorMsg
+	} else {
+		// 如果今天没有日志，查询历史数据
+		latestLog, err := db.GetMonitorLatestLog(monitorID)
+		if err == nil && latestLog != nil {
+			status.IsValid = latestLog.IsValid
+			status.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
+			status.Speed = latestLog.Speed
+			status.Size = latestLog.Size
+			status.ErrorMsg = latestLog.ErrorMsg
+		}
 	}
 
 	return status, nil
@@ -484,8 +495,11 @@ func GetMonitorStatusList() ([]MonitorStatus, error) {
 	}
 
 	statusList := make([]MonitorStatus, 0, len(monitors))
-	for _, monitor := range monitors {
-		status, err := GetMonitorStatusInit(monitor.ID)
+	todayInt := utils.TodayToDateInt()
+
+	for i := range monitors {
+		monitor := &monitors[i]
+		status, err := getMonitorStatusWithCache(monitor, todayInt)
 		if err != nil {
 			continue
 		}
@@ -493,6 +507,42 @@ func GetMonitorStatusList() ([]MonitorStatus, error) {
 	}
 
 	return statusList, nil
+}
+
+// getMonitorStatusWithCache 带缓存的监控状态获取
+func getMonitorStatusWithCache(monitor *model.Monitor, todayInt int64) (MonitorStatus, error) {
+	logs, err := db.GetMonitorLogListByDate(monitor.ID, todayInt, 0, MonitorBatchSize)
+	if err != nil {
+		logs = []model.MonitorLog{}
+	}
+
+	status := MonitorStatus{
+		ID:        monitor.ID,
+		Name:      monitor.Name,
+		Gid:       monitor.Gid,
+		Type:      monitor.Type,
+		Status:    monitor.Status != 0,
+		IsValid:   false,
+		Latency:   "",
+		Speed:     0,
+		Size:      0,
+		ErrorMsg:  "",
+		List:      GetMonitorHourLogsFromLogs(logs),
+		UpRate:    calculateUpRate(logs),
+		UpdatedAt: time.Now().Unix(),
+	}
+
+	// 优先从今天的日志中获取最新状态
+	if len(logs) > 0 {
+		latestLog := logs[len(logs)-1]
+		status.IsValid = latestLog.IsValid
+		status.Latency = fmt.Sprintf("%.2fms", latestLog.Speed)
+		status.Speed = latestLog.Speed
+		status.Size = latestLog.Size
+		status.ErrorMsg = latestLog.ErrorMsg
+	}
+
+	return status, nil
 }
 
 func BroadcastMonitorStatus() {
