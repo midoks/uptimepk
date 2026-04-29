@@ -350,8 +350,6 @@ func (c *WSClient) readPump() {
 			}
 
 			todayInt := message.Day
-
-			fmt.Println("received append_history_data :", message.MonitorID, todayInt, message.LastLogID)
 			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 10)
 
 			if err == nil {
