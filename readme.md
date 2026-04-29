@@ -2,6 +2,10 @@
 
 时间网格图风格的监控系统
 
+## 安装脚本
+```
+curl -fsSL https://raw.githubusercontent.com/midoks/uptimepk/master/scripts/install.sh | bash
+```
 
 # dev
 ```
