@@ -40,7 +40,7 @@ type MonitorStatus struct {
 	Size      int64     `json:"size"`
 	ErrorMsg  string    `json:"error_msg"`
 	List      []ListLog `json:"list"`
-	UpRate    float64   `json:"up_rate"` // 今天的可用率
+	UpRate    float64   `json:"up_rate"`
 	UpdatedAt int64     `json:"updated_at"`
 }
 
@@ -82,7 +82,7 @@ type WSHub struct {
 
 var hub = &WSHub{
 	clients:    make(map[*WSClient]bool),
-	broadcast:  make(chan []byte),
+	broadcast:  make(chan []byte, 1024),
 	register:   make(chan *WSClient),
 	unregister: make(chan *WSClient),
 }
@@ -117,18 +117,22 @@ func (c *WSClient) readPump() {
 		c.conn.Close()
 	}()
 
+	c.conn.SetReadLimit(512)
+	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
 	for {
 		_, msg, err := c.conn.ReadMessage()
-
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				fmt.Printf("error: %v\n", err)
+				fmt.Printf("websocket error: %v\n", err)
 			}
 			break
 		}
-		// fmt.Println("received message:", string(msg))
 
-		// 解析 JSON 消息
 		var message struct {
 			Type      string `json:"type"`
 			GroupID   int64  `json:"group_id"`
@@ -136,229 +140,218 @@ func (c *WSClient) readPump() {
 			LastLogID int64  `json:"last_log_id"`
 			Day       int64  `json:"day"`
 		}
+
 		if err := json.Unmarshal(msg, &message); err != nil {
-			fmt.Println("failed to parse message:", err)
+			fmt.Printf("failed to parse message: %v, msg: %s\n", err, string(msg))
 			continue
 		}
 
-		if message.Type == "init_monitor_groups" {
-			data := map[string]interface{}{
-				"type": "init_monitor_groups",
-			}
-			if groups, err := db.GetMonitorGroupAll(); err == nil {
-				data["groups"] = groups
-			}
-			responseMsg, _ := json.Marshal(data)
-			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
-		} else if message.Type == "init_monitor_data" {
-			data := map[string]interface{}{
-				"type":       "init_monitor_data",
-				"monitor_id": int64(message.MonitorID),
-			}
-
-			if message.MonitorID > 0 {
-				status, err := GetMonitorStatusInit(message.MonitorID)
-				// fmt.Println("status:", status)
-				if err != nil {
-					fmt.Println("failed to get monitor status init:", err)
-					return
-				}
-
-				data["data"] = status
-				initMessage, err := json.Marshal(data)
-				if err != nil {
-					fmt.Println("failed to get monitor status init list:", err)
-					return
-				}
-
-				c.conn.WriteMessage(websocket.TextMessage, initMessage)
-			} else {
-				// 处理初始化监控数据
-				statusList, err := GetMonitorStatusList()
-				if err != nil {
-					fmt.Println("failed to get monitor status list:", err)
-					return
-				}
-
-				data["data"] = statusList
-
-				initMessage, _ := json.Marshal(data)
-				c.conn.WriteMessage(websocket.TextMessage, initMessage)
-			}
-
-		} else if message.Type == "append_monitor_data" {
-			data := map[string]interface{}{
-				"type":       "append_monitor_data",
-				"monitor_id": int64(message.MonitorID),
-			}
-
-			todayInt := utils.TodayToDateInt()
-			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, MonitorBatchSize)
-
-			if err == nil {
-				data["list"] = logs
-			}
-
-			responseMsg, _ := json.Marshal(data)
-			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
-		} else if message.Type == "init_group_monitors" {
-			// 发送分组数据
-			var groups []model.MonitorGroup
-			groupID := message.GroupID
-
-			if groupID <= 0 {
-				return
-			}
-			// 如果指定了分组ID，只获取该分组
-			group, err := db.GetMonitorGroupByID(groupID)
-			if err == nil {
-				groups = []model.MonitorGroup{*group}
-			}
-
-			// 获取每个分组的监控状态
-			groupStatus := make([]map[string]interface{}, 0)
-			for _, group := range groups {
-				monitors, err := db.GetMonitorListByGid(group.ID)
-				if err != nil {
-					continue
-				}
-
-				monitorStatus := make([]MonitorStatus, 0)
-				for _, monitor := range monitors {
-					status, err := GetMonitorStatusInit(monitor.ID)
-					if err != nil {
-						continue
-					}
-					monitorStatus = append(monitorStatus, status)
-				}
-
-				groupData := map[string]interface{}{
-					"id":       group.ID,
-					"name":     group.Name,
-					"monitors": monitorStatus,
-				}
-				groupStatus = append(groupStatus, groupData)
-			}
-
-			data := map[string]interface{}{
-				"type": "init_group_monitors",
-				"data": groupStatus,
-			}
-
-			message, err := json.Marshal(data)
-			if err != nil {
-				return
-			}
-			c.conn.WriteMessage(websocket.TextMessage, message)
-		} else if message.Type == "init_history_day" {
-
-			weekLogs, err := db.GetMonitorLogsByDateRangeByPos(message.MonitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, MonitorBatchSize)
-			if err != nil {
-				weekLogs = []model.MonitorLog{}
-			}
-
-			logsByDay := make(map[string][]map[string]interface{})
-			for _, log := range weekLogs {
-				dayKey := time.Unix(log.CreateTime, 0).Format("2006-01-02")
-				logData := map[string]interface{}{
-					"time":        time.Unix(log.CreateTime, 0).Format("15:04:05"),
-					"is_valid":    log.IsValid,
-					"error_msg":   log.ErrorMsg,
-					"speed":       log.Speed,
-					"size":        log.Size,
-					"create_time": log.CreateTime,
-				}
-				logsByDay[dayKey] = append(logsByDay[dayKey], logData)
-			}
-
-			for day, logs := range logsByDay {
-				sort.Slice(logs, func(i, j int) bool {
-					return logs[i]["create_time"].(int64) < logs[j]["create_time"].(int64)
-				})
-				for i := range logs {
-					delete(logs[i], "create_time")
-				}
-				logsByDay[day] = logs
-			}
-
-			type DayStat struct {
-				Date      string                   `json:"date"`
-				Total     int                      `json:"total"`
-				UpCount   int                      `json:"up_count"`
-				DownCount int                      `json:"down_count"`
-				UpRate    float64                  `json:"up_rate"`
-				List      []map[string]interface{} `json:"list"`
-			}
-
-			var dayStats []DayStat
-			for day, list := range logsByDay {
-				stat := DayStat{
-					Date:  day,
-					Total: len(list),
-					List:  list,
-				}
-				for _, log := range list {
-					if log["is_valid"].(bool) {
-						stat.UpCount++
-					} else {
-						stat.DownCount++
-					}
-				}
-				if stat.Total > 0 {
-					stat.UpRate = float64(stat.UpCount) / float64(stat.Total) * 100
-				}
-				dayStats = append(dayStats, stat)
-			}
-
-			today := time.Now().Format("2006-01-02")
-			for _, stat := range dayStats {
-				if stat.Date == today {
-					continue
-				}
-				data := map[string]interface{}{
-					"type":       "init_history_day",
-					"date":       stat.Date,
-					"total":      stat.Total,
-					"up_count":   stat.UpCount,
-					"down_count": stat.DownCount,
-					"up_rate":    stat.UpRate,
-					"list":       stat.List,
-				}
-				msg, err := json.Marshal(data)
-				if err != nil {
-					continue
-				}
-				c.conn.WriteMessage(websocket.TextMessage, msg)
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			doneData := map[string]interface{}{
-				"type":       "history_done",
-				"total_days": len(dayStats),
-			}
-			doneMsg, err := json.Marshal(doneData)
-			if err != nil {
-				fmt.Println("Error marshaling history_done:", err)
-				return
-			}
-			c.conn.WriteMessage(websocket.TextMessage, doneMsg)
-		} else if message.Type == "append_history_data" {
-			data := map[string]interface{}{
-				"type":       "append_history_data",
-				"monitor_id": int64(message.MonitorID),
-				"day":        int64(message.Day),
-			}
-
-			todayInt := message.Day
-			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, MonitorBatchSize)
-
-			if err == nil {
-				data["list"] = logs
-			}
-
-			responseMsg, _ := json.Marshal(data)
-			c.conn.WriteMessage(websocket.TextMessage, responseMsg)
+		switch message.Type {
+		case "init_monitor_groups":
+			handleInitMonitorGroups(c)
+		case "init_monitor_data":
+			handleInitMonitorData(c, message.MonitorID)
+		case "append_monitor_data":
+			handleAppendMonitorData(c, message.MonitorID, message.LastLogID)
+		case "init_group_monitors":
+			handleInitGroupMonitors(c, message.GroupID)
+		case "init_history_day":
+			handleInitHistoryDay(c, message.MonitorID)
+		case "append_history_data":
+			handleAppendHistoryData(c, message.MonitorID, message.Day, message.LastLogID)
 		}
+	}
+}
+
+func handleInitMonitorGroups(c *WSClient) {
+	data := map[string]interface{}{"type": "init_monitor_groups"}
+	if groups, err := db.GetMonitorGroupAll(); err == nil {
+		data["groups"] = groups
+	}
+	sendWSMessage(c, data)
+}
+
+func handleInitMonitorData(c *WSClient, monitorID int64) {
+	data := map[string]interface{}{
+		"type":       "init_monitor_data",
+		"monitor_id": monitorID,
+	}
+
+	if monitorID > 0 {
+		status, err := GetMonitorStatusInit(monitorID)
+		if err != nil {
+			fmt.Printf("failed to get monitor status init: %v\n", err)
+			return
+		}
+		data["data"] = status
+	} else {
+		statusList, err := GetMonitorStatusList()
+		if err != nil {
+			fmt.Printf("failed to get monitor status list: %v\n", err)
+			return
+		}
+		data["data"] = statusList
+	}
+
+	sendWSMessage(c, data)
+}
+
+func handleAppendMonitorData(c *WSClient, monitorID, lastLogID int64) {
+	data := map[string]interface{}{
+		"type":       "append_monitor_data",
+		"monitor_id": monitorID,
+	}
+
+	todayInt := utils.TodayToDateInt()
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, lastLogID, MonitorBatchSize)
+	if err == nil {
+		data["list"] = logs
+	}
+
+	sendWSMessage(c, data)
+}
+
+func handleInitGroupMonitors(c *WSClient, groupID int64) {
+	if groupID <= 0 {
+		return
+	}
+
+	group, err := db.GetMonitorGroupByID(groupID)
+	if err != nil {
+		fmt.Printf("failed to get monitor group: %v\n", err)
+		return
+	}
+
+	monitors, err := db.GetMonitorListByGid(groupID)
+	if err != nil {
+		fmt.Printf("failed to get monitors by group: %v\n", err)
+		return
+	}
+
+	monitorStatus := make([]MonitorStatus, 0, len(monitors))
+	for _, monitor := range monitors {
+		status, err := GetMonitorStatusInit(monitor.ID)
+		if err != nil {
+			continue
+		}
+		monitorStatus = append(monitorStatus, status)
+	}
+
+	groupData := map[string]interface{}{
+		"id":       group.ID,
+		"name":     group.Name,
+		"monitors": monitorStatus,
+	}
+
+	data := map[string]interface{}{
+		"type": "init_group_monitors",
+		"data": []map[string]interface{}{groupData},
+	}
+
+	sendWSMessage(c, data)
+}
+
+func handleInitHistoryDay(c *WSClient, monitorID int64) {
+	weekLogs, err := db.GetMonitorLogsByDateRangeByPos(monitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, MonitorBatchSize)
+	if err != nil {
+		weekLogs = []model.MonitorLog{}
+	}
+
+	logsByDay := make(map[string][]map[string]interface{})
+	for _, log := range weekLogs {
+		dayKey := time.Unix(log.CreateTime, 0).Format("2006-01-02")
+		logData := map[string]interface{}{
+			"time":        time.Unix(log.CreateTime, 0).Format("15:04:05"),
+			"is_valid":    log.IsValid,
+			"error_msg":   log.ErrorMsg,
+			"speed":       log.Speed,
+			"size":        log.Size,
+			"create_time": log.CreateTime,
+		}
+		logsByDay[dayKey] = append(logsByDay[dayKey], logData)
+	}
+
+	for day, logs := range logsByDay {
+		sort.Slice(logs, func(i, j int) bool {
+			return logs[i]["create_time"].(int64) < logs[j]["create_time"].(int64)
+		})
+		for i := range logs {
+			delete(logs[i], "create_time")
+		}
+		logsByDay[day] = logs
+	}
+
+	type DayStat struct {
+		Date      string                   `json:"date"`
+		Total     int                      `json:"total"`
+		UpCount   int                      `json:"up_count"`
+		DownCount int                      `json:"down_count"`
+		UpRate    float64                  `json:"up_rate"`
+		List      []map[string]interface{} `json:"list"`
+	}
+
+	var dayStats []DayStat
+	for day, list := range logsByDay {
+		stat := DayStat{
+			Date:  day,
+			Total: len(list),
+			List:  list,
+		}
+		stat.UpCount, stat.DownCount = countValidLogs(list)
+		if stat.Total > 0 {
+			stat.UpRate = float64(stat.UpCount) / float64(stat.Total) * 100
+		}
+		dayStats = append(dayStats, stat)
+	}
+
+	today := time.Now().Format("2006-01-02")
+	for _, stat := range dayStats {
+		if stat.Date == today {
+			continue
+		}
+		data := map[string]interface{}{
+			"type":       "init_history_day",
+			"date":       stat.Date,
+			"total":      stat.Total,
+			"up_count":   stat.UpCount,
+			"down_count": stat.DownCount,
+			"up_rate":    stat.UpRate,
+			"list":       stat.List,
+		}
+		sendWSMessage(c, data)
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	doneData := map[string]interface{}{
+		"type":       "history_done",
+		"total_days": len(dayStats),
+	}
+	sendWSMessage(c, doneData)
+}
+
+func handleAppendHistoryData(c *WSClient, monitorID, day, lastLogID int64) {
+	data := map[string]interface{}{
+		"type":       "append_history_data",
+		"monitor_id": monitorID,
+		"day":        day,
+	}
+
+	logs, err := db.GetMonitorLogListByDate(monitorID, day, lastLogID, MonitorBatchSize)
+	if err == nil {
+		data["list"] = logs
+	}
+
+	sendWSMessage(c, data)
+}
+
+func sendWSMessage(c *WSClient, data map[string]interface{}) {
+	msg, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("failed to marshal message: %v\n", err)
+		return
+	}
+	if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+		fmt.Printf("failed to write message: %v\n", err)
 	}
 }
 
@@ -374,7 +367,6 @@ func (c *WSClient) writePump() {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -385,7 +377,6 @@ func (c *WSClient) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte("\n"))
@@ -407,6 +398,7 @@ func (c *WSClient) writePump() {
 func WSHandler(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
+		fmt.Printf("failed to upgrade connection: %v\n", err)
 		return
 	}
 
@@ -438,9 +430,8 @@ func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 		return MonitorStatus{}, err
 	}
 
-	// 获取今天的日志（只查询一次）
 	todayInt := utils.TodayToDateInt()
-	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, 1)
+	logs, err := db.GetMonitorLogListByDate(monitorID, todayInt, 0, MonitorBatchSize)
 
 	status := MonitorStatus{
 		ID:        monitor.ID,
@@ -454,7 +445,7 @@ func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 		Size:      0,
 		ErrorMsg:  "",
 		List:      GetMonitorHourLogsFromLogs(logs),
-		UpRate:    0,
+		UpRate:    calculateUpRate(logs),
 		UpdatedAt: time.Now().Unix(),
 	}
 
@@ -467,21 +458,9 @@ func GetMonitorStatusInit(monitorID int64) (MonitorStatus, error) {
 		status.ErrorMsg = latestLog.ErrorMsg
 	}
 
-	// 计算今天的可用率
-	if err == nil && len(logs) > 0 {
-		upCount := 0
-		for _, log := range logs {
-			if log.IsValid {
-				upCount++
-			}
-		}
-		status.UpRate = float64(upCount) / float64(len(logs)) * 100
-	}
-
 	return status, nil
 }
 
-// GetMonitorHourLogsFromLogs 从已有的日志列表生成小时日志
 func GetMonitorHourLogsFromLogs(logs []model.MonitorLog) []ListLog {
 	listLogs := make([]ListLog, 0, len(logs))
 	for _, log := range logs {
@@ -528,4 +507,29 @@ func BroadcastMonitorStatus() {
 			delete(hub.clients, client)
 		}
 	}
+}
+
+func calculateUpRate(logs []model.MonitorLog) float64 {
+	if len(logs) == 0 {
+		return 0
+	}
+	upCount := 0
+	for _, log := range logs {
+		if log.IsValid {
+			upCount++
+		}
+	}
+	return float64(upCount) / float64(len(logs)) * 100
+}
+
+func countValidLogs(logs []map[string]interface{}) (int, int) {
+	up, down := 0, 0
+	for _, log := range logs {
+		if log["is_valid"].(bool) {
+			up++
+		} else {
+			down++
+		}
+	}
+	return up, down
 }
