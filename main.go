@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	Version = "1.0.3"
+	Version = "1.0.4"
 	AppName = "uptimepk"
 )
 
 func init() {
 	conf.App.Version = Version
-	if !(conf.App.RunMode == "prod") {
-		conf.App.Version = fmt.Sprintf("%s%d", Version, time.Now().Unix())
-	}
+	// if !(conf.App.RunMode == "prod") {
+	// 	conf.App.Version = fmt.Sprintf("%s%d", Version, time.Now().Unix())
+	// }
 	conf.App.Name = AppName
 }
 
