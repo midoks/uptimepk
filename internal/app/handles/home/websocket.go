@@ -25,7 +25,7 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	MonitorBatchSize = 1000
+	MonitorBatchSize = 100
 )
 
 type MonitorStatus struct {
