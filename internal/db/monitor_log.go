@@ -360,7 +360,8 @@ func ensureMonitorLogTableExists(tableName string) error {
 		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id ON %s (monitor_id);
 		CREATE INDEX IF NOT EXISTS idx_%s_day ON %s (day);
 		CREATE INDEX IF NOT EXISTS idx_%s_create_time ON %s (create_time);
-		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
+		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id_id ON %s (monitor_id, id);
+		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
 	case "mysql":
 		createTableSQL = fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
@@ -377,7 +378,8 @@ func ensureMonitorLogTableExists(tableName string) error {
 			create_time BIGINT NOT NULL,
 			INDEX idx_monitor_id (monitor_id),
 			INDEX idx_day (day),
-			INDEX idx_create_time (create_time)
+			INDEX idx_create_time (create_time),
+			INDEX idx_monitor_id_id (monitor_id, id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`, tableName)
 	case "postgres":
@@ -398,7 +400,8 @@ func ensureMonitorLogTableExists(tableName string) error {
 		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id ON %s (monitor_id);
 		CREATE INDEX IF NOT EXISTS idx_%s_day ON %s (day);
 		CREATE INDEX IF NOT EXISTS idx_%s_create_time ON %s (create_time);
-		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
+		CREATE INDEX IF NOT EXISTS idx_%s_monitor_id_id ON %s (monitor_id, id);
+		`, tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
 	default:
 		return errors.Errorf("unsupported database type: %s", dbType)
 	}
