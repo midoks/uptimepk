@@ -713,7 +713,10 @@
                                 var day = strday.slice(0, 4) + strday.slice(5, 7) + strday.slice(8, 10);
                                 // console.log(day,monitorId);
                                 HomeApp.ws.send(JSON.stringify({type:'append_history_data', day:Number(day), monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
-                            } else if (data.type === 'append_history_data'){
+                            }  else if (data.type === 'history_done'){
+                                self.loadingComplete = true;
+                                self.renderHistoryComplete();
+                            }else if (data.type === 'append_history_data'){
                                 var strday = data.day.toString();
                                 var day = strday.slice(0, 4) + "-" + strday.slice(4, 6) + "-" + strday.slice(6, 8);
                                 if (data.day && data.list && data.list.length > 0) {
