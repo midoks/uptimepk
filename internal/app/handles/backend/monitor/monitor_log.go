@@ -17,13 +17,13 @@ func MonitorLog(c *gin.Context) {
 
 func MonitorLogList(c *gin.Context) {
 
-	var field form.Page
+	var field form.MonitorLogList
 	if err := c.ShouldBind(&field); err != nil {
 		common.ErrorResp(c, err, -1)
 		return
 	}
 
-	result, count, err := db.GetMonitorLogList(field.Page, field.Limit)
+	result, count, err := db.GetMonitorLogList(field)
 	if err != nil {
 		common.ErrorResp(c, err, -1)
 		return

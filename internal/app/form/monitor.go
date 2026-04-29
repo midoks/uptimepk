@@ -37,3 +37,9 @@ type MonitorList struct {
 	Gid int64  `form:"gid"`
 	Key string `form:"key"`
 }
+
+type MonitorLogList struct {
+	Page
+	Type string `form:"type"`
+	Key  string `form:"key"`
+}

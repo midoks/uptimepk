@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"uptimepk/internal/app/form"
 	"uptimepk/internal/conf"
 	"uptimepk/internal/model"
 )
@@ -29,7 +30,10 @@ func getMonitorLogTableName(date time.Time) string {
 	return prefix + "monitor_logs_" + dayStr
 }
 
-func GetMonitorLogList(page, size int) ([]model.MonitorLog, int64, error) {
+func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, error) {
+	page := field.Page.Page
+	size := field.Page.Limit
+
 	// 确保 page 至少为 1
 	if page <= 0 {
 		page = 1
