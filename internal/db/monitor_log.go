@@ -526,7 +526,7 @@ func DeleteMonitorLogByMonitorID(monitorID int64) error {
 	return nil
 }
 
-// GetMonitorLogsByDateRange 获取指定日期范围内的监控日志
+// 获取指定日期范围内的监控日志
 func GetMonitorLogsByDateRange(monitorID int64, startDate, endDate time.Time) ([]model.MonitorLog, error) {
 	var resultList []model.MonitorLog
 
@@ -543,6 +543,39 @@ func GetMonitorLogsByDateRange(monitorID int64, startDate, endDate time.Time) ([
 
 		var tableData []model.MonitorLog
 		if err := GetDb().Table(tableName).Where("monitor_id = ?", strconv.FormatInt(monitorID, 10)).Order(columnName("id") + " desc").Find(&tableData).Error; err != nil {
+			currentDate = currentDate.AddDate(0, 0, 1)
+			continue
+		}
+
+		resultList = append(resultList, tableData...)
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
+
+	return resultList, nil
+}
+
+func GetMonitorLogsByDateRangeByPos(monitorID int64, startDate, endDate time.Time, pos int64, size int) ([]model.MonitorLog, error) {
+	var resultList []model.MonitorLog
+
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		tableName := getMonitorLogTableName(currentDate)
+
+		// 检查表格是否存在
+		exists := GetDb().Migrator().HasTable(tableName)
+		if !exists {
+			currentDate = currentDate.AddDate(0, 0, 1)
+			continue
+		}
+
+		mm := GetDb().Table(tableName)
+
+		if pos > 0 {
+			mm = mm.Where("id > ?", pos)
+		}
+
+		var tableData []model.MonitorLog
+		if err := mm.Where("monitor_id = ?", strconv.FormatInt(monitorID, 10)).Order(columnName("id") + " desc").Limit(size).Find(&tableData).Error; err != nil {
 			currentDate = currentDate.AddDate(0, 0, 1)
 			continue
 		}

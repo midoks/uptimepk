@@ -620,7 +620,7 @@
                 }
 
                 // 根据是否已加载历史数据决定是否请求历史数据
-                let wsUrl = HomeApp.utils.getWsUrl('/ws/status', 'monitor_id=' + monitorId);
+                let wsUrl = HomeApp.utils.getWsUrl('/ws/monitor', 'id=' + monitorId);
                 if (this.loadingComplete) {
                     // 如果已经加载过历史数据，添加 no_history 参数
                     wsUrl += '&no_history=1';
@@ -648,10 +648,6 @@
                                     lastLogId = list[tlen - 1].id;
                                 }
                                 HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
-                                HomeApp.ws.send(JSON.stringify({type:'init_history_day', monitor_id:Number(monitorId)}));
-
-
-                                
                             } else if (data.type === 'append_monitor_data'){
                                 if (data.monitor_id && data.list && data.list.length > 0) {
                                     self.data.list = self.data.list.concat(data.list);
@@ -674,11 +670,11 @@
                                     }, 10000);
                                 }
 
-                            } else if (data.type === 'init_history_day') {
-                                console.log("init_history_day",data);
+                            } else if (data.type === 'history_day' && !self.loadingComplete) {
                                 self.historyDays.push(data);
                                 self.renderHistory();
                             } else if (data.type === 'history_done' && !self.loadingComplete) {
+                                // 只在历史数据未加载完成时才处理
                                 self.loadingComplete = true;
                                 self.renderHistoryComplete();
                             }
@@ -687,6 +683,7 @@
                         }
                     },
                     onclose: function() {
+                        console.log('monitor WebSocket disconnected, reconnecting...');
                         HomeApp.reconnect(wsUrl, handlers);
                     },
                     onerror: function(error) {
@@ -796,7 +793,7 @@
                             }
                         }
                     }
-                    dayHtml += '<div class="status-stats">可用率: ' + (dayData.up_rate || 0).toFixed(1) + '%</div>';
+                    dayHtml += '<div class="status-stats">可用率: ' + dayData.up_rate.toFixed(1) + '%</div>';
                     dayHtml += '</div>';
 
                     dayHtml += '</div>';
