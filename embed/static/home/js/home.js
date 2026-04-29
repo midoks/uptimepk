@@ -697,11 +697,31 @@
                                 var lastData = list[tlen -1];
                                 var lastLogId = lastData.id;
                                 var day = strday.slice(0, 4) + strday.slice(5, 7) + strday.slice(8, 10);
-                                console.log(day,monitorId);
+                                // console.log(day,monitorId);
                                 HomeApp.ws.send(JSON.stringify({type:'append_history_data', day:Number(day), monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
-
                             } else if (data.type === 'append_history_data'){
-                                console.log(data);
+                                var strday = data.day.toString();
+                                var day = strday.slice(0, 4) + "-" + strday.slice(4, 6) + "-" + strday.slice(6, 8);
+                                if (data.day && data.list && data.list.length > 0) {
+                                    var found = false;
+                                    for (var i = 0; i < self.historyDays.length; i++) {
+                                        if (self.historyDays[i].date === day) {
+                                            self.historyDays[i].list = self.historyDays[i].list.concat(data.list);
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+
+                                    self.renderHistory();
+
+                                    var list = data.list;
+                                    var tlen = list.length;
+                                    var lastData = list[tlen -1];
+                                    var lastLogId = lastData.id;
+
+                                    HomeApp.ws.send(JSON.stringify({type:'append_history_data', day:data.day, monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
+                                }
+
                             }
                         } catch (e) {
                             console.error('failed to parse message:', e);
