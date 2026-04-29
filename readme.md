@@ -8,3 +8,8 @@
 go env -w GOPROXY=https://goproxy.cn,direct
 journalctl -u uptimepk -f
 ```
+
+
+### 无图不真相
+
+[![截图](embed/static/screenshot.png)](embed/static/screenshot.png)
