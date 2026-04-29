@@ -81,7 +81,7 @@ download_and_extract() {
     fi
     
     echo -e "${YELLOW}正在解压...${NC}"
-    tar -xzf "$TMP_FILE" -C "$INSTALL_DIR" --strip-components=1
+    tar -xzf "$TMP_FILE" -C "$INSTALL_DIR"
     rm -f "$TMP_FILE"
     
     chmod +x "$INSTALL_DIR/uptimepk"
