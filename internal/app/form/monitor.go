@@ -40,6 +40,8 @@ type MonitorList struct {
 
 type MonitorLogList struct {
 	Page
-	Type string `form:"type"`
-	Key  string `form:"key"`
+
+	Times string `form:"times"`
+	Type  string `form:"type"`
+	Key   string `form:"key"`
 }
