@@ -612,8 +612,16 @@
                     return;
                 }
 
-                // 只在第一次初始化时清空历史数据
+                // 只在第一次初始化时创建容器结构
                 if (!this.initialized) {
+                    const container = document.getElementById('monitor-container');
+                    container.innerHTML = `
+                        <div id="status-card-container"></div>
+                        <div id="history-container" class="history-container">
+                            <div id="history-loading" class="loading" style="text-align: center; padding: 40px 0; color: #7f8c8d;">加载中...</div>
+                            <div id="history-days"></div>
+                        </div>
+                    `;
                     this.historyDays = [];
                     this.loadingComplete = false;
                     this.initialized = true;
@@ -657,7 +665,7 @@
                                     self.data.list = self.data.list.concat(data.list);
                                 }
 
-                                self.render();
+                                self.render()
 
                                 var tlen = data.list ? data.list.length : 0;
                                 if (tlen > 0) {
@@ -675,12 +683,27 @@
                                 }
 
                             } else if (data.type === 'init_history_day') {
-                                console.log("init_history_day",data);
                                 self.historyDays.push(data);
                                 self.renderHistory();
-                            } else if (data.type === 'history_done' && !self.loadingComplete) {
-                                self.loadingComplete = true;
-                                self.renderHistoryComplete();
+                                // 自动隐藏加载提示
+                                const loadingEl = document.getElementById('history-loading');
+                                if (loadingEl) {
+                                    loadingEl.style.display = 'none';
+                                }
+
+
+                                var list = data.list;
+                                var tlen = data.list.length;
+                                var monitor_id = data.id;
+
+                                var lastData = list[tlen -1];
+
+                                var lastLogId = lastData.id;
+                                var day = lastData.day;
+                                HomeApp.ws.send(JSON.stringify({type:'append_history_day', day:Number(day), monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
+
+                            } else if (data.type == "append_history_day"){
+                                console.log(data);
                             }
                         } catch (e) {
                             console.error('failed to parse message:', e);
@@ -697,26 +720,12 @@
             },
 
             render: function() {
-                const container = document.getElementById('monitor-container');
-                if (!container || !this.data) return;
+                // 只渲染状态卡片到独立容器，不影响历史数据
+                const cardContainer = document.getElementById('status-card-container');
+                if (!cardContainer || !this.data) return;
 
-                // 清理所有旧的提示元素
                 HomeApp.clearTips();
-
-                const data = this.data;
-
-                let html = '';
-
-                // 渲染状态卡片
-                html += HomeApp.renderStatusCard(data, false);
-
-                // 添加历史数据容器
-                html += '<div id="history-container" class="history-container">';
-                html += '<div id="history-loading" class="loading" style="text-align: center; padding: 40px 0; color: #7f8c8d;">加载中...</div>';
-                html += '<div id="history-days"></div>';
-                html += '</div>';
-
-                container.innerHTML = html;
+                cardContainer.innerHTML = HomeApp.renderStatusCard(this.data, false);
             },
 
             renderHistory: function() {
@@ -745,13 +754,13 @@
                     dayHtml += '<div class="status-indicator">';
                     dayHtml += '<span style="color: #27ae60;">正常: ' + dayData.up_count + '</span> / ';
                     dayHtml += '<span style="color: #e74c3c;">故障: ' + dayData.down_count + '</span> / ';
-                    dayHtml += '可用率: ' + dayData.up_rate.toFixed(1) + '%';
+                    dayHtml += '可用率: ' + (dayData.up_rate || 0).toFixed(1) + '%';
                     dayHtml += '</div>';
                     dayHtml += '</div>';
 
                     // 渲染时间网格
                     dayHtml += '<div class="time-grid" style="max-height: none; overflow: visible;">';
-                    dayData.logs.forEach(function(log) {
+                    (dayData.logs || []).forEach(function(log) {
                         const status = log.is_valid ? 'up' : 'down';
                         const error = log.error_msg || '无法访问';
                         const timeStr = log.time || '';
