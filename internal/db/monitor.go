@@ -15,7 +15,7 @@ import (
 func applyMonitorFilters(query *gorm.DB, field form.MonitorList) *gorm.DB {
 	// 条件查询: key like content
 	if field.Key != "" {
-		query = query.Where("name LIKE ?", "%"+field.Key+"%").Where("mark LIKE ?", "%"+field.Key+"%")
+		query = query.Where("name LIKE ?", "%"+field.Key+"%").Or("mark LIKE ?", "%"+field.Key+"%")
 
 	}
 
