@@ -287,17 +287,17 @@ func (c *WSClient) readPump() {
 				UpCount   int                      `json:"up_count"`
 				DownCount int                      `json:"down_count"`
 				UpRate    float64                  `json:"up_rate"`
-				Logs      []map[string]interface{} `json:"logs"`
+				List      []map[string]interface{} `json:"list"`
 			}
 
 			var dayStats []DayStat
-			for day, logs := range logsByDay {
+			for day, list := range logsByDay {
 				stat := DayStat{
 					Date:  day,
-					Total: len(logs),
-					Logs:  logs,
+					Total: len(list),
+					List:  list,
 				}
-				for _, log := range logs {
+				for _, log := range list {
 					if log["is_valid"].(bool) {
 						stat.UpCount++
 					} else {
@@ -322,7 +322,7 @@ func (c *WSClient) readPump() {
 					"up_count":   stat.UpCount,
 					"down_count": stat.DownCount,
 					"up_rate":    stat.UpRate,
-					"logs":       stat.Logs,
+					"list":       stat.List,
 				}
 				msg, err := json.Marshal(data)
 				if err != nil {

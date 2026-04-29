@@ -655,11 +655,10 @@
                                 if (tlen > 0) {
                                     lastLogId = list[tlen - 1].id;
                                 }
+
                                 HomeApp.ws.send(JSON.stringify({type:'append_monitor_data', monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
                                 HomeApp.ws.send(JSON.stringify({type:'init_history_day', monitor_id:Number(monitorId)}));
 
-
-                                
                             } else if (data.type === 'append_monitor_data'){
                                 if (data.monitor_id && data.list && data.list.length > 0) {
                                     self.data.list = self.data.list.concat(data.list);
@@ -691,15 +690,18 @@
                                     loadingEl.style.display = 'none';
                                 }
 
-
                                 var list = data.list;
-                                var tlen = data.list.length;
+
+                                console.log("ccclist:", data.date);
+                                var strday = data.date;
+                                var tlen = list.length;
                                 var monitor_id = data.id;
 
                                 var lastData = list[tlen -1];
 
                                 var lastLogId = lastData.id;
-                                var day = lastData.day;
+                                var day = strday[0:4]+strday[6:8]+strday[9:10];
+                                console.log(day);
                                 HomeApp.ws.send(JSON.stringify({type:'append_history_day', day:Number(day), monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
 
                             } else if (data.type === 'append_history_day'){
@@ -760,20 +762,20 @@
 
                     // 渲染时间网格
                     dayHtml += '<div class="time-grid" style="max-height: none; overflow: visible;">';
-                    (dayData.logs || []).forEach(function(log) {
-                        const status = log.is_valid ? 'up' : 'down';
-                        const error = log.error_msg || '无法访问';
-                        const timeStr = log.time || '';
+                    (dayData.list || []).forEach(function(d) {
+                        const status = d.is_valid ? 'up' : 'down';
+                        const error = d.error_msg || '无法访问';
+                        const timeStr = d.time || '';
                         let cellHtml = '<div class="time-cell ' + status + '" data-status="' + status + '" data-time="' + timeStr + '" data-error="' + HomeApp.utils.escapeHtml(error) + '"';
-                        if (log.speed) {
-                            cellHtml += ' data-speed="' + log.speed + '"';
+                        if (d.speed) {
+                            cellHtml += ' data-speed="' + d.speed + '"';
                         }
-                        if (log.size !== undefined && log.size !== null) {
+                        if (d.size !== undefined && d.size !== null) {
                             let sizeStr;
-                            if (log.size >= 1024) {
-                                sizeStr = (log.size / 1024).toFixed(2) + 'kb';
+                            if (d.size >= 1024) {
+                                sizeStr = (d.size / 1024).toFixed(2) + 'kb';
                             } else {
-                                sizeStr = log.size + 'b';
+                                sizeStr = d.size + 'b';
                             }
                             cellHtml += ' data-size="' + sizeStr + '"';
                         }
@@ -788,8 +790,8 @@
                     // 渲染页脚统计
                     dayHtml += '<div class="status-footer">';
                     dayHtml += '<div class="status-stats">日志: ' + dayData.total + ' 条</div>';
-                    if (dayData.logs && dayData.logs.length > 0) {
-                        const lastLog = dayData.logs[dayData.logs.length - 1];
+                    if (dayData.list && dayData.list.length > 0) {
+                        const lastLog = dayData.list[dayData.list.length - 1];
                         if (lastLog.is_valid) {
                             if (lastLog.speed) {
                                 dayHtml += '<div class="status-stats">耗时: ' + lastLog.speed + 'ms</div>';
