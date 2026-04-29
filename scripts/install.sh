@@ -52,9 +52,9 @@ detect_os() {
 install_deps() {
     echo -e "${YELLOW}正在安装依赖...${NC}"
     if [ "$OS" = "centos" ]; then
-        yum update -y && yum install -y wget tar
+        yum install -y wget tar
     elif [ "$OS" = "debian" ]; then
-        apt-get update -y && apt-get install -y wget tar
+        apt-get install -y wget tar
     else
         echo -e "${YELLOW}跳过依赖安装，请确保已安装 wget 和 tar${NC}"
     fi
