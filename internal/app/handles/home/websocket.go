@@ -25,7 +25,7 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	MonitorBatchSize = 20
+	MonitorBatchSize = 1000
 )
 
 type MonitorStatus struct {
@@ -193,7 +193,7 @@ func (c *WSClient) readPump() {
 			}
 
 			todayInt := utils.TodayToDateInt()
-			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 100)
+			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, MonitorBatchSize)
 
 			if err == nil {
 				data["list"] = logs
@@ -252,7 +252,7 @@ func (c *WSClient) readPump() {
 			c.conn.WriteMessage(websocket.TextMessage, message)
 		} else if message.Type == "init_history_day" {
 
-			weekLogs, err := db.GetMonitorLogsByDateRangeByPos(message.MonitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, 100)
+			weekLogs, err := db.GetMonitorLogsByDateRangeByPos(message.MonitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, MonitorBatchSize)
 			if err != nil {
 				weekLogs = []model.MonitorLog{}
 			}
@@ -350,7 +350,7 @@ func (c *WSClient) readPump() {
 			}
 
 			todayInt := message.Day
-			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 100)
+			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, MonitorBatchSize)
 
 			if err == nil {
 				data["list"] = logs

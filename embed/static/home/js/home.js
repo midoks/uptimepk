@@ -167,6 +167,20 @@
             const statusText = monitor.is_valid ? '正常' : '无法访问';
             const statusIcon = monitor.is_valid ? 'fa-check' : 'fa-times';
 
+            // 实时计算可用率
+            const list = monitor.list || [];
+            let up_count = 0;
+            let down_count = 0;
+            list.forEach(function(d) {
+                if (d.is_valid) {
+                    up_count++;
+                } else {
+                    down_count++;
+                }
+            });
+            const total_count = up_count + down_count;
+            const up_rate = total_count > 0 ? (up_count / total_count * 100) : 0;
+
             let html = '<div class="status-card" data-category="tab-' + monitor.gid + '" data-id="' + monitor.id + '">';
             html += '<div class="status-header">';
             html += '<div class="service-name">' + HomeApp.utils.getTypeIcon(monitor.type) + ' ' + HomeApp.utils.escapeHtml(monitor.name) + '</div>';
@@ -204,7 +218,7 @@
                 }
             }
             // 总是显示可用率，即使为0
-            html += '<div class="status-stats">可用率: ' + (monitor.up_rate || 0).toFixed(1) + '%</div>';
+            html += '<div class="status-stats">可用率: ' + up_rate.toFixed(1) + '%</div>';
             if (showJump) {
                 html += '<div class="status-jump"><a href="/monitor?id=' + monitor.id + '" style="color: #3498db; text-decoration: none;"><i class="fas fa-arrow-right"></i></a></div>';
             }
