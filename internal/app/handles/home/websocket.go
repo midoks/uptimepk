@@ -251,7 +251,7 @@ func (c *WSClient) readPump() {
 			}
 			c.conn.WriteMessage(websocket.TextMessage, message)
 		} else if message.Type == "init_history_day" {
-			fmt.Println("Received init_history_day request for monitor:", message.MonitorID)
+
 			weekLogs, err := db.GetMonitorLogsByDateRangeByPos(message.MonitorID, time.Now().AddDate(0, 0, -7), time.Now(), 0, 10)
 			if err != nil {
 				weekLogs = []model.MonitorLog{}
@@ -350,6 +350,8 @@ func (c *WSClient) readPump() {
 			}
 
 			todayInt := message.Day
+
+			fmt.Println("received append_history_data :", message.MonitorID, todayInt, message.LastLogID)
 			logs, err := db.GetMonitorLogListByDate(message.MonitorID, todayInt, message.LastLogID, 10)
 
 			if err == nil {

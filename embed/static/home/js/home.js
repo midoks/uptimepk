@@ -691,20 +691,16 @@
                                 }
 
                                 var list = data.list;
-
-                                console.log("ccclist:", data.date);
                                 var strday = data.date;
                                 var tlen = list.length;
                                 var monitor_id = data.id;
-
                                 var lastData = list[tlen -1];
-
                                 var lastLogId = lastData.id;
-                                var day = strday[0:4]+strday[6:8]+strday[9:10];
-                                console.log(day);
-                                HomeApp.ws.send(JSON.stringify({type:'append_history_day', day:Number(day), monitor_id:Number(data.monitor_id), last_log_id: Number(lastLogId)}));
+                                var day = strday.slice(0, 4) + strday.slice(5, 7) + strday.slice(8, 10);
+                                console.log(day,monitorId);
+                                HomeApp.ws.send(JSON.stringify({type:'append_history_data', day:Number(day), monitor_id:Number(monitorId), last_log_id: Number(lastLogId)}));
 
-                            } else if (data.type === 'append_history_day'){
+                            } else if (data.type === 'append_history_data'){
                                 console.log(data);
                             }
                         } catch (e) {
