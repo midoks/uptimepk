@@ -14,7 +14,7 @@ import (
 	"uptimepk/internal/model"
 )
 
-// getMonitorLogTableName 根据日期获取分表名
+// 根据日期获取分表名
 func getMonitorLogTableName(date time.Time) string {
 	// 获取表前缀
 	prefix := conf.Database.TablePrefix
