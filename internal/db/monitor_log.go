@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,8 +45,22 @@ func GetMonitorLogList(field form.MonitorLogList) ([]model.MonitorLog, int64, er
 	// 计算日期范围
 	var startDate, endDate time.Time
 
-	// 优先使用日期范围
-	if field.StartTime != "" && field.EndTime != "" {
+	// 优先使用日期范围（前端可能传递合并格式 "开始时间 - 结束时间"）
+	if field.Times != "" && strings.Contains(field.Times, " - ") {
+		parts := strings.Split(field.Times, " - ")
+		if len(parts) == 2 {
+			var err error
+			startDate, err = time.Parse("2006-01-02 15:04:05", parts[0])
+			if err != nil {
+				startDate, _ = time.Parse("2006-01-02", parts[0])
+			}
+			endDate, err = time.Parse("2006-01-02 15:04:05", parts[1])
+			if err != nil {
+				endDate, _ = time.Parse("2006-01-02", parts[1])
+				endDate = endDate.AddDate(0, 0, 1).Add(-time.Nanosecond)
+			}
+		}
+	} else if field.StartTime != "" && field.EndTime != "" {
 		var err error
 		startDate, err = time.Parse("2006-01-02 15:04:05", field.StartTime)
 		if err != nil {
