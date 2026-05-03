@@ -303,7 +303,13 @@ func GetMonitorLogListByDate(monitor_id int64, day int64, pos int64, size int) (
 		mm = mm.Where("id > ?", pos)
 	}
 
-	if err := mm.Where("monitor_id = ?", monitor_id).Order(columnName("id") + " asc").Limit(size).Find(&list).Error; err != nil {
+	mm = mm.Where("monitor_id = ?", monitor_id).Order(columnName("id") + " asc")
+
+	if size > 0 {
+		mm = mm.Limit(size)
+	}
+
+	if err := mm.Find(&list).Error; err != nil {
 		return nil, errors.Wrapf(err, "failed get monitor log list by date")
 	}
 	return list, nil
