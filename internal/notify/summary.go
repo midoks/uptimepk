@@ -76,7 +76,7 @@ func generateMonitorGroupSummary(monitorGid int64, domainName string) (string, e
 	message += fmt.Sprintf("在线: %d, 离线: %d\n\n", onlineCount, offlineCount)
 	message += "监控点详情:\n"
 	message += monitorDetails
-	message += "-----------------------------------------\n\n"
+	message += "---------------------------------------\n\n"
 
 	return message, nil
 }
@@ -95,7 +95,7 @@ func GenerateMonitorGroupSummaryMessage(monitorGid int64) (string, error) {
 
 	// 构建消息内容
 	message := fmt.Sprintf("📊 (%s): \n", time.Now().Format("2006-01-02 15:04:05"))
-	message += "============================\n\n"
+	message += "===========================\n\n"
 
 	// 生成单个监控分组的汇总
 	groupSummary, err := generateMonitorGroupSummary(monitorGid, domainName)
@@ -135,7 +135,7 @@ func GenerateRecipientsSummaryMessage(recipientID int64) (string, error) {
 
 	// 构建消息内容
 	message := fmt.Sprintf("📊 (%s): \n", time.Now().Format("2006-01-02 15:04:05"))
-	message += "============================\n\n"
+	message += "===========================\n\n"
 
 	for _, related := range relatedGroups {
 		groupSummary, err := generateMonitorGroupSummary(related.MonitorGid, domainName)
