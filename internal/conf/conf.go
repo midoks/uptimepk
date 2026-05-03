@@ -16,7 +16,7 @@ import (
 	"uptimepk/embed"
 )
 
-var yamlConfig YAMLConfig
+var appConfig AppConfig
 
 func ReadConf() error {
 	data, err := embed.Conf.ReadFile("conf/app.yaml")
@@ -24,7 +24,7 @@ func ReadConf() error {
 		return errors.Wrap(err, "read file 'conf/app.yaml'")
 	}
 
-	err = yaml.Unmarshal(data, &yamlConfig)
+	err = yaml.Unmarshal(data, &appConfig)
 	if err != nil {
 		return errors.Wrap(err, "parse 'conf/app.yaml'")
 	}
@@ -52,51 +52,51 @@ func InstallConf(data map[string]string) error {
 	}
 
 	// Update configuration values
-	yamlConfig.AppName = App.Name
-	yamlConfig.BrandName = App.BrandName
-	yamlConfig.RunUser = App.RunUser
-	yamlConfig.RunMode = "prod"
+	appConfig.AppName = App.Name
+	appConfig.BrandName = App.BrandName
+	appConfig.RunUser = App.RunUser
+	appConfig.RunMode = "prod"
 
 	// Update log settings
-	yamlConfig.Log.RootPath = Log.RootPath
+	appConfig.Log.RootPath = Log.RootPath
 
 	// Update web settings
-	yamlConfig.Web.HTTPPort = 9191
+	appConfig.Web.HTTPPort = 9191
 	// admin_path := fmt.Sprintf("/uptimepk_%s", randString(6))
 	admin_path := "uptimepk"
-	yamlConfig.Web.AdminPath = admin_path
+	appConfig.Web.AdminPath = admin_path
 
 	// Update database settings
 	if strings.EqualFold(data["type"], "mysql") {
-		yamlConfig.Database.Type = "mysql"
-		yamlConfig.Database.Hostname = data["hostname"]
+		appConfig.Database.Type = "mysql"
+		appConfig.Database.Hostname = data["hostname"]
 		// Convert string port to int64
 		hostport, _ := strconv.ParseInt(data["hostport"], 10, 64)
-		yamlConfig.Database.Hostport = hostport
-		yamlConfig.Database.Name = data["dbname"]
-		yamlConfig.Database.User = data["username"]
-		yamlConfig.Database.Password = data["password"]
-		yamlConfig.Database.TablePrefix = data["table_prefix"]
+		appConfig.Database.Hostport = hostport
+		appConfig.Database.Name = data["dbname"]
+		appConfig.Database.User = data["username"]
+		appConfig.Database.Password = data["password"]
+		appConfig.Database.TablePrefix = data["table_prefix"]
 	} else if strings.EqualFold(data["type"], "sqlite3") {
-		yamlConfig.Database.Type = "sqlite3"
-		yamlConfig.Database.Path = data["dbpath"]
+		appConfig.Database.Type = "sqlite3"
+		appConfig.Database.Path = data["dbpath"]
 	}
 
 	// Update security settings
-	yamlConfig.Security.InstallLock = true
-	yamlConfig.Security.SecretKey = randString(32)
+	appConfig.Security.InstallLock = true
+	appConfig.Security.SecretKey = randString(32)
 
 	// Create save config (excludes general and admin)
 	saveConfig := YAMLConfigCustom{
-		AppName:   yamlConfig.AppName,
-		BrandName: yamlConfig.BrandName,
-		RunUser:   yamlConfig.RunUser,
-		RunMode:   yamlConfig.RunMode,
-		Log:       yamlConfig.Log,
-		Session:   yamlConfig.Session,
-		Web:       yamlConfig.Web,
-		Security:  yamlConfig.Security,
-		Database:  yamlConfig.Database,
+		AppName:   appConfig.AppName,
+		BrandName: appConfig.BrandName,
+		RunUser:   appConfig.RunUser,
+		RunMode:   appConfig.RunMode,
+		Log:       appConfig.Log,
+		Session:   appConfig.Session,
+		Web:       appConfig.Web,
+		Security:  appConfig.Security,
+		Database:  appConfig.Database,
 	}
 
 	// Save the updated configuration
@@ -125,7 +125,7 @@ func InitConf(customConf string) error {
 		return errors.Wrap(err, "read embedded config")
 	}
 
-	err = yaml.Unmarshal(data, &yamlConfig)
+	err = yaml.Unmarshal(data, &appConfig)
 	if err != nil {
 		return errors.Wrap(err, "parse 'conf/app.yaml'")
 	}
@@ -149,7 +149,7 @@ func InitConf(customConf string) error {
 		}
 
 		// Unmarshal custom config, which will override embedded config
-		err = yaml.Unmarshal(customData, &yamlConfig)
+		err = yaml.Unmarshal(customData, &appConfig)
 		if err != nil {
 			return errors.Wrapf(err, "parse custom config %q", customConf)
 		}
@@ -165,66 +165,66 @@ func InitConf(customConf string) error {
 
 func renderSection() error {
 	// Map YAML config to global structs
-	App.Name = yamlConfig.AppName
-	App.BrandName = yamlConfig.BrandName
-	App.RunUser = yamlConfig.RunUser
-	App.RunMode = yamlConfig.RunMode
+	App.Name = appConfig.AppName
+	App.BrandName = appConfig.BrandName
+	App.RunUser = appConfig.RunUser
+	App.RunMode = appConfig.RunMode
 
 	// ****************************
 	// ----- general settings -----
 	// ****************************
-	General.MenuFile = yamlConfig.General.MenuFile
+	General.MenuFile = appConfig.General.MenuFile
 
 	// ****************************
 	// ----- Web settings -----
 	// ****************************
-	Web.HTTPAddr = yamlConfig.Web.HTTPAddr
-	Web.HTTPPort = yamlConfig.Web.HTTPPort
-	Web.AdminPath = yamlConfig.Web.AdminPath
-	Web.EnableGzip = yamlConfig.Web.EnableGzip
+	Web.HTTPAddr = appConfig.Web.HTTPAddr
+	Web.HTTPPort = appConfig.Web.HTTPPort
+	Web.AdminPath = appConfig.Web.AdminPath
+	Web.EnableGzip = appConfig.Web.EnableGzip
 
 	// ***************************
 	// ----- Log settings -----
 	// ***************************
-	Log.Format = yamlConfig.Log.Format
-	Log.RootPath = yamlConfig.Log.RootPath
+	Log.Format = appConfig.Log.Format
+	Log.RootPath = appConfig.Log.RootPath
 
 	// ***************************
 	// ----- Database settings -----
 	// ***************************
-	Database.Type = yamlConfig.Database.Type
-	Database.Path = yamlConfig.Database.Path
-	Database.DSN = yamlConfig.Database.DSN
-	Database.TablePrefix = yamlConfig.Database.TablePrefix
-	Database.Hostname = yamlConfig.Database.Hostname
-	Database.Hostport = yamlConfig.Database.Hostport
-	Database.Name = yamlConfig.Database.Name
-	Database.User = yamlConfig.Database.User
-	Database.Password = yamlConfig.Database.Password
-	Database.SSLMode = yamlConfig.Database.SSLMode
+	Database.Type = appConfig.Database.Type
+	Database.Path = appConfig.Database.Path
+	Database.DSN = appConfig.Database.DSN
+	Database.TablePrefix = appConfig.Database.TablePrefix
+	Database.Hostname = appConfig.Database.Hostname
+	Database.Hostport = appConfig.Database.Hostport
+	Database.Name = appConfig.Database.Name
+	Database.User = appConfig.Database.User
+	Database.Password = appConfig.Database.Password
+	Database.SSLMode = appConfig.Database.SSLMode
 
 	// ***************************
 	// ----- Security settings -----
 	// ***************************
-	Security.InstallLock = yamlConfig.Security.InstallLock
-	Security.SecretKey = yamlConfig.Security.SecretKey
-	Security.LoginRememberDays = yamlConfig.Security.LoginRememberDays
-	Security.CookieRememberName = yamlConfig.Security.CookieRememberName
-	Security.CookieUsername = yamlConfig.Security.CookieUsername
-	Security.CookieSecure = yamlConfig.Security.CookieSecure
-	Security.EnableLoginStatusCookie = yamlConfig.Security.EnableLoginStatusCookie
-	Security.LoginStatusCookieName = yamlConfig.Security.LoginStatusCookieName
+	Security.InstallLock = appConfig.Security.InstallLock
+	Security.SecretKey = appConfig.Security.SecretKey
+	Security.LoginRememberDays = appConfig.Security.LoginRememberDays
+	Security.CookieRememberName = appConfig.Security.CookieRememberName
+	Security.CookieUsername = appConfig.Security.CookieUsername
+	Security.CookieSecure = appConfig.Security.CookieSecure
+	Security.EnableLoginStatusCookie = appConfig.Security.EnableLoginStatusCookie
+	Security.LoginStatusCookieName = appConfig.Security.LoginStatusCookieName
 
 	// ***************************
 	// ----- Session settings -----
 	// ***************************
-	Session.Provider = yamlConfig.Session.Provider
-	Session.ProviderConfig = yamlConfig.Session.ProviderConfig
-	Session.CookieName = yamlConfig.Session.CookieName
-	Session.CookieSecure = yamlConfig.Session.CookieSecure
-	Session.GCInterval = yamlConfig.Session.GCInterval
-	Session.MaxLifeTime = yamlConfig.Session.MaxLifeTime
-	Session.CSRFCookieName = yamlConfig.Session.CSRFCookieName
+	Session.Provider = appConfig.Session.Provider
+	Session.ProviderConfig = appConfig.Session.ProviderConfig
+	Session.CookieName = appConfig.Session.CookieName
+	Session.CookieSecure = appConfig.Session.CookieSecure
+	Session.GCInterval = appConfig.Session.GCInterval
+	Session.MaxLifeTime = appConfig.Session.MaxLifeTime
+	Session.CSRFCookieName = appConfig.Session.CSRFCookieName
 
 	return nil
 }

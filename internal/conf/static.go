@@ -15,7 +15,7 @@ var (
 )
 
 // YAMLConfig represents the entire YAML configuration structure
-type YAMLConfig struct {
+type AppConfig struct {
 	AppName   string         `yaml:"app_name"`
 	BrandName string         `yaml:"brand_name"`
 	RunUser   string         `yaml:"run_user"`
