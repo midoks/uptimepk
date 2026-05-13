@@ -81,6 +81,11 @@ func PostInstallStep1(c *gin.Context) {
 	init_account := c.PostForm("account")
 	init_pass := c.PostForm("pass")
 
+	if init_account == "" || init_pass == "" {
+		common.ErrorStrResp(c, "初始化账户不能为为空!", -1)
+		return
+	}
+
 	if conf.Security.InstallLock {
 		db.InitDb()
 		if err := op.InitAdmin(init_account, init_pass); err != nil {
